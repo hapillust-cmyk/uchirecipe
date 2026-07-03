@@ -8,6 +8,7 @@ import { backupOverdue } from '../logic/backup'
 import type { Recipe } from '../db/types'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
+import ChipInput from '../components/ChipInput'
 import { ja } from '../i18n/ja'
 
 type SuggestCondition = 'any' | 'notRecent' | 'favorite' | 'quick'
@@ -47,7 +48,7 @@ function SuggestionCard({ recipe }: { recipe: Recipe }) {
         {photoUrl ? (
           <img src={photoUrl} alt={recipe.title} className="h-full w-full object-cover" />
         ) : (
-          <RecipePlaceholder seed={recipe.tags[0] ?? recipe.title} iconSize={32} />
+          <RecipePlaceholder recipe={recipe} iconSize={32} />
         )}
       </div>
       <div className="min-w-0">
@@ -79,7 +80,7 @@ export default function HomePage() {
   const [condition, setCondition] = useState<SuggestCondition>('any')
   const [seed, setSeed] = useState(() => Math.random())
   const [query, setQuery] = useState('')
-  const [ingredients, setIngredients] = useState('')
+  const [ingredients, setIngredients] = useState<string[]>([])
 
   // 「基本レシピを表示しない」設定を反映
   const recipes = useMemo(() => {
@@ -115,8 +116,8 @@ export default function HomePage() {
     navigate(query.trim() ? `/recipes?q=${encodeURIComponent(query.trim())}` : '/recipes')
   }
   const submitIngredients = () => {
-    if (!ingredients.trim()) return
-    navigate(`/recipes?ing=${encodeURIComponent(ingredients.trim())}`)
+    if (ingredients.length === 0) return
+    navigate(`/recipes?ing=${encodeURIComponent(ingredients.join(' '))}`)
   }
 
   return (
@@ -222,27 +223,22 @@ export default function HomePage() {
           <Carrot size={20} className="text-accent" aria-hidden />
           {ja.home.ingShortcutTitle}
         </h2>
-        <form
-          className="mt-[var(--space-sm)] flex gap-[var(--space-sm)]"
-          onSubmit={(e) => {
-            e.preventDefault()
-            submitIngredients()
-          }}
-        >
-          <input
-            type="text"
-            value={ingredients}
-            onChange={(e) => setIngredients(e.target.value)}
+        <div className="mt-[var(--space-sm)]">
+          <ChipInput
+            values={ingredients}
+            onChange={setIngredients}
             placeholder={ja.home.ingPlaceholder}
-            className="min-w-0 flex-1 rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+            addLabel={ja.home.ingAdd}
           />
           <button
-            type="submit"
-            className="shrink-0 rounded-sm border border-edge bg-surface px-3 text-sm font-bold text-accent shadow-sm"
+            type="button"
+            onClick={submitIngredients}
+            disabled={ingredients.length === 0}
+            className="mt-[var(--space-sm)] w-full shrink-0 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-accent shadow-sm disabled:opacity-50"
           >
             {ja.home.ingButton}
           </button>
-        </form>
+        </div>
       </section>
 
       {/* 最近作ったもの */}

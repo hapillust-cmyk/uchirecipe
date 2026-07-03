@@ -9,10 +9,10 @@ function cleanInput(input: RecipeInput): RecipeInput {
     title: input.title.trim(),
     tags: input.tags.map((t) => t.trim()).filter(Boolean),
     ingredients: input.ingredients
-      .map((i) => ({ ...i, name: i.name.trim() }))
+      .map((i) => ({ ...i, name: i.name.trim(), memo: i.memo?.trim() || undefined }))
       .filter((i) => i.name !== ''),
     steps: input.steps
-      .map((s) => ({ ...s, text: s.text.trim() }))
+      .map((s) => ({ ...s, text: s.text.trim(), memo: s.memo?.trim() || undefined }))
       .filter((s) => s.text !== ''),
   }
 }

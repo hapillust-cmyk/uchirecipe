@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Link } from 'react-router-dom'
 import {
   Clock,
@@ -11,25 +12,35 @@ import {
   CakeSlice,
   Sandwich,
   Coffee,
+  Utensils,
+  CookingPot,
+  Egg,
+  Drumstick,
 } from 'lucide-react'
-import type { Recipe } from '../db/types'
+import type { IconKey, Recipe } from '../db/types'
 import { hasNgIngredient } from '../logic/ng'
+import { pickIconKey } from '../logic/icon'
+import { ingredientColorToken } from '../logic/ingredientColor'
 import { ja } from '../i18n/ja'
 import { usePhotoUrl } from './usePhotoUrl'
 
-/* 写真がないレシピ用のプレースホルダー:
-   タグ（なければ料理名）から決まる色の濃さ＋料理アイコンで見栄えを保つ。
+/* 写真がないレシピ（または「アイコン表示」を選んだレシピ）用のプレースホルダー:
+   料理名・タグ・材料から選んだ料理アイコン＋タグ（なければ料理名）で決まる色の濃さ。
    色はアクセント色と背景色の混ぜ合わせだけで作る（トークン外の色は使わない） */
-const placeholderIcons = [
-  UtensilsCrossed,
-  Soup,
-  Salad,
-  Fish,
-  Beef,
-  CakeSlice,
-  Sandwich,
-  Coffee,
-] as const
+export const iconComponents: Record<IconKey, typeof UtensilsCrossed> = {
+  rice: CookingPot,
+  noodle: Utensils,
+  bread: Sandwich,
+  soup: Soup,
+  salad: Salad,
+  fish: Fish,
+  egg: Egg,
+  chicken: Drumstick,
+  meat: Beef,
+  dessert: CakeSlice,
+  drink: Coffee,
+  default: UtensilsCrossed,
+}
 
 const mixRatios = [16, 26, 38, 52] as const
 
@@ -39,16 +50,18 @@ function hashString(text: string): number {
   return Math.abs(hash)
 }
 
-/** 写真なしレシピの代わり絵（ホーム画面などでも使えるよう公開） */
+/** 写真なし（または表示優先）レシピの代わり絵。iconKey を指定すれば手動選択したアイコンで固定表示 */
 export function RecipePlaceholder({
-  seed,
+  recipe,
   iconSize = 48,
 }: {
-  seed: string
+  recipe: Pick<Recipe, 'title' | 'tags' | 'ingredients' | 'iconKey'>
   iconSize?: number
 }) {
+  const seed = recipe.tags[0] ?? recipe.title
   const hash = hashString(seed)
-  const Icon = placeholderIcons[hash % placeholderIcons.length]
+  const key = recipe.iconKey ?? pickIconKey(recipe)
+  const Icon = iconComponents[key]
   const ratio = mixRatios[Math.floor(hash / 7) % mixRatios.length]
   return (
     <div
@@ -71,19 +84,37 @@ type Props = {
 /** レシピ一覧のカード1枚分（写真＋名前＋時間・手間バッジ） */
 export default function RecipeCard({ recipe, ngIngredients, subLabel }: Props) {
   const photoUrl = usePhotoUrl(recipe.photo)
-  const seed = recipe.tags[0] ?? recipe.title
   const hasNg = ngIngredients ? hasNgIngredient(recipe, ngIngredients) : false
+  const showPhoto = photoUrl && !recipe.showIconInsteadOfPhoto
+  const topIngredients = recipe.ingredients.slice(0, 3)
 
   return (
     <Link
       to={`/recipes/${recipe.id}`}
       className="relative block overflow-hidden rounded-md bg-surface shadow-sm border border-edge"
     >
-      <div className="aspect-square w-full overflow-hidden">
-        {photoUrl ? (
+      <div className="relative aspect-square w-full overflow-hidden">
+        {showPhoto ? (
           <img src={photoUrl} alt={recipe.title} className="h-full w-full object-cover" />
         ) : (
-          <RecipePlaceholder seed={seed} />
+          <RecipePlaceholder recipe={recipe} />
+        )}
+        {/* 主要食材チップ（先頭3つ）を写真の右下に重ねる */}
+        {topIngredients.length > 0 && (
+          <div className="absolute bottom-1.5 right-1.5 flex max-w-[80%] flex-col items-end gap-1">
+            {topIngredients.map((ing, index) => (
+              <span
+                key={index}
+                className="max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm"
+                style={{
+                  background: `var(${ingredientColorToken(ing.name)})`,
+                  color: 'var(--chip-ink)',
+                }}
+              >
+                {ing.name}
+              </span>
+            ))}
+          </div>
         )}
       </div>
       {hasNg && (

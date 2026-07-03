@@ -84,28 +84,39 @@ export function parseBackup(json: string): BackupFile {
   return data as BackupFile
 }
 
+/** 'replace' 用: id を振り直さず、そのままの内容で取り込む */
 function toRecipe(backup: BackupRecipe): Recipe {
   const { photoBase64, photoType, ...rest } = backup
   const recipe: Recipe = { ...rest }
-  delete recipe.id // 読み込み先で新しい番号を振り直す
   if (photoBase64) {
     recipe.photo = base64ToBlob(photoBase64, photoType || 'image/jpeg')
   }
   return recipe
 }
 
+export interface ImportResult {
+  /** 新規に追加したレシピ数 */
+  added: number
+  /** 既存と重複していたため取り込まなかったレシピ数（merge時のみ発生） */
+  skipped: number
+}
+
 /**
  * バックアップを取り込む。
  * mode 'replace': 今のデータを全部消してから復元（引っ越し・復旧向け）
- * mode 'merge'  : 今のデータは残し、バックアップのレシピを追加する
+ * mode 'merge'  : 今のデータは残し、バックアップのレシピを id で照合して取り込む。
+ *   - 同一ID・同一内容 → スキップ（すでに入っている）
+ *   - 同一ID・内容が違う → 取り込まずスキップ（今のデータを優先。上書きしない）
+ *   - 新規ID → 追加
  */
 export async function importBackup(
   file: BackupFile,
   mode: 'replace' | 'merge',
-): Promise<number> {
+): Promise<ImportResult> {
   const recipes = file.recipes.map(toRecipe)
-  await db.transaction('rw', db.recipes, db.settings, async () => {
-    if (mode === 'replace') {
+
+  if (mode === 'replace') {
+    await db.transaction('rw', db.recipes, db.settings, async () => {
       await db.recipes.clear()
       // 設定も復元。基本レシピの二重投入を防ぐため starterSeeded は必ず true にする
       await db.settings.put({
@@ -114,10 +125,34 @@ export async function importBackup(
         id: 1,
         starterSeeded: true,
       })
+      await db.recipes.bulkAdd(recipes)
+    })
+    return { added: recipes.length, skipped: 0 }
+  }
+
+  // merge: 1件ずつ id で照合する
+  let added = 0
+  let skipped = 0
+  await db.transaction('rw', db.recipes, async () => {
+    for (const recipe of recipes) {
+      if (recipe.id == null) {
+        // 古い形式などIDが無い場合は照合できないので新規として追加
+        const { id: _unused, ...rest } = recipe
+        await db.recipes.add(rest as Recipe)
+        added++
+        continue
+      }
+      const existing = await db.recipes.get(recipe.id)
+      if (!existing) {
+        await db.recipes.add(recipe) // 同じIDのまま追加（次回以降も照合できるように）
+        added++
+      } else {
+        // 同一IDが既にある: 内容が同じでも違ってもスキップ（今のデータを優先）
+        skipped++
+      }
     }
-    await db.recipes.bulkAdd(recipes)
   })
-  return recipes.length
+  return { added, skipped }
 }
 
 /** 30日以上バックアップしていない（または一度もしていない）か */

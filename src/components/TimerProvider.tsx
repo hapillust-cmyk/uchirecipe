@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useSettings } from '../db/settings'
 import { ja } from '../i18n/ja'
 
 /**
@@ -17,20 +18,42 @@ import { ja } from '../i18n/ja'
 
 export interface ActiveTimer {
   id: number
-  /** 表示名（例: "肉じゃが 10分"） */
+  /** 重複起動防止のためのキー（レシピID・手順番号・秒数から組み立てる） */
+  key: string
+  /** 表示名（例: "肉じゃが・手順3"） */
   label: string
+  /** 終了時に表示する文言（例: "煮込み終わり"）。判別できなければ既定の「終わり」 */
+  doneLabel: string
+  recipeId: number
+  /** 手順番号（1始まり。常駐タイマーのタップ先スクロールに使う） */
+  stepNumber: number
   /** 終了予定時刻（ミリ秒） */
   endsAt: number
   totalSeconds: number
   done: boolean
+  /** このタイマーだけ消音しているか */
+  muted: boolean
+}
+
+export interface StartTimerOptions {
+  /** 重複起動防止キー。同じ手順・同じ時間なら同じキーになるようにする */
+  key: string
+  label: string
+  doneLabel?: string
+  seconds: number
+  recipeId: number
+  stepNumber: number
 }
 
 interface TimerContextValue {
   timers: ActiveTimer[]
   /** 現在時刻（残り時間の計算用。動作中は約0.3秒ごとに更新） */
   now: number
-  startTimer: (label: string, seconds: number) => void
+  /** 連打などで既に動いているタイマーに気づかせるための、点滅対象タイマーID */
+  flashingId: number | null
+  startTimer: (options: StartTimerOptions) => void
   dismissTimer: (id: number) => void
+  toggleMute: (id: number) => void
 }
 
 const TimerContext = createContext<TimerContextValue | null>(null)
@@ -61,13 +84,15 @@ function playChime(ctx: AudioContext | undefined) {
   }
 }
 
-function announceFinished(timer: ActiveTimer, audio: AudioContext | undefined) {
-  playChime(audio)
-  // バイブレーション（対応端末のみ）
-  try {
-    if (typeof navigator.vibrate === 'function') navigator.vibrate([300, 120, 300])
-  } catch {
-    /* 無視 */
+function announceFinished(timer: ActiveTimer, audio: AudioContext | undefined, soundOn: boolean) {
+  if (soundOn && !timer.muted) {
+    playChime(audio)
+    // バイブレーション（対応端末のみ）
+    try {
+      if (typeof navigator.vibrate === 'function') navigator.vibrate([300, 120, 300])
+    } catch {
+      /* 無視 */
+    }
   }
   // ブラウザ通知（許可済みのときだけ）
   try {
@@ -84,9 +109,22 @@ function announceFinished(timer: ActiveTimer, audio: AudioContext | undefined) {
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [timers, setTimers] = useState<ActiveTimer[]>([])
   const [now, setNow] = useState(() => Date.now())
+  const [flashingId, setFlashingId] = useState<number | null>(null)
   const audioRef = useRef<AudioContext>(undefined)
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const settings = useSettings()
+  const soundOn = settings?.timerSoundEnabled ?? true
 
-  const startTimer = useCallback((label: string, seconds: number) => {
+  const startTimer = useCallback((options: StartTimerOptions) => {
+    // 同じ手順・同じ時間ボタンの連打防止: 既に動作中なら新規起動せず、既存タイマーを点滅で知らせる
+    const existing = timers.find((t) => t.key === options.key && !t.done)
+    if (existing) {
+      setFlashingId(existing.id)
+      clearTimeout(flashTimeoutRef.current)
+      flashTimeoutRef.current = setTimeout(() => setFlashingId(null), 1200)
+      return
+    }
+
     // ボタンを押した瞬間（ユーザー操作中）に音の準備と通知の許可依頼を済ませる
     try {
       audioRef.current ??= new AudioContext()
@@ -103,17 +141,27 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
     const timer: ActiveTimer = {
       id: nextTimerId++,
-      label,
-      endsAt: Date.now() + seconds * 1000,
-      totalSeconds: seconds,
+      key: options.key,
+      label: options.label,
+      doneLabel: options.doneLabel ?? ja.timer.done,
+      recipeId: options.recipeId,
+      stepNumber: options.stepNumber,
+      endsAt: Date.now() + options.seconds * 1000,
+      totalSeconds: options.seconds,
       done: false,
+      muted: false,
     }
     setNow(Date.now())
     setTimers((prev) => [...prev, timer])
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timers])
 
   const dismissTimer = useCallback((id: number) => {
     setTimers((prev) => prev.filter((t) => t.id !== id))
+  }, [])
+
+  const toggleMute = useCallback((id: number) => {
+    setTimers((prev) => prev.map((t) => (t.id === id ? { ...t, muted: !t.muted } : t)))
   }, [])
 
   const hasRunning = timers.some((t) => !t.done)
@@ -129,14 +177,16 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const finished = timers.filter((t) => !t.done && t.endsAt <= now)
     if (finished.length === 0) return
-    finished.forEach((t) => announceFinished(t, audioRef.current))
+    finished.forEach((t) => announceFinished(t, audioRef.current, soundOn))
     setTimers((prev) =>
       prev.map((t) => (t.endsAt <= now ? { ...t, done: true } : t)),
     )
-  }, [now, timers])
+  }, [now, timers, soundOn])
 
   return (
-    <TimerContext.Provider value={{ timers, now, startTimer, dismissTimer }}>
+    <TimerContext.Provider
+      value={{ timers, now, flashingId, startTimer, dismissTimer, toggleMute }}
+    >
       {children}
     </TimerContext.Provider>
   )

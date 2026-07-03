@@ -9,13 +9,35 @@ export interface Ingredient {
   unit: string
   /** 価格（円・任意） */
   price?: number
+  /** ひとことメモ（任意。例: 「なければ玉ねぎでも可」） */
+  memo?: string
 }
 
 /** 手順1つ分。minutes があれば将来タイマー化できる */
 export interface Step {
   text: string
   minutes?: number
+  /** ひとことメモ（任意。例: 「焦げやすいので注意」） */
+  memo?: string
 }
+
+/**
+ * プレースホルダーアイコンの種類。
+ * 料理名・材料から自動で選ぶが、編集画面で手動指定もできる。
+ */
+export type IconKey =
+  | 'rice'
+  | 'noodle'
+  | 'bread'
+  | 'soup'
+  | 'salad'
+  | 'fish'
+  | 'egg'
+  | 'chicken'
+  | 'meat'
+  | 'dessert'
+  | 'drink'
+  | 'default'
 
 /** 「作った！」の記録 */
 export interface CookedLog {
@@ -47,12 +69,16 @@ export interface Recipe {
   searchWords: string[]
   /** 同梱の基本レシピなら true（将来の件数制限のカウント外にする） */
   isStarter?: boolean
+  /** プレースホルダーアイコンの手動指定（未指定なら料理名・材料から自動選択） */
+  iconKey?: IconKey
+  /** 写真があっても、一覧・詳細でアイコン表示を優先する */
+  showIconInsteadOfPhoto?: boolean
   createdAt: number
   updatedAt: number
 }
 
-/** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 */
-export type ThemeSetting = 'auto' | 'light' | 'dark'
+/** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 */
+export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown'
 
 /** アプリ全体の設定（1件だけ保存する） */
 export interface Settings {
@@ -69,6 +95,8 @@ export interface Settings {
   hideStarters: boolean
   /** 最後にバックアップを書き出した日時（ミリ秒） */
   lastBackupAt?: number
+  /** タイマー音の全体ON/OFF（個別ミュートとは別に、これがOFFなら全タイマーが無音） */
+  timerSoundEnabled: boolean
 }
 
 export const defaultSettings: Settings = {
@@ -78,6 +106,7 @@ export const defaultSettings: Settings = {
   theme: 'auto',
   starterSeeded: false,
   hideStarters: false,
+  timerSoundEnabled: true,
 }
 
 /** 登録・編集フォームから受け取る入力（派生フィールドは含まない） */
@@ -93,4 +122,6 @@ export type RecipeInput = Pick<
   | 'steps'
   | 'sourceUrl'
   | 'memo'
+  | 'iconKey'
+  | 'showIconInsteadOfPhoto'
 >

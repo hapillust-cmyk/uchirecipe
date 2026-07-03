@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, X, Download, Upload, RotateCcw } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
+import { listRecipes } from '../db/recipes'
 import { reloadStarterRecipes, starterCount } from '../db/starters'
 import { downloadBackup, importBackup, parseBackup } from '../logic/backup'
+import { hasNgIngredient } from '../logic/ng'
 import type { ThemeSetting } from '../db/types'
 import { ja } from '../i18n/ja'
 
@@ -10,6 +13,7 @@ const themeOptions: { value: ThemeSetting; label: string }[] = [
   { value: 'auto', label: ja.settings.themeAuto },
   { value: 'light', label: ja.settings.themeLight },
   { value: 'dark', label: ja.settings.themeDark },
+  { value: 'brown', label: ja.settings.themeBrown },
 ]
 
 const sectionCls =
@@ -18,12 +22,19 @@ const sectionCls =
 /** 設定: NG食材 / 画面を暗くしない / テーマ */
 export default function SettingsPage() {
   const settings = useSettings()
+  const recipes = useLiveQuery(listRecipes, [])
   const [ngInput, setNgInput] = useState('')
   const [message, setMessage] = useState('')
   const importFileRef = useRef<HTMLInputElement>(null)
   const importModeRef = useRef<'replace' | 'merge'>('merge')
 
   if (!settings) return null // 読み込み中
+
+  /** 現在の入力欄の文字が今の時点で何件のレシピに一致するか（登録前のその場プレビュー） */
+  const ngPreviewCount =
+    ngInput.trim() && recipes
+      ? recipes.filter((r) => hasNgIngredient(r, [ngInput.trim()])).length
+      : undefined
 
   /** バックアップの読み込み: モードを選んでからファイルを開く */
   const pickImportFile = (mode: 'replace' | 'merge') => {
@@ -41,8 +52,14 @@ export default function SettingsPage() {
     if (!window.confirm(confirmText)) return
     try {
       const backup = parseBackup(await file.text())
-      const count = await importBackup(backup, mode)
-      setMessage(ja.settings.backupImportDone.replace('{n}', String(count)))
+      const result = await importBackup(backup, mode)
+      setMessage(
+        mode === 'replace'
+          ? ja.settings.backupImportDone.replace('{n}', String(result.added))
+          : ja.settings.backupImportMergeResult
+              .replace('{a}', String(result.added))
+              .replace('{s}', String(result.skipped)),
+      )
     } catch {
       setMessage(ja.settings.backupImportError)
     }
@@ -61,6 +78,10 @@ export default function SettingsPage() {
       return
     }
     await updateSettings({ ngIngredients: [...settings.ngIngredients, value] })
+    const matchCount = recipes ? recipes.filter((r) => hasNgIngredient(r, [value])).length : 0
+    setMessage(
+      ja.settings.ngAddedFeedback.replace('{ng}', value).replace('{n}', String(matchCount)),
+    )
     setNgInput('')
   }
 
@@ -135,6 +156,12 @@ export default function SettingsPage() {
             {ja.settings.ngAdd}
           </button>
         </div>
+        {/* 登録前でも「効いている」と分かるその場プレビュー */}
+        {ngPreviewCount !== undefined && (
+          <p className="mt-1 text-sm text-ink-muted">
+            {ja.settings.ngMatchPreview.replace('{n}', String(ngPreviewCount))}
+          </p>
+        )}
       </section>
 
       {/* 画面を暗くしない */}
@@ -163,10 +190,36 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* タイマー音 */}
+      <section className={sectionCls}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold">{ja.settings.timerSoundTitle}</h2>
+            <p className="mt-1 text-sm text-ink-muted">{ja.settings.timerSoundDescription}</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.timerSoundEnabled}
+            aria-label={ja.settings.timerSoundTitle}
+            onClick={() => updateSettings({ timerSoundEnabled: !settings.timerSoundEnabled })}
+            className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
+              settings.timerSoundEnabled ? 'bg-accent' : 'bg-edge'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-6 w-6 rounded-full bg-surface shadow-sm transition-all ${
+                settings.timerSoundEnabled ? 'left-7' : 'left-1'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
       {/* テーマ */}
       <section className={sectionCls}>
         <h2 className="font-bold">{ja.settings.themeTitle}</h2>
-        <div className="mt-[var(--space-sm)] grid grid-cols-3 gap-[var(--space-sm)]">
+        <div className="mt-[var(--space-sm)] grid grid-cols-4 gap-[var(--space-sm)]">
           {themeOptions.map((option) => (
             <button
               key={option.value}
@@ -255,6 +308,7 @@ export default function SettingsPage() {
             <Upload size={18} aria-hidden />
             {ja.settings.backupImportMerge}
           </button>
+          <p className="text-xs text-ink-muted">{ja.settings.backupImportMergeNote}</p>
           <button
             type="button"
             onClick={() => pickImportFile('replace')}

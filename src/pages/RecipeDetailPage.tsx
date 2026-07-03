@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Heart,
@@ -21,8 +21,11 @@ import { useSettings } from '../db/settings'
 import { scaleAmount } from '../logic/amount'
 import { ngMatchedIndices } from '../logic/ng'
 import { shareText, shareImageCard } from '../logic/share'
+import { deriveDoneLabel } from '../logic/timerLabel'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import { useTimers } from '../components/TimerProvider'
+import BackHeader from '../components/BackHeader'
+import { RecipePlaceholder } from '../components/RecipeCard'
 import TimeText from '../components/TimeText'
 import { ja } from '../i18n/ja'
 
@@ -38,12 +41,37 @@ function todayString(): string {
 export default function RecipeDetailPage() {
   const params = useParams()
   const id = Number(params.id)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // undefined = 読み込み中 / null = 該当レシピなし、を区別する
   const recipe = useLiveQuery(async () => (await db.recipes.get(id)) ?? null, [id])
   const photoUrl = usePhotoUrl(recipe?.photo)
   const settings = useSettings()
   const { startTimer } = useTimers()
+
+  // 常駐タイマー・完了ポップアップからのタップ（?step=手順番号）で該当手順へスクロール＆一時ハイライト
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([])
+  const [highlightStepIndex, setHighlightStepIndex] = useState<number | null>(null)
+  useEffect(() => {
+    const stepParam = searchParams.get('step')
+    if (!stepParam || !recipe) return
+    const index = Number(stepParam) - 1
+    const el = stepRefs.current[index]
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightStepIndex(index)
+    const highlightTimeout = setTimeout(() => setHighlightStepIndex(null), 2000)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('step')
+        return next
+      },
+      { replace: true },
+    )
+    return () => clearTimeout(highlightTimeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, recipe])
 
   // 「画面を暗くしない」設定がオンなら、この画面を開いている間だけ
   // 画面の自動消灯を防ぐ（Wake Lock API。非対応ブラウザでは何もしない）
@@ -140,25 +168,42 @@ export default function RecipeDetailPage() {
     }
   }
 
+  const showPhoto = photoUrl && !recipe.showIconInsteadOfPhoto
+
   return (
     <div className="mx-auto w-full max-w-md pb-[var(--space-lg)]">
-      {/* 写真 */}
-      {photoUrl && (
+      <BackHeader fallback="/recipes" />
+
+      {/* 写真（無い場合・アイコン優先の場合はプレースホルダー） */}
+      {showPhoto ? (
         <img src={photoUrl} alt={recipe.title} className="aspect-video w-full object-cover" />
+      ) : (
+        <div className="aspect-video w-full">
+          <RecipePlaceholder recipe={recipe} iconSize={56} />
+        </div>
       )}
 
       <div className="px-[var(--space-md)] pt-[var(--space-md)]">
-        {/* タイトル行＋お気に入り */}
+        {/* タイトル行＋編集・お気に入り（編集ボタンはタイトル付近＝一番上のエリアに配置） */}
         <div className="flex items-start justify-between gap-2">
-          <h1 className="text-2xl font-bold leading-snug">{recipe.title}</h1>
-          <button
-            type="button"
-            onClick={() => toggleFavorite(id)}
-            aria-label={recipe.isFavorite ? ja.detail.favoriteOff : ja.detail.favoriteOn}
-            className="rounded-full p-3 text-accent"
-          >
-            <Heart size={28} fill={recipe.isFavorite ? 'currentColor' : 'none'} aria-hidden />
-          </button>
+          <h1 className="min-w-0 flex-1 text-2xl font-bold leading-snug">{recipe.title}</h1>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link
+              to={`/recipes/${id}/edit`}
+              aria-label={ja.detail.edit}
+              className="rounded-full p-3 text-ink-muted"
+            >
+              <Pencil size={22} aria-hidden />
+            </Link>
+            <button
+              type="button"
+              onClick={() => toggleFavorite(id)}
+              aria-label={recipe.isFavorite ? ja.detail.favoriteOff : ja.detail.favoriteOn}
+              className="rounded-full p-3 text-accent"
+            >
+              <Heart size={28} fill={recipe.isFavorite ? 'currentColor' : 'none'} aria-hidden />
+            </button>
+          </div>
         </div>
 
         {/* 時間・手間・概算価格 */}
@@ -234,22 +279,22 @@ export default function RecipeDetailPage() {
             {recipe.ingredients.map((ing, index) => {
               const isNg = ngIndices.has(index)
               return (
-                <li
-                  key={index}
-                  className="flex items-baseline justify-between gap-2 px-[var(--space-md)] py-3 text-lg"
-                >
-                  <span
-                    className={
-                      isNg ? 'inline-flex items-center gap-1 font-bold text-warning' : undefined
-                    }
-                  >
-                    {isNg && <TriangleAlert size={18} aria-label={ja.detail.ngWarning} />}
-                    {ing.name}
-                  </span>
-                  <span className="shrink-0 font-bold">
-                    {scaleAmount(ing.amount, recipe.servings, servings)}
-                    {ing.unit}
-                  </span>
+                <li key={index} className="px-[var(--space-md)] py-3 text-lg">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span
+                      className={
+                        isNg ? 'inline-flex items-center gap-1 font-bold text-warning' : undefined
+                      }
+                    >
+                      {isNg && <TriangleAlert size={18} aria-label={ja.detail.ngWarning} />}
+                      {ing.name}
+                    </span>
+                    <span className="shrink-0 font-bold">
+                      {scaleAmount(ing.amount, recipe.servings, servings)}
+                      {ing.unit}
+                    </span>
+                  </div>
+                  {ing.memo && <p className="mt-0.5 text-sm text-ink-muted">{ing.memo}</p>}
                 </li>
               )
             })}
@@ -260,44 +305,65 @@ export default function RecipeDetailPage() {
         <section className="mt-[var(--space-lg)]">
           <h2 className="text-xl font-bold">{ja.detail.steps}</h2>
           <ol className="mt-[var(--space-sm)] space-y-[var(--space-sm)]">
-            {recipe.steps.map((step, index) => (
-              <li
-                key={index}
-                className="flex gap-3 rounded-md border border-edge bg-surface p-[var(--space-md)] text-lg leading-relaxed shadow-sm"
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-app">
-                  {index + 1}
-                </span>
-                <div>
-                  {/* 文中の「10分」などはタップでタイマー開始 */}
-                  <p>
-                    <TimeText
-                      text={step.text}
-                      onStart={(tokenText, seconds) =>
-                        startTimer(`${recipe.title} ${tokenText}`, seconds)
-                      }
-                    />
-                  </p>
-                  {step.minutes != null && step.minutes > 0 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startTimer(
-                          `${recipe.title} ${step.minutes}${ja.detail.minutesSuffix}`,
-                          (step.minutes ?? 0) * 60,
-                        )
-                      }
-                      aria-label={ja.timer.start}
-                      className="mt-1 inline-flex items-center gap-1 rounded-sm border border-edge px-2 py-1 text-sm font-bold text-accent"
-                    >
-                      <TimerIcon size={14} aria-hidden />
-                      {step.minutes}
-                      {ja.detail.minutesSuffix}
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
+            {recipe.steps.map((step, index) => {
+              const stepNumber = index + 1
+              const isHighlighted = highlightStepIndex === index
+              return (
+                <li
+                  key={index}
+                  ref={(el) => {
+                    stepRefs.current[index] = el
+                  }}
+                  className={`flex gap-3 rounded-md border p-[var(--space-md)] text-lg leading-relaxed shadow-sm transition-colors ${
+                    isHighlighted ? 'border-accent bg-accent/10' : 'border-edge bg-surface'
+                  }`}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-app">
+                    {stepNumber}
+                  </span>
+                  <div>
+                    {/* 文中の「10分」などはタップでタイマー開始 */}
+                    <p>
+                      <TimeText
+                        text={step.text}
+                        onStart={(_tokenText, seconds) =>
+                          startTimer({
+                            key: `${id}-${index}-${seconds}`,
+                            label: `${recipe.title}・${ja.timer.stepLabel.replace('{n}', String(stepNumber))}`,
+                            doneLabel: deriveDoneLabel(step.text),
+                            seconds,
+                            recipeId: id,
+                            stepNumber,
+                          })
+                        }
+                      />
+                    </p>
+                    {step.memo && <p className="mt-0.5 text-sm text-ink-muted">{step.memo}</p>}
+                    {step.minutes != null && step.minutes > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startTimer({
+                            key: `${id}-${index}-${(step.minutes ?? 0) * 60}`,
+                            label: `${recipe.title}・${ja.timer.stepLabel.replace('{n}', String(stepNumber))}`,
+                            doneLabel: deriveDoneLabel(step.text),
+                            seconds: (step.minutes ?? 0) * 60,
+                            recipeId: id,
+                            stepNumber,
+                          })
+                        }
+                        aria-label={ja.timer.start}
+                        className="mt-1 inline-flex items-center gap-1 rounded-sm border border-edge px-2 py-1 text-sm font-bold text-accent"
+                      >
+                        <TimerIcon size={14} aria-hidden />
+                        {step.minutes}
+                        {ja.detail.minutesSuffix}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
           </ol>
         </section>
 
@@ -413,7 +479,7 @@ export default function RecipeDetailPage() {
           </div>
         )}
 
-        {/* 下部の大ボタン: 作った！ / シェア / 編集 */}
+        {/* 下部の大ボタン: 作った！ / シェア（編集はタイトル付近に移動済み） */}
         <div className="mt-[var(--space-lg)] flex gap-2">
           <button
             type="button"
@@ -438,13 +504,6 @@ export default function RecipeDetailPage() {
           >
             <Share2 size={22} aria-hidden />
           </button>
-          <Link
-            to={`/recipes/${id}/edit`}
-            aria-label={ja.detail.edit}
-            className="flex items-center justify-center gap-2 rounded-md border border-edge bg-surface px-4 py-4 font-bold text-ink shadow-sm"
-          >
-            <Pencil size={22} aria-hidden />
-          </Link>
         </div>
       </div>
     </div>

@@ -10,7 +10,13 @@ import {
   type TimeFilter,
 } from '../logic/search'
 import RecipeCard from '../components/RecipeCard'
+import ChipInput from '../components/ChipInput'
 import { ja } from '../i18n/ja'
+
+/** クエリパラメータの空白区切り文字列 → チップ配列（初期表示用の簡易分割） */
+function splitToChips(text: string): string[] {
+  return text.split(/[\s,、]+/u).map((t) => t.trim()).filter(Boolean)
+}
 
 const timeOptions: { value: TimeFilter; label: string }[] = [
   { value: 'all', label: ja.search.timeAll },
@@ -36,7 +42,9 @@ export default function RecipesPage() {
   // ホーム画面から ?q=... / ?ing=... 付きで来たときは、その条件で開く
   const [searchParams] = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
-  const [ingredients, setIngredients] = useState(searchParams.get('ing') ?? '')
+  const [ingredients, setIngredients] = useState<string[]>(() =>
+    splitToChips(searchParams.get('ing') ?? ''),
+  )
   const [panelOpen, setPanelOpen] = useState(searchParams.get('ing') !== null)
   const [time, setTime] = useState<TimeFilter>('all')
   const [effort, setEffort] = useState<EffortFilter>('all')
@@ -55,7 +63,7 @@ export default function RecipesPage() {
     const visible = hideStarters ? recipes.filter((r) => !r.isStarter) : recipes
     return searchRecipes(visible, {
       query,
-      ingredients,
+      ingredients: ingredients.join(' '),
       time,
       effort,
       favoriteOnly,
@@ -66,7 +74,7 @@ export default function RecipesPage() {
 
   const filtersActive =
     query !== '' ||
-    ingredients !== '' ||
+    ingredients.length > 0 ||
     time !== 'all' ||
     effort !== 'all' ||
     favoriteOnly ||
@@ -74,7 +82,7 @@ export default function RecipesPage() {
 
   const clearFilters = () => {
     setQuery('')
-    setIngredients('')
+    setIngredients([])
     setTime('all')
     setEffort('all')
     setFavoriteOnly(false)
@@ -128,16 +136,15 @@ export default function RecipesPage() {
       {panelOpen && (
         <div className="mt-[var(--space-sm)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
           {/* 使いたい食材 */}
-          <label className="block text-sm font-bold text-ink-muted">
-            {ja.search.ingredientTitle}
-            <input
-              type="text"
-              value={ingredients}
-              onChange={(e) => setIngredients(e.target.value)}
+          <p className="text-sm font-bold text-ink-muted">{ja.search.ingredientTitle}</p>
+          <div className="mt-1">
+            <ChipInput
+              values={ingredients}
+              onChange={setIngredients}
               placeholder={ja.search.ingredientPlaceholder}
-              className="mt-1 block w-full rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+              addLabel={ja.home.ingAdd}
             />
-          </label>
+          </div>
 
           {/* 調理時間 */}
           <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">

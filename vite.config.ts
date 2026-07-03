@@ -6,10 +6,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   // ── GitHub Pages で公開するときの設定 ──────────────────────
-  // GitHub Pages に公開するときは、下の base を '/リポジトリ名/' に変更してください。
-  // 例: リポジトリ名が「uchi-recipe」なら → base: '/uchi-recipe/'
-  // 手元での開発中（npm run dev）は '/' のままで OK です。
-  base: '/',
+  // リポジトリ名（uchirecipe）に合わせたパスに設定済み。
+  // 手元での開発中（npm run dev → localhost:5173）でも、Viteが自動でこのパス配下に
+  // リダイレクトしてくれるのでそのまま動きます。
+  base: '/uchirecipe/',
   plugins: [
     react(),
     tailwindcss(),

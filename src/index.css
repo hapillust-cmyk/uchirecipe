@@ -30,6 +30,17 @@
   /* 影（2段階） */
   --shadow-sm: 0 1px 3px rgb(67 54 42 / 0.08);
   --shadow-md: 0 4px 14px rgb(67 54 42 / 0.12);
+
+  /* 食材チップ色（一覧カードの主要食材チップ専用。にんじん=オレンジ 等の簡易マッピング） */
+  --chip-orange: #e8590c;
+  --chip-pink: #e64980;
+  --chip-red: #c92a2a;
+  --chip-tan: #a17c4f;
+  --chip-blue: #1971c2;
+  --chip-yellow: #e8a400;
+  --chip-green: #2f9e44;
+  --chip-neutral: #8c7b69;
+  --chip-ink: #fffdf8; /* 食材チップの文字色（どのテーマでも彩度の高いチップ背景の上で読める色） */
 }
 
 /* ダークモード:
@@ -59,6 +70,19 @@
   --border: #3d3327;
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.4);
   --shadow-md: 0 4px 14px rgb(0 0 0 / 0.5);
+}
+
+/* ブラウンテーマ: ライトとダークの中間くらいの、暖色でやや落ち着いた見た目 */
+:root[data-theme="brown"] {
+  --bg: #ecdfc9;
+  --text: #40301f;
+  --accent: #a8571e;
+  --warning: #a8351f;
+  --surface: #f4e9d6;
+  --text-muted: #7d6a4f;
+  --border: #d8c4a0;
+  --shadow-sm: 0 1px 3px rgb(64 48 31 / 0.14);
+  --shadow-md: 0 4px 14px rgb(64 48 31 / 0.18);
 }
 
 /* トークンを Tailwind のクラス名（bg-app, text-accent 等）として使えるようにする */
