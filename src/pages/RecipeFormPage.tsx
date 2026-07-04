@@ -10,7 +10,7 @@ import {
   Trash2,
   ClipboardPaste,
 } from 'lucide-react'
-import type { EffortLevel, IconKey, RecipeInput, Season } from '../db/types'
+import type { EffortLevel, IconKey, MealSlot, RecipeInput, Season } from '../db/types'
 import { createRecipe, deleteRecipe, getRecipe, updateRecipe } from '../db/recipes'
 import { resizePhoto } from '../logic/image'
 import { parseRecipeText } from '../logic/parseRecipeText'
@@ -29,6 +29,7 @@ const emptyStep: StepRow = { text: '', minutes: '', memo: '' }
 
 const effortLevels: EffortLevel[] = ['easy', 'normal', 'fancy']
 const seasons: Exclude<Season, 'all'>[] = ['spring', 'summer', 'autumn', 'winter']
+const mealSlots: MealSlot[] = ['breakfast', 'lunch', 'dinner']
 
 const inputCls =
   'mt-1 block w-full rounded-sm border border-edge bg-surface px-3 py-3 text-base text-ink placeholder:text-ink-muted/60'
@@ -66,6 +67,7 @@ export default function RecipeFormPage() {
   const [iconKey, setIconKey] = useState<IconKey>()
   const [showIconInsteadOfPhoto, setShowIconInsteadOfPhoto] = useState(false)
   const [season, setSeason] = useState<Season>()
+  const [suitableFor, setSuitableFor] = useState<MealSlot[]>([])
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -115,6 +117,7 @@ export default function RecipeFormPage() {
       setIconKey(recipe.iconKey)
       setShowIconInsteadOfPhoto(recipe.showIconInsteadOfPhoto ?? false)
       setSeason(recipe.season)
+      setSuitableFor(recipe.suitableFor ?? [])
     })
     return () => {
       cancelled = true
@@ -202,6 +205,7 @@ export default function RecipeFormPage() {
         iconKey,
         showIconInsteadOfPhoto,
         season,
+        suitableFor: suitableFor.length > 0 ? suitableFor : undefined,
       }
       let id = editId
       if (isEdit && editId !== undefined) {
@@ -486,6 +490,32 @@ export default function RecipeFormPage() {
               }`}
             >
               {ja.season[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 向いている時間帯（任意・複数選択可） */}
+      <div className="mt-[var(--space-md)]">
+        <span className={labelCls}>{ja.form.suitableForLabel}</span>
+        <p className="mt-1 text-sm text-ink-muted">{ja.form.suitableForDescription}</p>
+        <div className="mt-1 grid grid-cols-3 gap-[var(--space-sm)]">
+          {mealSlots.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() =>
+                setSuitableFor((current) =>
+                  current.includes(slot) ? current.filter((s) => s !== slot) : [...current, slot],
+                )
+              }
+              className={`rounded-md border py-3 font-bold shadow-sm ${
+                suitableFor.includes(slot)
+                  ? 'border-accent bg-accent text-app'
+                  : 'border-edge bg-surface text-ink-muted'
+              }`}
+            >
+              {ja.mealPlan.slot[slot]}
             </button>
           ))}
         </div>

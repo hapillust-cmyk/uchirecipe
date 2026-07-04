@@ -1,9 +1,18 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronLeft, ChevronRight, Dices, X, Search, ShoppingCart, CheckCircle2 } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Dices,
+  X,
+  Search,
+  ShoppingCart,
+  CheckCircle2,
+  Sparkles,
+} from 'lucide-react'
 import { listRecipes } from '../db/recipes'
-import { useSettings } from '../db/settings'
+import { useSettings, updateSettings } from '../db/settings'
 import { useMealPlanRange, assignMeal, clearMeal } from '../db/mealPlan'
 import {
   useTodayList,
@@ -82,6 +91,17 @@ export default function MealPlanPage() {
     if (!recipes) return []
     return settings?.hideStarters ? recipes.filter((r) => !r.isStarter) : recipes
   }, [recipes, settings?.hideStarters])
+
+  // 表示する食事帯（未設定なら朝昼夜すべて）
+  const visibleSlots = settings?.visibleMealSlots ?? [...MEAL_SLOTS]
+  const toggleSlot = (slot: MealSlot) => {
+    const next = visibleSlots.includes(slot)
+      ? visibleSlots.filter((s) => s !== slot)
+      : [...visibleSlots, slot]
+    // 全部外すことはできない（何も見えなくなるため）
+    if (next.length === 0) return
+    void updateSettings({ visibleMealSlots: next })
+  }
   const recipeById = useMemo(() => {
     const map = new Map<number, Recipe>()
     visibleRecipes.forEach((r) => map.set(r.id!, r))
@@ -97,14 +117,15 @@ export default function MealPlanPage() {
       .filter((r): r is Recipe => r !== undefined)
   }, [todayList, recipeById])
 
-  // 今週の献立のうち「今日」の枠に入っているレシピID（取り込みボタン用）
+  // 今週の献立のうち「今日」の枠(表示中の食事帯のみ)に入っているレシピID（取り込みボタン用）
   const todayFromPlanIds = useMemo(() => {
     const ids = new Set<number>()
     entries?.forEach((e) => {
-      if (e.date === today) ids.add(e.recipeId)
+      if (e.date === today && visibleSlots.includes(e.slot)) ids.add(e.recipeId)
     })
     return Array.from(ids)
-  }, [entries, today])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, today, settings?.visibleMealSlots])
 
   const [quickOnly, setQuickOnly] = useState(false)
   const [message, setMessage] = useState('')
@@ -129,12 +150,35 @@ export default function MealPlanPage() {
       excludeNg: true,
       ngIngredients: settings?.ngIngredients ?? [],
       usedRecipeIds,
+      slot,
     })
     if (!picked) {
       setMessage(ja.mealPlan.noSuggestion)
       return
     }
     await assignMeal(date, slot, picked.id!)
+  }
+
+  /** 週の空いている枠(表示中の食事帯のみ)すべてに自動提案で埋める。埋まっている枠は触らない */
+  const fillWeek = async () => {
+    if (!recipes) return
+    setMessage('')
+    const usedRecipeIds = (entries ?? []).map((e) => e.recipeId)
+    for (const date of dates) {
+      for (const slot of visibleSlots) {
+        if (entryMap.has(`${date}|${slot}`)) continue
+        const picked = suggestForSlot(visibleRecipes, {
+          quickOnly,
+          excludeNg: true,
+          ngIngredients: settings?.ngIngredients ?? [],
+          usedRecipeIds,
+          slot,
+        })
+        if (!picked) continue
+        await assignMeal(date, slot, picked.id!)
+        usedRecipeIds.push(picked.id!)
+      }
+    }
   }
 
   const openPicker = (date: string, slot: MealSlot) => {
@@ -163,9 +207,12 @@ export default function MealPlanPage() {
 
   const weekRecipeIds = useMemo(() => {
     const ids = new Set<number>()
-    entries?.forEach((e) => ids.add(e.recipeId))
+    entries?.forEach((e) => {
+      if (visibleSlots.includes(e.slot)) ids.add(e.recipeId)
+    })
     return Array.from(ids)
-  }, [entries])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, settings?.visibleMealSlots])
 
   const goShopping = () => {
     if (weekRecipeIds.length === 0) return
@@ -249,16 +296,47 @@ export default function MealPlanPage() {
         </button>
       </div>
 
+      {/* 表示する食事帯 */}
+      <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">
+        {ja.mealPlan.slotFilterTitle}
+      </p>
+      <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+        {MEAL_SLOTS.map((slot) => (
+          <button
+            key={slot}
+            type="button"
+            onClick={() => toggleSlot(slot)}
+            className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+              visibleSlots.includes(slot)
+                ? 'border-accent bg-accent text-app'
+                : 'border-edge bg-surface text-ink-muted'
+            }`}
+          >
+            {ja.mealPlan.slot[slot]}
+          </button>
+        ))}
+      </div>
+
       {/* 自動提案の条件 */}
-      <button
-        type="button"
-        onClick={() => setQuickOnly((v) => !v)}
-        className={`mt-[var(--space-sm)] rounded-sm border px-3 py-2 text-sm font-bold ${
-          quickOnly ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
-        }`}
-      >
-        {ja.mealPlan.quickOnlyToggle}
-      </button>
+      <div className="mt-[var(--space-sm)] flex flex-wrap gap-[var(--space-sm)]">
+        <button
+          type="button"
+          onClick={() => setQuickOnly((v) => !v)}
+          className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+            quickOnly ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
+          }`}
+        >
+          {ja.mealPlan.quickOnlyToggle}
+        </button>
+        <button
+          type="button"
+          onClick={() => void fillWeek()}
+          className="inline-flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-accent shadow-sm"
+        >
+          <Sparkles size={14} aria-hidden />
+          {ja.mealPlan.fillWeek}
+        </button>
+      </div>
 
       {message && (
         <p className="mt-[var(--space-sm)] rounded-sm border border-edge bg-surface px-3 py-2 text-sm text-ink-muted">
@@ -296,7 +374,7 @@ export default function MealPlanPage() {
               {date === today && <span className="ml-2 text-sm text-accent">{ja.mealPlan.thisWeek}</span>}
             </h2>
             <div className="mt-[var(--space-sm)] space-y-1">
-              {MEAL_SLOTS.map((slot) => {
+              {visibleSlots.map((slot) => {
                 const entry = entryMap.get(`${date}|${slot}`)
                 const recipe = entry ? recipeById.get(entry.recipeId) : undefined
                 return (

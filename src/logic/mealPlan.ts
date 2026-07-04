@@ -1,6 +1,6 @@
 import { hasNgIngredient } from './ng'
 import { cookedWithinDays } from './cooked'
-import type { Recipe } from '../db/types'
+import type { MealSlot, Recipe } from '../db/types'
 
 export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner'] as const
 
@@ -38,12 +38,16 @@ export interface SuggestOptions {
   ngIngredients: string[]
   /** この週で既に使っているレシピID（同じ主菜が続かないように避けたい） */
   usedRecipeIds: number[]
+  /** どの食事帯の枠か。朝から鍋が出る、のようなミスマッチを避けるために使う */
+  slot: MealSlot
 }
 
 /**
  * 空き枠の自動提案。
- * 「最近作ってない」「時短」「NG除外」「週内で重複しない」の順で絞り込むが、
- * 候補が無くなったら条件を緩めて必ず何か返す（0件にはしない）。
+ * 「NG除外」「時短」で絞り込んだ後、「向いている時間帯」が一致するものを優先し
+ * （未設定のレシピは制限なしとして扱う）、その中で「最近作ってない」
+ * 「週内で重複しない」の順にも絞り込む。候補が無くなったら段階的に
+ * 条件を緩めて必ず何か返す（0件にはしない）。
  */
 export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Recipe | undefined {
   const base = recipes.filter((r) => {
@@ -54,9 +58,16 @@ export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Reci
   })
   if (base.length === 0) return undefined
 
-  const notUsedThisWeek = base.filter((r) => !options.usedRecipeIds.includes(r.id!))
+  // 時間帯が一致する(または未設定の)レシピを優先。無ければ全体まで含める
+  const slotMatched = base.filter(
+    (r) => !r.suitableFor || r.suitableFor.length === 0 || r.suitableFor.includes(options.slot),
+  )
+  const slotPool = slotMatched.length > 0 ? slotMatched : base
+
+  const notUsedThisWeek = slotPool.filter((r) => !options.usedRecipeIds.includes(r.id!))
   const freshAndUnused = notUsedThisWeek.filter((r) => !cookedWithinDays(r, 14))
 
-  const pool = freshAndUnused.length > 0 ? freshAndUnused : notUsedThisWeek.length > 0 ? notUsedThisWeek : base
+  const pool =
+    freshAndUnused.length > 0 ? freshAndUnused : notUsedThisWeek.length > 0 ? notUsedThisWeek : slotPool
   return pool[Math.floor(Math.random() * pool.length)]
 }

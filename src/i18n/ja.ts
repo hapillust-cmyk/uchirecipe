@@ -77,6 +77,8 @@ export const ja = {
     remove: 'この食材を在庫ボードから外す',
     empty: 'よく使う食材を登録すると、ここに並びます',
     addToSearch: '在庫から追加',
+    reorderToggle: '並び替え',
+    reorderDone: '完了',
   },
   history: {
     title: '作った記録',
@@ -108,6 +110,8 @@ export const ja = {
     suggestAria: 'この枠にレシピを自動提案する',
     clear: 'この割り当てを外す',
     quickOnlyToggle: '自動提案は時短レシピ優先',
+    fillWeek: 'まとめて献立を立てる',
+    slotFilterTitle: '表示する食事帯',
     pickTitle: 'レシピを選ぶ',
     pickSearchPlaceholder: 'レシピ名で絞り込み',
     pickEmpty: 'レシピがありません',
@@ -311,6 +315,9 @@ export const ja = {
     iconShowInsteadOfPhotoDescription: '写真を登録していても、一覧・詳細でアイコンを優先表示します',
     seasonLabel: '季節（任意）',
     seasonDescription: 'ホームの「今日なに作る？」で、今の季節のレシピが優先されます。もう一度押すと解除できます',
+    suitableForLabel: '向いている時間帯（任意）',
+    suitableForDescription:
+      '献立プランナーの自動提案で優先されます。何も選ばなければ制限なしとして扱われます',
     save: '保存する',
     saving: '保存中…',
     cancel: 'キャンセル',

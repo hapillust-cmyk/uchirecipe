@@ -78,6 +78,8 @@ export interface Recipe {
   showIconInsteadOfPhoto?: boolean
   /** 季節（任意）。未指定は「季節を問わない」として扱う */
   season?: Season
+  /** 向いている時間帯（任意・複数可）。未指定は「制限なし」として扱う */
+  suitableFor?: MealSlot[]
   createdAt: number
   updatedAt: number
 }
@@ -95,6 +97,8 @@ export interface PantryItem {
   level: PantryLevel
   /** 在庫ボードに表示するか（外した食材は非表示にする） */
   isFrequent: boolean
+  /** 手動並び替えの順序（任意）。未指定の食材はid順（＝登録順）で表示する */
+  sortOrder?: number
 }
 
 /**
@@ -174,6 +178,8 @@ export interface Settings {
   timerNoticeShown: boolean
   /** 週の食費予算（円・任意）。献立プランナーで概算食費と比較する */
   weeklyBudget?: number
+  /** 献立タブに表示する食事帯（任意・未指定は朝昼夜すべて表示） */
+  visibleMealSlots?: MealSlot[]
   /** ホーム画面に表示するパーツと並び順（配列に無いものは非表示） */
   homeWidgets: HomeWidgetKey[]
 }
@@ -207,4 +213,5 @@ export type RecipeInput = Pick<
   | 'iconKey'
   | 'showIconInsteadOfPhoto'
   | 'season'
+  | 'suitableFor'
 >
