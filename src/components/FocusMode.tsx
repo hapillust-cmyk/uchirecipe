@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react'
 import {
   X,
+  Check,
   ChevronLeft,
   ChevronRight,
   Volume2,
@@ -12,7 +13,7 @@ import {
 import type { Recipe } from '../db/types'
 import { useTimers } from './TimerProvider'
 import { deriveDoneLabel } from '../logic/timerLabel'
-import { findTimeTokens, formatRemaining } from '../logic/time'
+import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
 import StepBadge from './StepBadge'
 import TimeText from './TimeText'
 import { ja } from '../i18n/ja'
@@ -34,7 +35,7 @@ const micSupported =
  * 「画面を暗くしない」設定は詳細画面(呼び出し元)側のWake Lockがそのまま効く。
  */
 export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Props) {
-  const { startTimer, timers, now } = useTimers()
+  const { startTimer, timers, now, dismissTimer } = useTimers()
   const [index, setIndex] = useState(initialStep)
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
@@ -267,18 +268,32 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Pr
       {recipeTimers.length > 0 && (
         <div className="flex flex-wrap justify-center gap-2 px-[var(--space-md)] pb-1">
           {recipeTimers.map((t) => (
-            <button
+            <div
               key={t.id}
-              type="button"
-              onClick={() => goTo(t.stepNumber - 1)}
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-bold ${
+              className={`inline-flex items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-1.5 ${
                 t.done ? 'border-warning text-warning' : 'border-accent text-accent'
               }`}
             >
-              <TimerIcon size={14} aria-hidden />
-              {ja.timer.stepLabel.replace('{n}', String(t.stepNumber))}
-              {t.done ? t.doneLabel : formatRemaining(Math.max(0, Math.ceil((t.endsAt - now) / 1000)))}
-            </button>
+              <button
+                type="button"
+                onClick={() => goTo(t.stepNumber - 1)}
+                aria-label={ja.timer.stepLabel.replace('{n}', String(t.stepNumber))}
+                className="flex items-center gap-1.5"
+              >
+                <StepBadge number={t.stepNumber} size={24} />
+                <span className="text-lg font-bold tabular-nums">
+                  {t.done ? t.doneLabel : formatRemaining(Math.max(0, Math.ceil((t.endsAt - now) / 1000)))}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => dismissTimer(t.id)}
+                aria-label={ja.timer.dismiss}
+                className="rounded-full p-1.5"
+              >
+                <X size={16} aria-hidden />
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -293,7 +308,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Pr
           <TimeText text={step.text} onStart={(_tokenText, seconds) => startStepTimer(seconds)} />
         </p>
         {step.memo && <p className="text-ink-muted">{step.memo}</p>}
-        {step.minutes != null && step.minutes > 0 && (
+        {step.minutes != null && step.minutes > 0 && !isMinutesShownInText(step.text, step.minutes) && (
           <button
             type="button"
             onClick={() => startStepTimer((step.minutes ?? 0) * 60)}
@@ -318,15 +333,25 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Pr
           <ChevronLeft size={22} aria-hidden />
           {ja.focus.prev}
         </button>
-        <button
-          type="button"
-          onClick={() => goTo(index + 1)}
-          disabled={index === total - 1}
-          className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md disabled:opacity-30"
-        >
-          {ja.focus.next}
-          <ChevronRight size={22} aria-hidden />
-        </button>
+        {index === total - 1 ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
+          >
+            <Check size={22} aria-hidden />
+            {ja.focus.complete}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => goTo(index + 1)}
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
+          >
+            {ja.focus.next}
+            <ChevronRight size={22} aria-hidden />
+          </button>
+        )}
       </div>
     </div>
   )

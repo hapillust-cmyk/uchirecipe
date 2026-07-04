@@ -115,5 +115,9 @@
     color: var(--text);
     /* スマホでタップ時のハイライトを控えめに */
     -webkit-tap-highlight-color: transparent;
+    /* 日本語の改行位置を単語相当のまとまりで区切る（「タイ」「マー」のような不自然な分断を防ぐ）。
+       長い英単語やURLは overflow-wrap で折り返すので横はみ出しはしない */
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 }

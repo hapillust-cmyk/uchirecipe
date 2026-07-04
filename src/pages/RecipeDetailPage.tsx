@@ -26,6 +26,7 @@ import { ngMatchedIndices } from '../logic/ng'
 import { seasoningGroupColorToken } from '../logic/seasoningGroup'
 import { shareText, shareImageCard } from '../logic/share'
 import { deriveDoneLabel } from '../logic/timerLabel'
+import { isMinutesShownInText } from '../logic/time'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import { useTimers } from '../components/TimerProvider'
 import { useWakeLock } from '../components/useWakeLock'
@@ -395,7 +396,9 @@ export default function RecipeDetailPage() {
                       />
                     </p>
                     {step.memo && <p className="mt-0.5 text-sm text-ink-muted">{step.memo}</p>}
-                    {step.minutes != null && step.minutes > 0 && (
+                    {step.minutes != null &&
+                      step.minutes > 0 &&
+                      !isMinutesShownInText(step.text, step.minutes) && (
                       <button
                         type="button"
                         onClick={() =>

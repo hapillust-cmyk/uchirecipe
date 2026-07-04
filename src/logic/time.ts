@@ -46,6 +46,16 @@ export function findTimeTokens(text: string): TimeToken[] {
   return tokens
 }
 
+/**
+ * 手順の分数(step.minutes)と同じ時間が、本文中の時間表記としてすでに書かれているか。
+ * 「3分ほど煮る」のように本文とstep.minutesが同じ内容を指している場合、
+ * 本文のタップ操作だけで十分なので、別枠のタイマーボタンは表示しない判定に使う
+ */
+export function isMinutesShownInText(text: string, minutes: number): boolean {
+  const seconds = minutes * 60
+  return findTimeTokens(text).some((token) => token.seconds === seconds)
+}
+
 /** 残り秒数を "08:24" や "1:05:00" の形にする */
 export function formatRemaining(totalSeconds: number): string {
   const total = Math.max(0, totalSeconds)
