@@ -239,6 +239,11 @@ export const ja = {
     read: '読み上げ',
     stop: '止める',
     readUnsupported: 'お使いのブラウザは読み上げに対応していません',
+    micStart: '声で操作する',
+    micStop: '声の操作をやめる',
+    micHint:
+      '声で操作できます:「次へ」「戻って」「もう一回」「3分タイマー」「ストップ」。マイクへのアクセスを聞かれたら許可してください',
+    micListening: '聞いています…',
   },
   timer: {
     start: 'タイマー開始',
