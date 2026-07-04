@@ -143,6 +143,42 @@ export const ja = {
     planMismatchDescription: 'タップすると、その時間帯の週の予定を今日の献立に合わせて更新します',
     planMismatchCurrent: '現在: {title}',
     planMismatchEmpty: '現在: 未定',
+    cookNaviEntry: '並行調理ナビ',
+    cookNaviEntrySub: '複数レシピの段取りの叩き台を作る',
+  },
+  cookNavi: {
+    title: '並行調理ナビ',
+    proTag: 'Pro',
+    gateTitle: '並行調理ナビはPro版の機能です',
+    gateDescription:
+      '選んだ2〜3品の手順を1本にまとめ、待ち時間の長い工程を先に、その隙間に別の手作業を差し込んだ「段取りの叩き台」を作ります。',
+    gateLink: 'Pro版について見る',
+    intro:
+      '今日の献立から2〜3品を選ぶと、待ち時間の長い工程を先にして、その隙間に別の手作業を差し込んだ「1本の段取り」を提案します。',
+    disclaimer:
+      'これはあくまで段取りの叩き台（目安）です。火加減や進み具合を見ながら、自分のやりやすい順に調整してください。この通りに進めなくても大丈夫です。',
+    selectTitle: '組み合わせるレシピを選ぶ',
+    selectHint: '今日の献立から2〜3品まで選べます',
+    selectedCount: '{n}品を選択中',
+    emptyToday:
+      '今日の献立にレシピがありません。レシピ詳細の「今日つくる」から追加すると、ここで段取りを組めます。',
+    onlyOneToday:
+      '今日の献立が1品だけです。2品以上あると、待ち時間を活かした段取りを組めます。',
+    goToday: '今日の献立を見る',
+    needTwo: '2品以上を選んでください',
+    maxThree: '選べるのは3品までです（v1）',
+    build: '段取りを作る',
+    rebuild: 'レシピを選び直す',
+    totalEstimate: '全体の目安 約{n}分',
+    totalNote: '手作業のおおよその時間も含んだ目安です。実際の火加減で前後します。',
+    legendTitle: '組み合わせる{n}品',
+    kindWait: '待ち',
+    kindActive: '手を動かす',
+    waitBlockTitle: '約{n}分の待ち時間',
+    waitFillHint: 'この間に、次の手作業を進められます',
+    stepNumberLabel: '手順{n}',
+    openRecipe: 'レシピを開く',
+    startTimer: 'タイマーを始める',
   },
   shopping: {
     fromRecipeTitle: 'レシピから追加',

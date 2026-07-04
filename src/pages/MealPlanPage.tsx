@@ -13,6 +13,7 @@ import {
   Clock,
   TriangleAlert,
   Lock,
+  Route,
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
@@ -298,6 +299,20 @@ export default function MealPlanPage() {
               <CheckCircle2 size={18} aria-hidden />
               {ja.mealPlan.todayMarkAllCooked}
             </button>
+
+            {todayListRecipes.length >= 2 && (
+              <Link
+                to="/cook-navi"
+                className="mt-[var(--space-sm)] flex w-full items-center gap-2 rounded-md border border-edge bg-surface p-[var(--space-sm)] shadow-sm"
+              >
+                <Route size={20} className="shrink-0 text-accent" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold text-accent">{ja.mealPlan.cookNaviEntry}</span>
+                  <span className="block text-xs text-ink-muted">{ja.mealPlan.cookNaviEntrySub}</span>
+                </span>
+                <ChevronRight size={18} className="shrink-0 text-ink-muted" aria-hidden />
+              </Link>
+            )}
 
             {mismatchRecipes.length > 0 && (
               <div className="mt-[var(--space-sm)] rounded-md border border-warning bg-surface p-[var(--space-sm)]">

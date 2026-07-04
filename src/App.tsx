@@ -5,6 +5,7 @@ import RecipesPage from './pages/RecipesPage'
 import RecipeFormPage from './pages/RecipeFormPage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import MealPlanPage from './pages/MealPlanPage'
+import CookNaviPage from './pages/CookNaviPage'
 import ShoppingPage from './pages/ShoppingPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
@@ -64,6 +65,7 @@ function App() {
             <Route path="/recipes/:id" element={<RecipeDetailPage />} />
             <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
             <Route path="/meal-plan" element={<MealPlanPage />} />
+            <Route path="/cook-navi" element={<CookNaviPage />} />
             <Route path="/shopping" element={<ShoppingPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
