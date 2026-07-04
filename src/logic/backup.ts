@@ -18,8 +18,13 @@ export interface BackupFile {
   app: 'uchi-recipe'
   version: 1
   exportedAt: string
-  settings: Settings
+  /** 配布用のレシピセットにはsettingsを含めない（個人設定の器を配布物に持たせないため） */
+  settings?: Settings
   recipes: BackupRecipe[]
+  /** 配布レシピセットのID・表示名・版番号（個人のバックアップファイルには無い） */
+  setId?: string
+  setName?: string
+  setVersion?: number
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
@@ -187,6 +192,8 @@ export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
       await db.recipes.add({
         ...rest,
         isStarter: true,
+        sourceSetId: file.setId,
+        sourceSetName: file.setName,
         searchWords: buildSearchWords(rest.title, rest.ingredients, rest.tags),
         createdAt: now,
         updatedAt: now,

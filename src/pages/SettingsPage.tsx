@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
@@ -52,6 +53,53 @@ export default function SettingsPage() {
   const [recipeSetUrl, setRecipeSetUrl] = useState('')
   const [recipeSetLoading, setRecipeSetLoading] = useState(false)
   const recipeSetFileRef = useRef<HTMLInputElement>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // 配布ページの「うちレシピに追加する」リンク(#/settings?set=<setId>)からのワンタップ取り込み。
+  // 任意URLは受け付けず、同一オリジンの/sets/data/<setId>.jsonだけをfetchする
+  useEffect(() => {
+    const setId = searchParams.get('set')
+    if (!setId) return
+    const clearParam = () => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('set')
+          return next
+        },
+        { replace: true },
+      )
+    }
+    if (!/^[a-z0-9-]+$/.test(setId)) {
+      clearParam()
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const file = await fetchRecipeSet(`/sets/data/${setId}.json`)
+        if (cancelled) return
+        const confirmText = ja.settings.recipeSetDeepLinkConfirm
+          .replace('{name}', file.setName ?? setId)
+          .replace('{n}', String(file.recipes.length))
+        if (!window.confirm(confirmText)) return
+        const result = await importRecipeSet(file)
+        setMessage(
+          ja.settings.recipeSetResult
+            .replace('{a}', String(result.added))
+            .replace('{s}', String(result.skipped)),
+        )
+      } catch {
+        if (!cancelled) setMessage(ja.settings.recipeSetError)
+      } finally {
+        clearParam()
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   if (!settings) return null // 読み込み中
 
@@ -489,6 +537,14 @@ export default function SettingsPage() {
           <Upload size={18} aria-hidden />
           {recipeSetLoading ? ja.settings.recipeSetLoading : ja.settings.recipeSetFileLoad}
         </button>
+        {/* 別窓(target="_blank")にしない: iOSのホーム画面追加アプリはSafariとストレージが別のため、
+            別窓で開くと取り込み先が今のアプリとズレてしまう */}
+        <a
+          href="/sets/"
+          className="mt-[var(--space-sm)] block text-center text-sm font-bold text-accent underline"
+        >
+          {ja.settings.recipeSetPageLink}
+        </a>
       </section>
 
       {/* バックアップ */}

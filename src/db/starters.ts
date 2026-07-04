@@ -444,10 +444,16 @@ export async function seedStartersIfNeeded(): Promise<void> {
   })
 }
 
-/** 基本レシピを入れ直す（既存の基本レシピを消してから新しく追加） */
+/**
+ * 基本レシピを入れ直す（既存の基本レシピを消してから新しく追加）。
+ * 配布レシピセット（logic/backup.tsのimportRecipeSetで読み込んだもの）もisStarter=trueだが、
+ * sourceSetIdを持つので対象から除外する（入れ直すたびにセットが消える事故を防ぐ）
+ */
 export async function reloadStarterRecipes(): Promise<void> {
   await db.transaction('rw', db.recipes, async () => {
-    const olds = await db.recipes.filter((r) => r.isStarter === true).primaryKeys()
+    const olds = await db.recipes
+      .filter((r) => r.isStarter === true && r.sourceSetId == null)
+      .primaryKeys()
     await db.recipes.bulkDelete(olds)
     await db.recipes.bulkAdd(starterDefs.map(toRecipe))
   })

@@ -77,6 +77,10 @@ export interface Recipe {
   searchWords: string[]
   /** 同梱の基本レシピなら true（将来の件数制限のカウント外にする） */
   isStarter?: boolean
+  /** 配布レシピセットから読み込んだ場合、そのセットのID（例: "kintore"） */
+  sourceSetId?: string
+  /** 配布レシピセットから読み込んだ場合、そのセットの表示名（例: "筋トレ・高たんぱくセット"） */
+  sourceSetName?: string
   /** プレースホルダーアイコンの手動指定（未指定なら料理名・材料から自動選択） */
   iconKey?: IconKey
   /** 写真があっても、一覧・詳細でアイコン表示を優先する */

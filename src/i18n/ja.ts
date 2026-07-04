@@ -204,6 +204,8 @@ export const ja = {
     recipeSetLoading: '読み込み中…',
     recipeSetResult: '{a}件追加しました（重複{s}件はスキップ）',
     recipeSetError: '読み込めませんでした。レシピセットのJSONファイルか確認してください',
+    recipeSetDeepLinkConfirm: '「{name}」（{n}品）を追加しますか？',
+    recipeSetPageLink: '配布ページを見る',
     backupTitle: 'バックアップ',
     backupDescription: 'レシピ・写真・記録・設定を1つのファイルに保存します。機種変更やデータ消失に備えて定期的にどうぞ',
     backupExport: 'ファイルに書き出す',
