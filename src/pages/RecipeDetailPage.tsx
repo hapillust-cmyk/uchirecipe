@@ -18,7 +18,7 @@ import {
   CalendarPlus,
 } from 'lucide-react'
 import { db } from '../db/db'
-import { addCookedLog, toggleFavorite } from '../db/recipes'
+import { addCookedLog, toggleFavorite, updateCookedLog } from '../db/recipes'
 import { useSettings } from '../db/settings'
 import { useTodayList, addToTodayList, removeFromTodayList } from '../db/todayList'
 import { scaleAmount } from '../logic/amount'
@@ -46,7 +46,7 @@ export default function RecipeDetailPage() {
   const recipe = useLiveQuery(async () => (await db.recipes.get(id)) ?? null, [id])
   const photoUrl = usePhotoUrl(recipe?.photo)
   const settings = useSettings()
-  const { startTimer } = useTimers()
+  const { startTimer, timers } = useTimers()
   const todayList = useTodayList()
   const isInTodayList = todayList?.some((item) => item.recipeId === id) ?? false
 
@@ -86,6 +86,11 @@ export default function RecipeDetailPage() {
   const [logOpen, setLogOpen] = useState(false)
   const [logDate, setLogDate] = useState(todayString)
   const [logNote, setLogNote] = useState('')
+
+  // 過去の記録を後から編集する
+  const [editingLogIndex, setEditingLogIndex] = useState<number | null>(null)
+  const [editingLogDate, setEditingLogDate] = useState('')
+  const [editingLogNote, setEditingLogNote] = useState('')
 
   // シェア
   const [shareOpen, setShareOpen] = useState(false)
@@ -132,6 +137,21 @@ export default function RecipeDetailPage() {
     setLogNote('')
   }
 
+  const openEditLog = (index: number, date: string, note: string | undefined) => {
+    setEditingLogIndex(index)
+    setEditingLogDate(date)
+    setEditingLogNote(note ?? '')
+  }
+
+  const saveEditingLog = async () => {
+    if (editingLogIndex === null || !editingLogDate) return
+    await updateCookedLog(id, editingLogIndex, {
+      date: editingLogDate,
+      note: editingLogNote.trim() || undefined,
+    })
+    setEditingLogIndex(null)
+  }
+
   /** テキスト or 画像カードでシェア（非対応環境ではコピー/保存に切替） */
   const runShare = async (kind: 'text' | 'image') => {
     setSharing(true)
@@ -155,7 +175,7 @@ export default function RecipeDetailPage() {
   const showPhoto = photoUrl && !recipe.showIconInsteadOfPhoto
 
   return (
-    <div className="mx-auto w-full max-w-md pb-[var(--space-lg)]">
+    <div className={`mx-auto w-full max-w-md ${timers.length > 0 ? 'pb-48' : 'pb-[var(--space-lg)]'}`}>
       <BackHeader
         fallback="/recipes"
         title={recipe.title}
@@ -408,8 +428,56 @@ export default function RecipeDetailPage() {
             <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-surface shadow-sm">
               {recipe.cookedLogs.slice(0, 5).map((log, index) => (
                 <li key={index} className="px-[var(--space-md)] py-2">
-                  <span className="text-sm text-ink-muted">{log.date.replaceAll('-', '/')}</span>
-                  {log.note && <p className="mt-0.5">{log.note}</p>}
+                  {editingLogIndex === index ? (
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        value={editingLogDate}
+                        onChange={(e) => setEditingLogDate(e.target.value)}
+                        className="block w-full rounded-sm border border-edge bg-app px-3 py-2 text-sm text-ink"
+                      />
+                      <input
+                        type="text"
+                        value={editingLogNote}
+                        onChange={(e) => setEditingLogNote(e.target.value)}
+                        placeholder={ja.detail.cookedLogNotePlaceholder}
+                        className="block w-full rounded-sm border border-edge bg-app px-3 py-2 text-sm text-ink placeholder:text-ink-muted/60"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void saveEditingLog()}
+                          className="flex-1 rounded-sm bg-accent py-2 text-sm font-bold text-app shadow-sm"
+                        >
+                          {ja.detail.cookedLogSave}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingLogIndex(null)}
+                          className="rounded-sm border border-edge px-3 py-2 text-sm text-ink-muted"
+                        >
+                          {ja.detail.cookedLogCancel}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm text-ink-muted">
+                          {log.date.replaceAll('-', '/')}
+                        </span>
+                        {log.note && <p className="mt-0.5">{log.note}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openEditLog(index, log.date, log.note)}
+                        aria-label={ja.detail.cookedLogEdit}
+                        className="shrink-0 rounded-full p-2 text-ink-muted"
+                      >
+                        <Pencil size={16} aria-hidden />
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

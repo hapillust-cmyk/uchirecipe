@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, Refrigerator } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -42,12 +42,29 @@ const chipCls = (active: boolean) =>
 /** レシピ一覧: 検索・フィルタ＋写真カードのグリッド＋右下の「＋」ボタン */
 export default function RecipesPage() {
   // ホーム画面から ?q=... / ?ing=... 付きで来たときは、その条件で開く
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
   const [ingredients, setIngredients] = useState<string[]>(() =>
     splitToChips(searchParams.get('ing') ?? ''),
   )
   const [panelOpen, setPanelOpen] = useState(searchParams.get('ing') !== null)
+
+  // 検索中の内容をURLにも反映しておく。こうすると、タイマー等で別レシピに
+  // 移動した後に「戻る」で帰ってきたとき、検索していた内容がそのまま復元される
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (query.trim()) next.set('q', query)
+        else next.delete('q')
+        if (ingredients.length > 0) next.set('ing', ingredients.join(' '))
+        else next.delete('ing')
+        return next
+      },
+      { replace: true },
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, ingredients])
   const [time, setTime] = useState<TimeFilter>('all')
   const [effort, setEffort] = useState<EffortFilter>('all')
   const [favoriteOnly, setFavoriteOnly] = useState(false)

@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { toHiragana } from '../logic/kana'
+import { defaultSettings } from './types'
 import type { PantryItem, PantryLevel } from './types'
 
 /** タップのたびに ある→少ない→ない→ある… と3段階を巡回する */
@@ -8,6 +9,36 @@ const nextLevel: Record<PantryLevel, PantryLevel> = {
   have: 'low',
   low: 'none',
   none: 'have',
+}
+
+/** 初回に用意しておく「よく使う食材」プリセット（一般的な家庭の常備品） */
+const PANTRY_PRESET_NAMES = [
+  '卵', '玉ねぎ', 'にんじん', 'じゃがいも', 'キャベツ',
+  '豚肉', '鶏肉', '牛乳', 'しょうゆ', 'みそ', '米', '豆腐',
+]
+
+/**
+ * 初回起動時だけ、「よく使う食材」プリセットを在庫ボードに用意する
+ * （すべて「ない」状態。ユーザーがタップして自分の状況に合わせる前提）。
+ * 既にプリセット投入済み、または在庫ボードに何か登録済みなら何もしない。
+ */
+export async function seedPantryPresetIfNeeded(): Promise<void> {
+  await db.transaction('rw', db.pantryItems, db.settings, async () => {
+    const settings = { ...defaultSettings, ...(await db.settings.get(1)) }
+    if (settings.pantryPresetSeeded) return
+    const existingCount = await db.pantryItems.count()
+    if (existingCount === 0) {
+      await db.pantryItems.bulkAdd(
+        PANTRY_PRESET_NAMES.map((name, index) => ({
+          name,
+          level: 'none' as const,
+          isFrequent: true,
+          sortOrder: index,
+        })),
+      )
+    }
+    await db.settings.put({ ...settings, pantryPresetSeeded: true, id: 1 })
+  })
 }
 
 /**

@@ -76,3 +76,19 @@ export async function addCookedLog(id: number, log: CookedLog): Promise<void> {
     })
   })
 }
+
+/** 「作った！」記録を後から編集する（日付・ひとことメモの追記や修正） */
+export async function updateCookedLog(
+  id: number,
+  index: number,
+  patch: Partial<CookedLog>,
+): Promise<void> {
+  await db.transaction('rw', db.recipes, async () => {
+    const recipe = await db.recipes.get(id)
+    if (!recipe || !recipe.cookedLogs[index]) return
+    const cookedLogs = recipe.cookedLogs.map((log, i) =>
+      i === index ? { ...log, ...patch } : log,
+    )
+    await db.recipes.update(id, { cookedLogs })
+  })
+}

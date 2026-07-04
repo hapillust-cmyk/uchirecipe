@@ -13,6 +13,7 @@ import TimerBar from './components/TimerBar'
 import { TimerProvider } from './components/TimerProvider'
 import { useSettings } from './db/settings'
 import { seedStartersIfNeeded } from './db/starters'
+import { seedPantryPresetIfNeeded } from './db/pantry'
 
 /**
  * 設定のテーマを画面に反映する。
@@ -39,9 +40,10 @@ function ThemeSync() {
  * TimerProvider が全体を包むので、タブを移動してもタイマーは動き続ける。
  */
 function App() {
-  // 初回起動時だけ、同梱の基本レシピ21品をデータベースに入れる
+  // 初回起動時だけ、同梱の基本レシピ21品と在庫ボードのプリセットをデータベースに入れる
   useEffect(() => {
     void seedStartersIfNeeded()
+    void seedPantryPresetIfNeeded()
   }, [])
 
   return (

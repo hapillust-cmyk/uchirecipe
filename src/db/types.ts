@@ -166,6 +166,8 @@ export interface Settings {
   theme: ThemeSetting
   /** 基本レシピの初回投入が済んでいるか */
   starterSeeded: boolean
+  /** 在庫ボードへの「よく使う食材」プリセット投入が済んでいるか */
+  pantryPresetSeeded: boolean
   /** 基本レシピを一覧・ホームに出さない */
   hideStarters: boolean
   /** 最後にバックアップを書き出した日時（ミリ秒） */
@@ -190,6 +192,7 @@ export const defaultSettings: Settings = {
   keepScreenOn: false,
   theme: 'auto',
   starterSeeded: false,
+  pantryPresetSeeded: false,
   hideStarters: false,
   timerSoundEnabled: true,
   timerWakeLockEnabled: true,
