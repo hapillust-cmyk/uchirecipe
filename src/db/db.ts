@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { PantryItem, Recipe, Settings, ShoppingItem } from './types'
+import type { MealPlanEntry, PantryItem, Recipe, Settings, ShoppingItem } from './types'
 
 /**
  * うちレシピのデータベース（ブラウザ内蔵の IndexedDB を Dexie 経由で使う）。
@@ -10,6 +10,7 @@ class UchiRecipeDB extends Dexie {
   settings!: Table<Settings, number>
   pantryItems!: Table<PantryItem, number>
   shoppingItems!: Table<ShoppingItem, number>
+  mealPlans!: Table<MealPlanEntry, number>
 
   constructor() {
     super('uchi-recipe')
@@ -34,6 +35,14 @@ class UchiRecipeDB extends Dexie {
       settings: 'id',
       pantryItems: '++id, name',
       shoppingItems: '++id, order',
+    })
+    // バージョン5: 週間献立プランナー用テーブルを追加（[date+slot]で1枠1件を検索）
+    this.version(5).stores({
+      recipes: '++id, title, *tags, *searchWords, updatedAt',
+      settings: 'id',
+      pantryItems: '++id, name',
+      shoppingItems: '++id, order',
+      mealPlans: '++id, date, [date+slot]',
     })
   }
 }

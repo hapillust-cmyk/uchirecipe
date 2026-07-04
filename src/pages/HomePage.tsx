@@ -17,6 +17,7 @@ import { useSettings } from '../db/settings'
 import { usePantryItems } from '../db/pantry'
 import { pantryAvailableNames } from '../logic/pantry'
 import { backupOverdue } from '../logic/backup'
+import { cookedWithinDays } from '../logic/cooked'
 import type { Recipe } from '../db/types'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
@@ -32,16 +33,8 @@ const conditions: { value: SuggestCondition; label: string }[] = [
   { value: 'quick', label: ja.home.condQuick },
 ]
 
-/** 直近14日以内に作っていたら true */
-function cookedRecently(recipe: Recipe): boolean {
-  const last = recipe.cookedLogs[0]?.date
-  if (!last) return false
-  const elapsed = Date.now() - new Date(last).getTime()
-  return elapsed < 14 * 24 * 60 * 60 * 1000
-}
-
 function matchesCondition(recipe: Recipe, condition: SuggestCondition): boolean {
-  if (condition === 'notRecent') return !cookedRecently(recipe)
+  if (condition === 'notRecent') return !cookedWithinDays(recipe, 14)
   if (condition === 'favorite') return recipe.isFavorite
   if (condition === 'quick')
     return recipe.cookMinutes != null && recipe.cookMinutes > 0 && recipe.cookMinutes <= 10

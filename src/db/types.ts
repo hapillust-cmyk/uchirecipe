@@ -92,6 +92,18 @@ export interface PantryItem {
   isFrequent: boolean
 }
 
+/** 献立の枠: 朝/昼/夜 */
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner'
+
+/** 週間献立の1枠分（日付＋枠にレシピを割り当てる） */
+export interface MealPlanEntry {
+  id?: number
+  /** YYYY-MM-DD */
+  date: string
+  slot: MealSlot
+  recipeId: number
+}
+
 /**
  * 買い物メモの1項目。
  * レシピから作る「候補」はDBに保存せず画面上だけで検討し、
@@ -128,6 +140,8 @@ export interface Settings {
   lastBackupAt?: number
   /** タイマー音の全体ON/OFF（個別ミュートとは別に、これがOFFなら全タイマーが無音） */
   timerSoundEnabled: boolean
+  /** 週の食費予算（円・任意）。献立プランナーで概算食費と比較する */
+  weeklyBudget?: number
 }
 
 export const defaultSettings: Settings = {

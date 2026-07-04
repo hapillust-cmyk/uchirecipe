@@ -216,6 +216,24 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* 週の食費予算 */}
+      <section className={sectionCls}>
+        <h2 className="font-bold">{ja.settings.weeklyBudgetTitle}</h2>
+        <p className="mt-1 text-sm text-ink-muted">{ja.settings.weeklyBudgetDescription}</p>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={settings.weeklyBudget ?? ''}
+          onChange={(e) => {
+            const value = e.target.value
+            void updateSettings({ weeklyBudget: value === '' ? undefined : Number(value) })
+          }}
+          placeholder={ja.settings.weeklyBudgetPlaceholder}
+          className="mt-[var(--space-sm)] w-full rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+        />
+      </section>
+
       {/* テーマ */}
       <section className={sectionCls}>
         <h2 className="font-bold">{ja.settings.themeTitle}</h2>

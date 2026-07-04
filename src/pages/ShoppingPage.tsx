@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChefHat, Search, ChevronUp, ChevronDown, X, Plus, CheckCircle2 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
@@ -49,6 +50,35 @@ export default function ShoppingPage() {
 
   // 買い物候補（下書き。確定するまでDBには保存しない）
   const [candidates, setCandidates] = useState<CandidateRow[] | null>(null)
+
+  // 献立プランナーの「この週の買い物リストを作る」から来た場合（?recipeIds=1,2,3）は
+  // ピッカーを介さず自動で候補を作る
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const raw = searchParams.get('recipeIds')
+    if (!raw || !recipes) return
+    const ids = raw
+      .split(',')
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n))
+    const chosen = recipes.filter((r) => ids.includes(r.id!))
+    if (chosen.length > 0) {
+      const built = buildShoppingCandidates(
+        chosen.map((r) => ({ id: r.id!, ingredients: r.ingredients })),
+        haveNames,
+      )
+      setCandidates(built.map((c) => ({ ...c, checked: true })))
+    }
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('recipeIds')
+        return next
+      },
+      { replace: true },
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipes, searchParams])
 
   const makeCandidates = () => {
     const chosen = visibleRecipes.filter((r) => selectedIds.includes(r.id!))

@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage'
 import RecipesPage from './pages/RecipesPage'
 import RecipeFormPage from './pages/RecipeFormPage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
+import MealPlanPage from './pages/MealPlanPage'
 import ShoppingPage from './pages/ShoppingPage'
 import SettingsPage from './pages/SettingsPage'
 import TabBar from './components/TabBar'
@@ -56,6 +57,7 @@ function App() {
             <Route path="/recipes/new" element={<RecipeFormPage />} />
             <Route path="/recipes/:id" element={<RecipeDetailPage />} />
             <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
+            <Route path="/meal-plan" element={<MealPlanPage />} />
             <Route path="/shopping" element={<ShoppingPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

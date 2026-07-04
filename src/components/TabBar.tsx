@@ -1,15 +1,16 @@
 import { NavLink } from 'react-router-dom'
-import { House, BookOpen, ShoppingCart, Settings } from 'lucide-react'
+import { House, BookOpen, CalendarDays, ShoppingCart, Settings } from 'lucide-react'
 import { ja } from '../i18n/ja'
 
 const tabs = [
   { to: '/', label: ja.nav.home, Icon: House },
   { to: '/recipes', label: ja.nav.recipes, Icon: BookOpen },
+  { to: '/meal-plan', label: ja.nav.mealPlan, Icon: CalendarDays },
   { to: '/shopping', label: ja.nav.shopping, Icon: ShoppingCart },
   { to: '/settings', label: ja.nav.settings, Icon: Settings },
 ] as const
 
-/** 画面下部に固定するタブナビゲーション（ホーム / レシピ / 買い物 / 設定） */
+/** 画面下部に固定するタブナビゲーション（ホーム / レシピ / 献立 / 買い物 / 設定） */
 export default function TabBar() {
   return (
     <nav
