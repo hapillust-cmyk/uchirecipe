@@ -203,6 +203,8 @@ export interface Settings {
   proCode?: string
   /** Pro解錠日時（ミリ秒） */
   proActivatedAt?: number
+  /** アプリ内お知らせで最後に見た（閉じた）お知らせのid。未読管理に使う */
+  lastSeenNewsId?: string
 }
 
 export const defaultSettings: Settings = {

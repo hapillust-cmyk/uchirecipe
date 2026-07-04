@@ -10,6 +10,7 @@ export const ja = {
   },
   common: {
     back: '戻る',
+    close: '閉じる',
   },
   chip: {
     remove: 'このチップを削除',
@@ -62,6 +63,7 @@ export const ja = {
     historyMore: 'すべて見る',
     backupReminder: 'しばらくバックアップしていません。設定から書き出しておくと安心です',
     backupReminderLink: '設定を開く',
+    newsLinkLabel: '詳しく見る',
     pantryShortcut: '在庫ボードを見る・編集する',
   },
   pantry: {

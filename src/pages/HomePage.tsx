@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Clock,
@@ -11,10 +11,13 @@ import {
   Refrigerator,
   ChevronRight,
   CalendarDays,
+  Megaphone,
+  X,
 } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { listRecipes } from '../db/recipes'
-import { useSettings } from '../db/settings'
+import { useSettings, updateSettings } from '../db/settings'
+import { fetchNews, type NewsItem } from '../logic/news'
 import { usePantryItems } from '../db/pantry'
 import { pantryAvailableNames } from '../logic/pantry'
 import { useTodayList } from '../db/todayList'
@@ -121,6 +124,17 @@ export default function HomePage() {
     settings !== undefined &&
     (allRecipes?.some((r) => !r.isStarter) ?? false) &&
     backupOverdue(settings.lastBackupAt)
+
+  // アプリ内お知らせ: 起動時に同一オリジンで取得し、最新1件だけを未読なら表示する
+  const [news, setNews] = useState<NewsItem[]>([])
+  useEffect(() => {
+    void fetchNews().then(setNews)
+  }, [])
+  const latestNews = news[0]
+  const showNews = settings !== undefined && latestNews !== undefined && latestNews.id !== settings.lastSeenNewsId
+  const dismissNews = () => {
+    if (latestNews) void updateSettings({ lastSeenNewsId: latestNews.id })
+  }
 
   // 条件で絞り込んだ上で、今の季節に合うものを優先する
   const candidates = useMemo(() => {
@@ -351,6 +365,35 @@ export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-md px-[var(--space-md)] pt-[var(--space-lg)] pb-[var(--space-lg)]">
       <h1 className="text-2xl font-bold">{ja.app.name}</h1>
+
+      {/* アプリ内お知らせ（最新1件・未読のときだけ） */}
+      {showNews && latestNews && (
+        <div className="mt-[var(--space-sm)] flex items-start gap-2 rounded-md border border-edge bg-surface px-[var(--space-md)] py-2 text-sm shadow-sm">
+          <Megaphone size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-ink">{latestNews.title}</p>
+            <p className="text-ink-muted">{latestNews.body}</p>
+            {latestNews.link && (
+              <a
+                href={latestNews.link}
+                target="_blank"
+                rel="noopener"
+                className="font-bold text-accent underline"
+              >
+                {ja.home.newsLinkLabel}
+              </a>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={dismissNews}
+            aria-label={ja.common.close}
+            className="shrink-0 text-ink-muted"
+          >
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+      )}
 
       {/* バックアップの控えめなリマインド */}
       {showBackupReminder && (
