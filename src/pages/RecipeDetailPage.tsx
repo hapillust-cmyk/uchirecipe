@@ -14,6 +14,7 @@ import {
   Share2,
   Image as ImageIcon,
   MessageSquareText,
+  Maximize2,
 } from 'lucide-react'
 import { db } from '../db/db'
 import { addCookedLog, toggleFavorite } from '../db/recipes'
@@ -25,6 +26,7 @@ import { deriveDoneLabel } from '../logic/timerLabel'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import { useTimers } from '../components/TimerProvider'
 import BackHeader from '../components/BackHeader'
+import FocusMode from '../components/FocusMode'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import TimeText from '../components/TimeText'
 import { ja } from '../i18n/ja'
@@ -113,6 +115,10 @@ export default function RecipeDetailPage() {
   const [shareOpen, setShareOpen] = useState(false)
   const [shareMessage, setShareMessage] = useState('')
   const [sharing, setSharing] = useState(false)
+
+  // フォーカスモード（1手順ずつ大きく表示）
+  const [focusOpen, setFocusOpen] = useState(false)
+  const [focusStep, setFocusStep] = useState(0)
 
   if (recipe === undefined) {
     // 読み込み中(undefined)は何も出さない。id が存在しない場合は下の分岐へ
@@ -303,7 +309,20 @@ export default function RecipeDetailPage() {
 
         {/* 手順 */}
         <section className="mt-[var(--space-lg)]">
-          <h2 className="text-xl font-bold">{ja.detail.steps}</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl font-bold">{ja.detail.steps}</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setFocusStep(0)
+                setFocusOpen(true)
+              }}
+              className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-edge px-3 py-2 text-sm font-bold text-accent"
+            >
+              <Maximize2 size={16} aria-hidden />
+              {ja.focus.open}
+            </button>
+          </div>
           <ol className="mt-[var(--space-sm)] space-y-[var(--space-sm)]">
             {recipe.steps.map((step, index) => {
               const stepNumber = index + 1
@@ -506,6 +525,15 @@ export default function RecipeDetailPage() {
           </button>
         </div>
       </div>
+
+      {focusOpen && (
+        <FocusMode
+          recipe={recipe}
+          recipeId={id}
+          initialStep={focusStep}
+          onClose={() => setFocusOpen(false)}
+        />
+      )}
     </div>
   )
 }

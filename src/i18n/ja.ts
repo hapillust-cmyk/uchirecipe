@@ -230,6 +230,16 @@ export const ja = {
     cookedLogsTitle: '作った記録',
     cookedCountSuffix: '回',
   },
+  focus: {
+    open: 'フォーカスモードで見る',
+    stepCounter: '手順 {n}/{t}',
+    close: '閉じる',
+    prev: '前へ',
+    next: '次へ',
+    read: '読み上げ',
+    stop: '止める',
+    readUnsupported: 'お使いのブラウザは読み上げに対応していません',
+  },
   timer: {
     start: 'タイマー開始',
     done: '終わり',
