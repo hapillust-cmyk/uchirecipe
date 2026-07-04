@@ -336,7 +336,7 @@ export default function RecipeDetailPage() {
                       {ing.name}
                     </span>
                     <span className="shrink-0 font-bold">
-                      {scaleAmount(ing.amount, recipe.servings, servings)}
+                      {scaleAmount(ing.amount, recipe.servings, servings, ing.unit)}
                       {ing.unit}
                     </span>
                   </div>
