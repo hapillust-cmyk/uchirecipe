@@ -30,6 +30,7 @@ export const ja = {
   nav: {
     home: 'ホーム',
     recipes: 'レシピ',
+    shopping: '買い物',
     settings: '設定',
   },
   home: {
@@ -52,6 +53,22 @@ export const ja = {
     historyTitle: '最近作ったもの',
     backupReminder: 'しばらくバックアップしていません。設定から書き出しておくと安心です',
     backupReminderLink: '設定を開く',
+    pantryShortcut: '在庫ボードを見る・編集する',
+  },
+  pantry: {
+    title: '在庫ボード',
+    description:
+      'よく使う食材をタップして「ある→少ない→ない」の3段階を切り替えます。数は数えず、ざっくりでOK',
+    level: {
+      have: 'ある',
+      low: '少ない',
+      none: 'ない',
+    },
+    addPlaceholder: '例: 豚肉',
+    add: '追加',
+    remove: 'この食材を在庫ボードから外す',
+    empty: 'よく使う食材を登録すると、ここに並びます',
+    addToSearch: '在庫から追加',
   },
   settings: {
     title: '設定',

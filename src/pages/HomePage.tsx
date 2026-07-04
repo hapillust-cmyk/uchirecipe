@@ -1,9 +1,21 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Clock, Dices, Heart, History, Search, Carrot, HardDriveDownload } from 'lucide-react'
+import {
+  Clock,
+  Dices,
+  Heart,
+  History,
+  Search,
+  Carrot,
+  HardDriveDownload,
+  Refrigerator,
+  ChevronRight,
+} from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { listRecipes } from '../db/recipes'
 import { useSettings } from '../db/settings'
+import { usePantryItems } from '../db/pantry'
+import { pantryAvailableNames } from '../logic/pantry'
 import { backupOverdue } from '../logic/backup'
 import type { Recipe } from '../db/types'
 import { RecipePlaceholder } from '../components/RecipeCard'
@@ -81,6 +93,8 @@ export default function HomePage() {
   const [seed, setSeed] = useState(() => Math.random())
   const [query, setQuery] = useState('')
   const [ingredients, setIngredients] = useState<string[]>([])
+  const pantryItems = usePantryItems()
+  const pantryNames = useMemo(() => pantryAvailableNames(pantryItems ?? []), [pantryItems])
 
   // 「基本レシピを表示しない」設定を反映
   const recipes = useMemo(() => {
@@ -230,6 +244,18 @@ export default function HomePage() {
             placeholder={ja.home.ingPlaceholder}
             addLabel={ja.home.ingAdd}
           />
+          {pantryNames.length > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setIngredients((prev) => Array.from(new Set([...prev, ...pantryNames])))
+              }
+              className="mt-[var(--space-sm)] inline-flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-accent shadow-sm"
+            >
+              <Refrigerator size={16} aria-hidden />
+              {ja.pantry.addToSearch}
+            </button>
+          )}
           <button
             type="button"
             onClick={submitIngredients}
@@ -240,6 +266,16 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+
+      {/* 在庫ボードへのショートカット（簡易版。本格カスタマイズはバッチFで対応） */}
+      <Link
+        to="/shopping"
+        className="mt-[var(--space-md)] flex items-center gap-2 rounded-md border border-edge bg-surface px-[var(--space-md)] py-3 text-sm shadow-sm"
+      >
+        <Refrigerator size={18} className="shrink-0 text-accent" aria-hidden />
+        <span className="min-w-0 flex-1 font-bold">{ja.home.pantryShortcut}</span>
+        <ChevronRight size={16} className="shrink-0 text-ink-muted" aria-hidden />
+      </Link>
 
       {/* 最近作ったもの */}
       {history.length > 0 && (

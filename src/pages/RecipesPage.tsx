@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { Plus, Search, SlidersHorizontal, Refrigerator } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { listRecipes } from '../db/recipes'
 import { useSettings } from '../db/settings'
+import { usePantryItems } from '../db/pantry'
+import { pantryAvailableNames } from '../logic/pantry'
 import {
   searchRecipes,
   type EffortFilter,
@@ -54,6 +56,8 @@ export default function RecipesPage() {
   const recipes = useLiveQuery(listRecipes, [])
   const settings = useSettings()
   const ngIngredients = settings?.ngIngredients
+  const pantryItems = usePantryItems()
+  const pantryNames = useMemo(() => pantryAvailableNames(pantryItems ?? []), [pantryItems])
 
   const hideStarters = settings?.hideStarters ?? false
 
@@ -144,6 +148,18 @@ export default function RecipesPage() {
               placeholder={ja.search.ingredientPlaceholder}
               addLabel={ja.home.ingAdd}
             />
+            {pantryNames.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setIngredients((prev) => Array.from(new Set([...prev, ...pantryNames])))
+                }
+                className="mt-[var(--space-sm)] inline-flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-accent shadow-sm"
+              >
+                <Refrigerator size={16} aria-hidden />
+                {ja.pantry.addToSearch}
+              </button>
+            )}
           </div>
 
           {/* 調理時間 */}

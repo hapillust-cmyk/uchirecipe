@@ -77,6 +77,21 @@ export interface Recipe {
   updatedAt: number
 }
 
+/**
+ * 在庫の3段階（ざっくり在庫）。数量は数えず「ある/少ない/ない」だけを管理し、
+ * 自動計算と実際の中身がズレる問題を仕組みごと避ける。
+ */
+export type PantryLevel = 'have' | 'low' | 'none'
+
+/** 在庫ボードの1食材分（よく使う食材をタップで3段階切替） */
+export interface PantryItem {
+  id?: number
+  name: string
+  level: PantryLevel
+  /** 在庫ボードに表示するか（外した食材は非表示にする） */
+  isFrequent: boolean
+}
+
 /** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 */
 export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown'
 
