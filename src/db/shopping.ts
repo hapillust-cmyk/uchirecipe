@@ -1,0 +1,94 @@
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from './db'
+import { markPantryHaveIfTracked } from './pantry'
+import type { ShoppingItem } from './types'
+
+export async function listShoppingItems(): Promise<ShoppingItem[]> {
+  return db.shoppingItems.orderBy('order').toArray()
+}
+
+/** 買い物メモの一覧を取得するフック（変更されると自動で再描画） */
+export function useShoppingItems() {
+  return useLiveQuery(listShoppingItems, [])
+}
+
+async function nextOrder(): Promise<number> {
+  const last = await db.shoppingItems.orderBy('order').last()
+  return (last?.order ?? 0) + 1
+}
+
+/** 手動で1件追加する */
+export async function addShoppingItem(name: string, amount?: string): Promise<void> {
+  const trimmed = name.trim()
+  if (!trimmed) return
+  const order = await nextOrder()
+  await db.shoppingItems.add({
+    name: trimmed,
+    amount: amount?.trim() || undefined,
+    isChecked: false,
+    order,
+  })
+}
+
+/** レシピから作った候補のうち、確定された項目をまとめて買い物メモに追加する */
+export async function addConfirmedItems(
+  items: { name: string; amount: string; recipeIds: number[] }[],
+): Promise<void> {
+  if (items.length === 0) return
+  let order = await nextOrder()
+  await db.transaction('rw', db.shoppingItems, async () => {
+    for (const item of items) {
+      await db.shoppingItems.add({
+        name: item.name,
+        amount: item.amount || undefined,
+        isChecked: false,
+        order: order++,
+        fromRecipeIds: item.recipeIds,
+      })
+    }
+  })
+}
+
+/** チェックのオン・オフ（買い物中の消し込み） */
+export async function toggleShoppingChecked(id: number): Promise<void> {
+  const item = await db.shoppingItems.get(id)
+  if (!item) return
+  await db.shoppingItems.update(id, { isChecked: !item.isChecked })
+}
+
+export async function removeShoppingItem(id: number): Promise<void> {
+  await db.shoppingItems.delete(id)
+}
+
+/** 隣の項目と順序を入れ替える（上へ/下へ移動） */
+export async function moveShoppingItem(
+  items: ShoppingItem[],
+  index: number,
+  direction: -1 | 1,
+): Promise<void> {
+  const targetIndex = index + direction
+  if (targetIndex < 0 || targetIndex >= items.length) return
+  const a = items[index]
+  const b = items[targetIndex]
+  await db.transaction('rw', db.shoppingItems, async () => {
+    await db.shoppingItems.update(a.id!, { order: b.order })
+    await db.shoppingItems.update(b.id!, { order: a.order })
+  })
+}
+
+/**
+ * 買い物完了: チェック済みの項目を削除する。
+ * reflectToPantry が true なら、在庫ボードに登録済みの食材だけ「ある」に更新する。
+ */
+export async function completeShopping(
+  checkedItems: ShoppingItem[],
+  reflectToPantry: boolean,
+): Promise<void> {
+  if (checkedItems.length === 0) return
+  if (reflectToPantry) {
+    for (const item of checkedItems) {
+      await markPantryHaveIfTracked(item.name)
+    }
+  }
+  await db.shoppingItems.bulkDelete(checkedItems.map((i) => i.id!))
+}

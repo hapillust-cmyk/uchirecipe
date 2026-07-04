@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { PantryItem, Recipe, Settings } from './types'
+import type { PantryItem, Recipe, Settings, ShoppingItem } from './types'
 
 /**
  * うちレシピのデータベース（ブラウザ内蔵の IndexedDB を Dexie 経由で使う）。
@@ -9,6 +9,7 @@ class UchiRecipeDB extends Dexie {
   recipes!: Table<Recipe, number>
   settings!: Table<Settings, number>
   pantryItems!: Table<PantryItem, number>
+  shoppingItems!: Table<ShoppingItem, number>
 
   constructor() {
     super('uchi-recipe')
@@ -26,6 +27,13 @@ class UchiRecipeDB extends Dexie {
       recipes: '++id, title, *tags, *searchWords, updatedAt',
       settings: 'id',
       pantryItems: '++id, name',
+    })
+    // バージョン4: 買い物メモ（確定済みの項目だけを保存）テーブルを追加
+    this.version(4).stores({
+      recipes: '++id, title, *tags, *searchWords, updatedAt',
+      settings: 'id',
+      pantryItems: '++id, name',
+      shoppingItems: '++id, order',
     })
   }
 }

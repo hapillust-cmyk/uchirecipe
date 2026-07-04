@@ -92,6 +92,22 @@ export interface PantryItem {
   isFrequent: boolean
 }
 
+/**
+ * 買い物メモの1項目。
+ * レシピから作る「候補」はDBに保存せず画面上だけで検討し、
+ * ユーザーが確定した項目だけがここに保存される（自動任せにしない設計）。
+ */
+export interface ShoppingItem {
+  id?: number
+  name: string
+  amount?: string
+  isChecked: boolean
+  /** 並び順（上へ/下へ移動で隣の項目と入れ替える） */
+  order: number
+  /** どのレシピから来たか（複数レシピで材料が重複した場合の合算元） */
+  fromRecipeIds?: number[]
+}
+
 /** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 */
 export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown'
 
