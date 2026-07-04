@@ -32,6 +32,30 @@ export function shiftWeek(dateStr: string, weeks: number): string {
   return toDateString(d)
 }
 
+/** 引数の日付を含む月の全日付（1日〜月末）をYYYY-MM-DDの配列で返す */
+export function monthDates(reference: Date): string[] {
+  const year = reference.getFullYear()
+  const month = reference.getMonth()
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return Array.from({ length: lastDay }, (_, i) => toDateString(new Date(year, month, i + 1)))
+}
+
+/** YYYY-MM-DD を months ヶ月分だけ前後にずらす（同じ日にちが無い月は月末に丸める） */
+export function shiftMonth(dateStr: string, months: number): string {
+  const original = new Date(`${dateStr}T00:00:00`)
+  const day = original.getDate()
+  const shifted = new Date(original.getFullYear(), original.getMonth() + months, 1)
+  const lastDay = new Date(shifted.getFullYear(), shifted.getMonth() + 1, 0).getDate()
+  shifted.setDate(Math.min(day, lastDay))
+  return toDateString(shifted)
+}
+
+/** 引数の日付を含む月の1日が、月曜始まりのカレンダーで何列目か（先頭の空白セル数） */
+export function monthLeadingBlanks(reference: Date): number {
+  const firstDay = new Date(reference.getFullYear(), reference.getMonth(), 1).getDay() // 0=日 1=月...
+  return firstDay === 0 ? 6 : firstDay - 1
+}
+
 export interface SuggestOptions {
   quickOnly: boolean
   excludeNg: boolean

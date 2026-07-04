@@ -12,6 +12,7 @@ import {
   Sparkles,
   Clock,
   TriangleAlert,
+  Lock,
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
@@ -23,7 +24,16 @@ import {
   markAllTodayListCooked,
   importRecipeIdsToTodayList,
 } from '../db/todayList'
-import { MEAL_SLOTS, weekDates, shiftWeek, suggestForSlot, todayPlanMismatch } from '../logic/mealPlan'
+import {
+  MEAL_SLOTS,
+  weekDates,
+  shiftWeek,
+  monthDates,
+  shiftMonth,
+  monthLeadingBlanks,
+  suggestForSlot,
+  todayPlanMismatch,
+} from '../logic/mealPlan'
 import { todayString } from '../logic/date'
 import { hasNgIngredient } from '../logic/ng'
 import { RecipePlaceholder } from '../components/RecipeCard'
@@ -84,6 +94,32 @@ export default function MealPlanPage() {
   const dates = useMemo(() => weekDates(new Date(`${weekStart}T00:00:00`)), [weekStart])
 
   const entries = useMealPlanRange(dates[0], dates[6])
+
+  // 月間の献立ビュー（Pro機能）
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
+  const [monthAnchor, setMonthAnchor] = useState(() => todayString())
+  const isPro = !!settings?.proCode
+  const monthDatesList = useMemo(
+    () => monthDates(new Date(`${monthAnchor}T00:00:00`)),
+    [monthAnchor],
+  )
+  const monthLeading = useMemo(
+    () => monthLeadingBlanks(new Date(`${monthAnchor}T00:00:00`)),
+    [monthAnchor],
+  )
+  const monthEntries = useMealPlanRange(
+    monthDatesList[0],
+    monthDatesList[monthDatesList.length - 1],
+  )
+  const monthDaysWithPlan = useMemo(() => {
+    const set = new Set<string>()
+    monthEntries?.forEach((e) => set.add(e.date))
+    return set
+  }, [monthEntries])
+  const goToWeekOf = (date: string) => {
+    setWeekStart(weekDates(new Date(`${date}T00:00:00`))[0])
+    setViewMode('week')
+  }
   const entryMap = useMemo(() => {
     const map = new Map<string, { id: number; recipeId: number }>()
     entries?.forEach((e) => map.set(`${e.date}|${e.slot}`, { id: e.id!, recipeId: e.recipeId }))
@@ -321,6 +357,109 @@ export default function MealPlanPage() {
         )}
       </section>
 
+      {/* 週／月の切り替え */}
+      <div className="mt-[var(--space-lg)] flex gap-[var(--space-sm)]">
+        <button
+          type="button"
+          onClick={() => setViewMode('week')}
+          className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+            viewMode === 'week'
+              ? 'border-accent bg-accent text-app'
+              : 'border-edge bg-surface text-ink-muted'
+          }`}
+        >
+          {ja.mealPlan.viewWeek}
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('month')}
+          className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+            viewMode === 'month'
+              ? 'border-accent bg-accent text-app'
+              : 'border-edge bg-surface text-ink-muted'
+          }`}
+        >
+          {ja.mealPlan.viewMonth}
+        </button>
+      </div>
+
+      {viewMode === 'month' &&
+        (isPro ? (
+          <div className="mt-[var(--space-md)]">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setMonthAnchor((d) => shiftMonth(d, -1))}
+                aria-label={ja.mealPlan.prevMonth}
+                className="rounded-full border border-edge bg-surface p-2 text-accent shadow-sm"
+              >
+                <ChevronLeft size={20} aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonthAnchor(todayString())}
+                className="text-sm font-bold text-ink-muted"
+              >
+                {monthAnchor.slice(0, 4)}/{monthAnchor.slice(5, 7)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonthAnchor((d) => shiftMonth(d, 1))}
+                aria-label={ja.mealPlan.nextMonth}
+                className="rounded-full border border-edge bg-surface p-2 text-accent shadow-sm"
+              >
+                <ChevronRight size={20} aria-hidden />
+              </button>
+            </div>
+            <div className="mt-[var(--space-sm)] grid grid-cols-7 gap-1 text-center text-xs font-bold text-ink-muted">
+              {ja.mealPlan.dow.map((d) => (
+                <div key={d}>{d}</div>
+              ))}
+            </div>
+            <div className="mt-1 grid grid-cols-7 gap-1">
+              {Array.from({ length: monthLeading }, (_, i) => (
+                <div key={`blank-${i}`} />
+              ))}
+              {monthDatesList.map((date) => (
+                <button
+                  key={date}
+                  type="button"
+                  onClick={() => goToWeekOf(date)}
+                  className={`flex aspect-square flex-col items-center justify-center rounded-sm border text-sm ${
+                    date === today
+                      ? 'border-accent bg-accent text-app font-bold'
+                      : 'border-edge bg-surface text-ink'
+                  }`}
+                >
+                  <span>{Number(date.slice(8, 10))}</span>
+                  {monthDaysWithPlan.has(date) && (
+                    <span
+                      aria-label={ja.mealPlan.monthDayHasPlan}
+                      className={`mt-0.5 h-1.5 w-1.5 rounded-full ${
+                        date === today ? 'bg-app' : 'bg-accent'
+                      }`}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-[var(--space-md)] rounded-md border border-edge bg-surface p-[var(--space-lg)] text-center shadow-sm">
+            <Lock size={28} className="mx-auto text-ink-muted" aria-hidden />
+            <p className="mt-[var(--space-sm)] font-bold">{ja.mealPlan.monthProGateTitle}</p>
+            <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.monthProGateDescription}</p>
+            <Link
+              to="/settings"
+              className="mt-[var(--space-sm)] inline-block text-sm font-bold text-accent underline"
+            >
+              {ja.mealPlan.monthProGateLink}
+            </Link>
+          </div>
+        ))}
+
+      {viewMode === 'week' && (
+      <>
       {/* 今週の献立 */}
       <h2 className="mt-[var(--space-lg)] text-xl font-bold">{ja.mealPlan.weekTitle}</h2>
 
@@ -502,6 +641,8 @@ export default function MealPlanPage() {
       >
         {ja.mealPlan.historyLink}
       </Link>
+      </>
+      )}
 
       {/* レシピ選択ピッカー */}
       {pickerTarget && (
