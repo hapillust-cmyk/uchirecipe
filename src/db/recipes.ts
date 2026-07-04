@@ -1,6 +1,8 @@
 import { db } from './db'
+import { defaultSettings } from './types'
 import type { CookedLog, Recipe, RecipeInput } from './types'
 import { buildSearchWords } from '../logic/kana'
+import { READINGS_VERSION } from '../logic/ingredientReadings'
 
 /** 入力の掃除: 名前が空の材料行・本文が空の手順行は保存しない */
 function cleanInput(input: RecipeInput): RecipeInput {
@@ -55,6 +57,24 @@ export async function updateRecipe(id: number, input: RecipeInput): Promise<void
 /** レシピを削除 */
 export async function deleteRecipe(id: number): Promise<void> {
   await db.recipes.delete(id)
+}
+
+/**
+ * 食材名の読み仮名辞書（表記ゆれ対策）が更新されていたら、
+ * 全レシピのsearchWordsを作り直す（保存済みsearchWordsは古い変換のまま
+ * 残ってしまうため）。updatedAtは変えない（一覧の並び順を崩さないため）。
+ */
+export async function rebuildSearchWordsIfNeeded(): Promise<void> {
+  await db.transaction('rw', db.recipes, db.settings, async () => {
+    const settings = { ...defaultSettings, ...(await db.settings.get(1)) }
+    if (settings.ingredientReadingsVersion === READINGS_VERSION) return
+    const all = await db.recipes.toArray()
+    for (const recipe of all) {
+      const searchWords = buildSearchWords(recipe.title, recipe.ingredients, recipe.tags)
+      await db.recipes.update(recipe.id!, { searchWords })
+    }
+    await db.settings.put({ ...settings, ingredientReadingsVersion: READINGS_VERSION, id: 1 })
+  })
 }
 
 /** お気に入りの ON/OFF を切り替える */

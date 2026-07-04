@@ -184,6 +184,12 @@ export interface Settings {
   visibleMealSlots?: MealSlot[]
   /** ホーム画面に表示するパーツと並び順（配列に無いものは非表示） */
   homeWidgets: HomeWidgetKey[]
+  /**
+   * 食材名の読み仮名辞書（表記ゆれ対策）の反映バージョン。
+   * logic/ingredientReadings.ts の READINGS_VERSION と食い違っていたら、
+   * 起動時に全レシピのsearchWordsを再構築する（辞書追記のたびに追従させるため）。
+   */
+  ingredientReadingsVersion: number
 }
 
 export const defaultSettings: Settings = {
@@ -198,6 +204,7 @@ export const defaultSettings: Settings = {
   timerWakeLockEnabled: true,
   timerNoticeShown: false,
   homeWidgets: defaultHomeWidgets,
+  ingredientReadingsVersion: 0,
 }
 
 /** 登録・編集フォームから受け取る入力（派生フィールドは含まない） */
