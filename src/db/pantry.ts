@@ -33,7 +33,9 @@ export async function addFrequentIngredient(name: string): Promise<void> {
     if (!existing.isFrequent) await db.pantryItems.update(existing.id!, { isFrequent: true })
     return
   }
-  await db.pantryItems.add({ name: trimmed, level: 'none', isFrequent: true })
+  // 新規追加時は「ある」から開始する。よく使う食材として登録するのは
+  // 大抵「今まさに家にある」場面が多く、「ない」始まりだと実態と逆になりがちだった
+  await db.pantryItems.add({ name: trimmed, level: 'have', isFrequent: true })
 }
 
 /** タップで3段階を切り替える */

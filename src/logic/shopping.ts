@@ -8,22 +8,35 @@ export interface ShoppingCandidate {
   recipeIds: number[]
 }
 
-/** 同じ単位・数値化できる分量だけを合計し、それ以外はそのまま列挙する */
+/**
+ * 単位ごとにグループ化し、数値化できるものはグループ内で合計する
+ * （例:「大さじ2」+「大さじ3」+「小さじ1」→「大さじ5・小さじ1」）。
+ * 数値化できないもの（「少々」等）はそのまま列挙する。
+ */
 function combineAmounts(parts: { amount: string; unit: string }[]): string {
   const nonEmpty = parts.filter((p) => p.amount.trim() || p.unit.trim())
   if (nonEmpty.length === 0) return ''
 
-  const firstUnit = nonEmpty[0].unit.trim()
-  const sameUnit = nonEmpty.every((p) => p.unit.trim() === firstUnit)
-  if (sameUnit) {
-    const nums = nonEmpty.map((p) => Number.parseFloat(p.amount))
+  const groups = new Map<string, { amount: string; unit: string }[]>()
+  for (const part of nonEmpty) {
+    const unit = part.unit.trim()
+    const list = groups.get(unit)
+    if (list) list.push(part)
+    else groups.set(unit, [part])
+  }
+
+  const texts: string[] = []
+  for (const [unit, items] of groups) {
+    const nums = items.map((p) => Number.parseFloat(p.amount))
     if (nums.every((n) => Number.isFinite(n))) {
       const total = nums.reduce((sum, n) => sum + n, 0)
       const totalText = Number.isInteger(total) ? String(total) : String(Math.round(total * 10) / 10)
-      return `${totalText}${firstUnit}`
+      texts.push(`${totalText}${unit}`)
+    } else {
+      texts.push(...items.map((p) => `${p.amount}${p.unit}`.trim()))
     }
   }
-  return nonEmpty.map((p) => `${p.amount}${p.unit}`.trim()).join('・')
+  return texts.join('・')
 }
 
 /**

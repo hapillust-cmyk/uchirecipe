@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Camera,
   Image as ImageIcon,
@@ -80,49 +81,53 @@ export default function RecipeFormPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
 
-  // 編集モード: 既存レシピを読み込んでフォームに反映
+  // 編集モード: 既存レシピを読み込んでフォームに反映。
+  // useLiveQueryで反応的に取得することで、アプリ起動直後の基本レシピ投入
+  // (非同期)がまだ終わっていないタイミングでこの画面を直接開いても、
+  // 投入完了後に自動で正しく読み込まれる（以前は読み込みが一度きりで、
+  // 投入前に空振りすると空欄のまま固まる不具合があった）
+  const loadedRecipe = useLiveQuery(
+    () => (editId !== undefined && !Number.isNaN(editId) ? getRecipe(editId) : undefined),
+    [editId],
+  )
+  const hydratedRef = useRef(false)
   useEffect(() => {
-    if (editId === undefined || Number.isNaN(editId)) return
-    let cancelled = false
-    getRecipe(editId).then((recipe) => {
-      if (!recipe || cancelled) return
-      setTitle(recipe.title)
-      setPhoto(recipe.photo)
-      setServings(recipe.servings)
-      setCookMinutes(recipe.cookMinutes != null ? String(recipe.cookMinutes) : '')
-      setEffortLevel(recipe.effortLevel)
-      setIngredients(
-        recipe.ingredients.length > 0
-          ? recipe.ingredients.map((i) => ({
-              name: i.name,
-              amount: i.amount,
-              unit: i.unit,
-              price: i.price != null ? String(i.price) : '',
-              memo: i.memo ?? '',
-            }))
-          : [{ ...emptyIngredient }],
-      )
-      setSteps(
-        recipe.steps.length > 0
-          ? recipe.steps.map((s) => ({
-              text: s.text,
-              minutes: s.minutes != null ? String(s.minutes) : '',
-              memo: s.memo ?? '',
-            }))
-          : [{ ...emptyStep }],
-      )
-      setTags(recipe.tags)
-      setMemo(recipe.memo ?? '')
-      setSourceUrl(recipe.sourceUrl ?? '')
-      setIconKey(recipe.iconKey)
-      setShowIconInsteadOfPhoto(recipe.showIconInsteadOfPhoto ?? false)
-      setSeason(recipe.season)
-      setSuitableFor(recipe.suitableFor ?? [])
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [editId])
+    const recipe = loadedRecipe
+    if (!recipe || hydratedRef.current) return
+    hydratedRef.current = true
+    setTitle(recipe.title)
+    setPhoto(recipe.photo)
+    setServings(recipe.servings)
+    setCookMinutes(recipe.cookMinutes != null ? String(recipe.cookMinutes) : '')
+    setEffortLevel(recipe.effortLevel)
+    setIngredients(
+      recipe.ingredients.length > 0
+        ? recipe.ingredients.map((i) => ({
+            name: i.name,
+            amount: i.amount,
+            unit: i.unit,
+            price: i.price != null ? String(i.price) : '',
+            memo: i.memo ?? '',
+          }))
+        : [{ ...emptyIngredient }],
+    )
+    setSteps(
+      recipe.steps.length > 0
+        ? recipe.steps.map((s) => ({
+            text: s.text,
+            minutes: s.minutes != null ? String(s.minutes) : '',
+            memo: s.memo ?? '',
+          }))
+        : [{ ...emptyStep }],
+    )
+    setTags(recipe.tags)
+    setMemo(recipe.memo ?? '')
+    setSourceUrl(recipe.sourceUrl ?? '')
+    setIconKey(recipe.iconKey)
+    setShowIconInsteadOfPhoto(recipe.showIconInsteadOfPhoto ?? false)
+    setSeason(recipe.season)
+    setSuitableFor(recipe.suitableFor ?? [])
+  }, [loadedRecipe])
 
   /** 貼り付けた文章を解析してフォームに流し込む（結果はユーザーが修正できる） */
   const applyPaste = () => {
@@ -181,13 +186,19 @@ export default function RecipeFormPage() {
     }
     setSaving(true)
     try {
+      // タグ欄に入力したまま「追加」を押し忘れていても、保存時に取り込む
+      // （押し忘れたら無言でタグが消えるのは実質的なデータロス扱いのため）
+      const pendingTag = tagInput.trim()
+      const effectiveTags =
+        pendingTag && !tags.includes(pendingTag) ? [...tags, pendingTag] : tags
+
       const input: RecipeInput = {
         title,
         photo,
         servings,
         cookMinutes: cookMinutes.trim() ? Number(cookMinutes) : undefined,
         effortLevel,
-        tags,
+        tags: effectiveTags,
         ingredients: ingredients.map((row) => ({
           name: row.name,
           amount: row.amount.trim(),
@@ -373,9 +384,11 @@ export default function RecipeFormPage() {
                 type="button"
                 onClick={() => setIconKey(key)}
                 className={`flex flex-col items-center justify-center gap-1 rounded-md border py-2 text-xs font-bold shadow-sm ${
-                  iconKey === key || isAutoPick
+                  iconKey === key
                     ? 'border-accent bg-accent text-app'
-                    : 'border-edge bg-surface text-ink-muted'
+                    : isAutoPick
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-edge bg-surface text-ink-muted'
                 }`}
               >
                 <Icon size={20} aria-hidden />
@@ -557,16 +570,18 @@ export default function RecipeFormPage() {
                 />
               </div>
               <div className="mt-[var(--space-sm)] flex items-center gap-[var(--space-sm)]">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={row.price}
-                  onChange={(e) => updateIngredient(index, { price: e.target.value })}
-                  placeholder={ja.form.ingredientPricePlaceholder}
-                  aria-label={ja.form.ingredientPrice}
-                  className="min-w-0 flex-1 rounded-sm border border-edge bg-app px-3 py-2 text-base text-ink placeholder:text-ink-muted/60"
-                />
+                <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-ink-muted">
+                  <span className="shrink-0">{ja.form.ingredientPrice}</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={row.price}
+                    onChange={(e) => updateIngredient(index, { price: e.target.value })}
+                    placeholder={ja.form.ingredientPricePlaceholder}
+                    className="min-w-0 flex-1 rounded-sm border border-edge bg-app px-3 py-2 text-base text-ink placeholder:text-ink-muted/60"
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => setIngredients((rows) => move(rows, index, index - 1))}

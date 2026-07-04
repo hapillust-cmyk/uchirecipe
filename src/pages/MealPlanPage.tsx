@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   CheckCircle2,
   Sparkles,
+  Clock,
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
@@ -478,9 +479,21 @@ export default function MealPlanPage() {
                     <button
                       type="button"
                       onClick={() => void pickRecipe(recipe.id!)}
-                      className="flex w-full items-center px-[var(--space-md)] py-3 text-left"
+                      className="flex w-full items-center gap-2 px-[var(--space-md)] py-3 text-left"
                     >
                       <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
+                      <span className="flex shrink-0 items-center gap-2 text-xs text-ink-muted">
+                        {recipe.cookMinutes != null && recipe.cookMinutes > 0 && (
+                          <span className="inline-flex items-center gap-0.5">
+                            <Clock size={12} aria-hidden />
+                            {recipe.cookMinutes}
+                            {ja.recipes.minutesSuffix}
+                          </span>
+                        )}
+                        <span className="rounded-sm border border-edge px-1.5 py-0.5">
+                          {ja.effort[recipe.effortLevel]}
+                        </span>
+                      </span>
                     </button>
                   </li>
                 ))}

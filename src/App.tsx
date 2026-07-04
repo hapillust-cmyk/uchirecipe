@@ -39,7 +39,7 @@ function ThemeSync() {
  * TimerProvider が全体を包むので、タブを移動してもタイマーは動き続ける。
  */
 function App() {
-  // 初回起動時だけ、同梱の基本レシピ20品をデータベースに入れる
+  // 初回起動時だけ、同梱の基本レシピ21品をデータベースに入れる
   useEffect(() => {
     void seedStartersIfNeeded()
   }, [])
