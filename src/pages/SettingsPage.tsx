@@ -1,10 +1,16 @@
 import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, X, Download, Upload, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
 import { listRecipes } from '../db/recipes'
 import { reloadStarterRecipes, starterCount } from '../db/starters'
-import { downloadBackup, importBackup, parseBackup } from '../logic/backup'
+import {
+  downloadBackup,
+  importBackup,
+  parseBackup,
+  fetchRecipeSet,
+  importRecipeSet,
+} from '../logic/backup'
 import { hasNgIngredient } from '../logic/ng'
 import type { HomeWidgetKey, ThemeSetting } from '../db/types'
 import { ja } from '../i18n/ja'
@@ -43,6 +49,9 @@ export default function SettingsPage() {
   const [message, setMessage] = useState('')
   const importFileRef = useRef<HTMLInputElement>(null)
   const importModeRef = useRef<'replace' | 'merge'>('merge')
+  const [recipeSetUrl, setRecipeSetUrl] = useState('')
+  const [recipeSetLoading, setRecipeSetLoading] = useState(false)
+  const recipeSetFileRef = useRef<HTMLInputElement>(null)
 
   if (!settings) return null // 読み込み中
 
@@ -78,6 +87,42 @@ export default function SettingsPage() {
       )
     } catch {
       setMessage(ja.settings.backupImportError)
+    }
+  }
+
+  const showRecipeSetResult = (result: { added: number; skipped: number }) => {
+    setMessage(
+      ja.settings.recipeSetResult
+        .replace('{a}', String(result.added))
+        .replace('{s}', String(result.skipped)),
+    )
+  }
+
+  const loadRecipeSetFromUrl = async () => {
+    const url = recipeSetUrl.trim()
+    if (!url) return
+    setRecipeSetLoading(true)
+    try {
+      const file = await fetchRecipeSet(url)
+      showRecipeSetResult(await importRecipeSet(file))
+      setRecipeSetUrl('')
+    } catch {
+      setMessage(ja.settings.recipeSetError)
+    } finally {
+      setRecipeSetLoading(false)
+    }
+  }
+
+  const loadRecipeSetFromFile = async (file: File | undefined) => {
+    if (!file) return
+    setRecipeSetLoading(true)
+    try {
+      const parsed = parseBackup(await file.text())
+      showRecipeSetResult(await importRecipeSet(parsed))
+    } catch {
+      setMessage(ja.settings.recipeSetError)
+    } finally {
+      setRecipeSetLoading(false)
     }
   }
 
@@ -398,6 +443,51 @@ export default function SettingsPage() {
         >
           <RotateCcw size={18} aria-hidden />
           {ja.settings.starterReload}
+        </button>
+      </section>
+
+      {/* レシピセットの読み込み */}
+      <section className={sectionCls}>
+        <h2 className="font-bold">{ja.settings.recipeSetTitle}</h2>
+        <p className="mt-1 text-sm text-ink-muted">{ja.settings.recipeSetDescription}</p>
+        <div className="mt-[var(--space-sm)] flex gap-[var(--space-sm)]">
+          <input
+            type="url"
+            inputMode="url"
+            value={recipeSetUrl}
+            onChange={(e) => setRecipeSetUrl(e.target.value)}
+            placeholder={ja.settings.recipeSetUrlPlaceholder}
+            className="min-w-0 flex-1 rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+          />
+          <button
+            type="button"
+            onClick={() => void loadRecipeSetFromUrl()}
+            disabled={recipeSetLoading || !recipeSetUrl.trim()}
+            className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-edge bg-surface px-3 font-bold text-accent shadow-sm disabled:opacity-40"
+          >
+            <Link2 size={18} aria-hidden />
+            {ja.settings.recipeSetUrlLoad}
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-ink-muted">{ja.settings.recipeSetUrlHint}</p>
+        <input
+          ref={recipeSetFileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            void loadRecipeSetFromFile(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => recipeSetFileRef.current?.click()}
+          disabled={recipeSetLoading}
+          className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md border border-edge bg-surface py-3 font-bold text-accent shadow-sm disabled:opacity-40"
+        >
+          <Upload size={18} aria-hidden />
+          {recipeSetLoading ? ja.settings.recipeSetLoading : ja.settings.recipeSetFileLoad}
         </button>
       </section>
 

@@ -1,6 +1,7 @@
 import { db } from '../db/db'
 import { getSettings, updateSettings } from '../db/settings'
 import { defaultSettings, type Recipe, type Settings } from '../db/types'
+import { buildSearchWords } from './kana'
 
 /**
  * バックアップ: 全データ（レシピ・写真・作った記録・設定）を
@@ -150,6 +151,48 @@ export async function importBackup(
         // 同一IDが既にある: 内容が同じでも違ってもスキップ（今のデータを優先）
         skipped++
       }
+    }
+  })
+  return { added, skipped }
+}
+
+/** URLからレシピセットのJSON（バックアップと同形式）を取得する。配布元がCORSに対応していないと失敗する */
+export async function fetchRecipeSet(url: string): Promise<BackupFile> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`fetch failed: ${res.status}`)
+  return parseBackup(await res.text())
+}
+
+/**
+ * 配布されているレシピセット（バックアップと同形式のJSON）を追加で読み込む。
+ * 個人のバックアップ復元(importBackup)とは別物:
+ * - idは信用せず振り直す（配布元と自分のIDが衝突する可能性があるため）
+ * - 読み込んだレシピはisStarter扱いにする（無料版の件数制限に含めない）
+ * - 重複判定はidではなく料理名（完全一致）で行う
+ * - settingsは取り込まない（配布元の設定で自分の設定を上書きしないため）
+ */
+export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
+  let added = 0
+  let skipped = 0
+  await db.transaction('rw', db.recipes, async () => {
+    const existingTitles = new Set((await db.recipes.toArray()).map((r) => r.title.trim()))
+    for (const backupRecipe of file.recipes) {
+      const { id: _unused, ...rest } = toRecipe(backupRecipe)
+      const title = rest.title.trim()
+      if (existingTitles.has(title)) {
+        skipped++
+        continue
+      }
+      const now = Date.now()
+      await db.recipes.add({
+        ...rest,
+        isStarter: true,
+        searchWords: buildSearchWords(rest.title, rest.ingredients, rest.tags),
+        createdAt: now,
+        updatedAt: now,
+      })
+      existingTitles.add(title)
+      added++
     }
   })
   return { added, skipped }
