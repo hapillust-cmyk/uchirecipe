@@ -606,6 +606,21 @@ export default function SettingsPage() {
           <Info size={18} aria-hidden />
           {ja.settings.aboutPageLink}
         </a>
+        <a
+          href="/about/terms.html"
+          className="mt-[var(--space-sm)] block text-center text-sm font-bold text-accent underline"
+        >
+          {ja.settings.termsLink}
+        </a>
+        {/* ご意見箱はGoogleフォーム(外部サイト)なので別窓でよい */}
+        <a
+          href={ja.settings.feedbackFormUrl}
+          target="_blank"
+          rel="noopener"
+          className="mt-[var(--space-sm)] block text-center text-sm font-bold text-accent underline"
+        >
+          {ja.settings.feedbackLink}
+        </a>
       </section>
     </div>
   )
