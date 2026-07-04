@@ -252,6 +252,7 @@ export const ja = {
     emptyHint: '右下の「＋」から最初のレシピを登録しましょう',
     addRecipe: 'レシピを登録',
     minutesSuffix: '分',
+    freeLimitNearBanner: '無料版はあと{n}件登録できます（既存のレシピはこのまま全部使えます）',
   },
   search: {
     placeholder: '料理名・材料・タグで検索',
@@ -311,6 +312,7 @@ export const ja = {
     nameLabel: '料理名',
     namePlaceholder: '例: 肉じゃが',
     nameRequired: '料理名を入力してください',
+    freeLimitBlocked: '無料版の登録上限（50件）に達しました。続けて登録するには設定画面からPro版を解錠してください（今までのレシピはそのまま使えます）',
     photoLabel: '写真',
     photoTake: 'カメラで撮る',
     photoPick: 'アルバムから選ぶ',

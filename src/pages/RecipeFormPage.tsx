@@ -12,7 +12,9 @@ import {
   ClipboardPaste,
 } from 'lucide-react'
 import type { EffortLevel, IconKey, MealSlot, RecipeInput, Season } from '../db/types'
-import { createRecipe, deleteRecipe, getRecipe, updateRecipe } from '../db/recipes'
+import { createRecipe, deleteRecipe, getRecipe, listRecipes, updateRecipe } from '../db/recipes'
+import { useSettings } from '../db/settings'
+import { countFreeLimitRecipes, isAtFreeLimit } from '../logic/freeLimit'
 import { resizePhoto } from '../logic/image'
 import { parseRecipeText } from '../logic/parseRecipeText'
 import { pickIconKey, iconKeyOrder } from '../logic/icon'
@@ -105,6 +107,8 @@ export default function RecipeFormPage() {
     () => (editId !== undefined && !Number.isNaN(editId) ? getRecipe(editId) : undefined),
     [editId],
   )
+  const settings = useSettings()
+  const allRecipes = useLiveQuery(listRecipes, [])
   const hydratedRef = useRef(false)
   useEffect(() => {
     const recipe = loadedRecipe
@@ -199,6 +203,11 @@ export default function RecipeFormPage() {
   const save = async () => {
     if (!title.trim()) {
       setError(ja.form.nameRequired)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    if (!isEdit && isAtFreeLimit(countFreeLimitRecipes(allRecipes ?? []), !!settings?.proCode)) {
+      setError(ja.form.freeLimitBlocked)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }

@@ -13,6 +13,7 @@ import {
   type TimeFilter,
 } from '../logic/search'
 import { sortResults, type RecipeSortOption } from '../logic/recipeSort'
+import { countFreeLimitRecipes, isNearFreeLimit, FREE_LIMIT } from '../logic/freeLimit'
 import { splitValues } from '../logic/textSplit'
 import RecipeCard from '../components/RecipeCard'
 import ChipInput from '../components/ChipInput'
@@ -147,6 +148,15 @@ export default function RecipesPage() {
   return (
     <div className="mx-auto w-full max-w-md px-[var(--space-md)] pt-[var(--space-lg)]">
       <h1 className="text-2xl font-bold">{ja.recipes.title}</h1>
+
+      {recipes && isNearFreeLimit(countFreeLimitRecipes(recipes), !!settings?.proCode) && (
+        <p className="mt-[var(--space-sm)] rounded-sm bg-surface px-3 py-2 text-sm text-ink-muted">
+          {ja.recipes.freeLimitNearBanner.replace(
+            '{n}',
+            String(FREE_LIMIT - countFreeLimitRecipes(recipes)),
+          )}
+        </p>
+      )}
 
       {/* 検索バー＋絞り込みボタン */}
       <div className="mt-[var(--space-md)] flex gap-[var(--space-sm)]">
