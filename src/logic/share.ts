@@ -21,6 +21,7 @@ export function buildShareText(recipe: Recipe): string {
     .replace('{ingredients}', ingredients + more)
     .replace('{steps}', String(recipe.steps.length))
     .replace('{app}', ja.app.name)
+    .replace('{url}', ja.app.url)
 }
 
 /** テキストを共有（非対応ならクリップボードへコピー）。戻り値は 'shared' | 'copied' */
@@ -153,13 +154,13 @@ export async function generateShareCard(recipe: Recipe): Promise<Blob> {
     ctx.fillText(ja.share.moreIngredients, pad, y)
   }
 
-  // 下部の帯: アプリ名
+  // 下部の帯: アプリ名｜ドメイン
   ctx.fillStyle = accent
   ctx.fillRect(0, height - 96, width, 96)
   ctx.fillStyle = bg
   ctx.font = 'bold 44px system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(ja.app.name, width / 2, height - 34)
+  ctx.fillText(`${ja.app.name}｜${ja.app.url}`, width / 2, height - 34)
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

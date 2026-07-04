@@ -6,6 +6,7 @@
 export const ja = {
   app: {
     name: 'うちレシピ',
+    url: 'uchirecipe.com',
   },
   common: {
     back: '戻る',
@@ -289,7 +290,7 @@ export const ja = {
     generating: '画像を作成中…',
     failed: 'シェアできませんでした',
     moreIngredients: '…ほか',
-    textTemplate: '{title}（{servings}人分）\n\n【材料】\n{ingredients}\n\n作り方は全{steps}ステップ\n#{app}',
+    textTemplate: '{title}（{servings}人分）\n\n【材料】\n{ingredients}\n\n作り方は全{steps}ステップ\n#{app}\nhttps://{url}/',
   },
   form: {
     newTitle: 'レシピを登録',
