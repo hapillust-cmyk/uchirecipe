@@ -65,6 +65,16 @@ class UchiRecipeDB extends Dexie {
       mealPlans: '++id, date, [date+slot]',
       todayList: '++id, recipeId, addedAt',
     })
+    // バージョン8: recipesにsourceSetIdの索引を追加
+    // （配布セット=テーマ由来のレシピをテーマ単位でまとめて検索・削除する機能のため。既存データはそのまま引き継がれる）
+    this.version(8).stores({
+      recipes: '++id, title, *tags, *searchWords, updatedAt, sourceSetId',
+      settings: 'id',
+      pantryItems: '++id, name',
+      shoppingItems: '++id, order',
+      mealPlans: '++id, date, [date+slot]',
+      todayList: '++id, recipeId, addedAt',
+    })
   }
 }
 

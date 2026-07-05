@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown, Info } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
-import { listRecipes } from '../db/recipes'
+import { listRecipes, deleteRecipesBySourceSet } from '../db/recipes'
 import { reloadStarterRecipes, starterCount } from '../db/starters'
 import {
   downloadBackup,
@@ -13,7 +13,14 @@ import {
   importRecipeSet,
 } from '../logic/backup'
 import { hasNgIngredient } from '../logic/ng'
-import { isValidProCode, normalizeProCode } from '../logic/pro'
+import {
+  isValidProCode,
+  normalizeProCode,
+  isValidPackCode,
+  normalizePackCode,
+  hasPaidRecipeAccess,
+} from '../logic/pro'
+import { fetchThemeManifest, type ThemeManifestEntry } from '../logic/themeManifest'
 import type { HomeWidgetKey, ThemeSetting } from '../db/types'
 import { ja } from '../i18n/ja'
 
@@ -58,12 +65,34 @@ export default function SettingsPage() {
   const [proCodeInput, setProCodeInput] = useState('')
   const [proChecking, setProChecking] = useState(false)
   const [proError, setProError] = useState('')
+  const [packCodeInput, setPackCodeInput] = useState('')
+  const [packChecking, setPackChecking] = useState(false)
+  const [packError, setPackError] = useState('')
+
+  // テーマ一覧（配布物マニフェスト）
+  const [themes, setThemes] = useState<ThemeManifestEntry[]>([])
+  const [themesLoading, setThemesLoading] = useState(true)
+  const [themeBusyId, setThemeBusyId] = useState<string | null>(null)
+  const [addAllBusy, setAddAllBusy] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const list = await fetchThemeManifest()
+      if (!cancelled) {
+        setThemes(list)
+        setThemesLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // 配布ページの「うちレシピに追加する」リンク(#/settings?set=<setId>)からのワンタップ取り込み。
   // 任意URLは受け付けず、同一オリジンの/sets/data/<setId>.jsonだけをfetchする
   useEffect(() => {
     const setId = searchParams.get('set')
-    if (!setId) return
+    if (!setId || !settings) return
     const clearParam = () => {
       setSearchParams(
         (prev) => {
@@ -83,6 +112,10 @@ export default function SettingsPage() {
       try {
         const file = await fetchRecipeSet(`/sets/data/${setId}.json`)
         if (cancelled) return
+        if (file.setId && !hasPaidRecipeAccess(settings)) {
+          setMessage(ja.settings.recipeSetBlocked)
+          return
+        }
         const confirmText = ja.settings.recipeSetDeepLinkConfirm
           .replace('{name}', file.setName ?? setId)
           .replace('{n}', String(file.recipes.length))
@@ -103,7 +136,7 @@ export default function SettingsPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, settings])
 
   // Pro版の紹介リンク(例: /settings?section=pro)から開いたとき、Pro版セクションまで自動スクロール。
   // settings読み込み前はコンポーネントがnullを返す(下記)ため#pro-sectionがまだ無く、
@@ -168,6 +201,10 @@ export default function SettingsPage() {
     setRecipeSetLoading(true)
     try {
       const file = await fetchRecipeSet(url)
+      if (file.setId && !hasPaidRecipeAccess(settings)) {
+        setMessage(ja.settings.recipeSetBlocked)
+        return
+      }
       showRecipeSetResult(await importRecipeSet(file))
       setRecipeSetUrl('')
     } catch {
@@ -182,6 +219,10 @@ export default function SettingsPage() {
     setRecipeSetLoading(true)
     try {
       const parsed = parseBackup(await file.text())
+      if (parsed.setId && !hasPaidRecipeAccess(settings)) {
+        setMessage(ja.settings.recipeSetBlocked)
+        return
+      }
       showRecipeSetResult(await importRecipeSet(parsed))
     } catch {
       setMessage(ja.settings.recipeSetError)
@@ -238,6 +279,71 @@ export default function SettingsPage() {
     } finally {
       setProChecking(false)
     }
+  }
+
+  const activatePack = async () => {
+    setPackChecking(true)
+    setPackError('')
+    try {
+      const valid = await isValidPackCode(packCodeInput)
+      if (!valid) {
+        setPackError(ja.settings.packInvalidCode)
+        return
+      }
+      await updateSettings({
+        recipePackCode: normalizePackCode(packCodeInput),
+        recipePackActivatedAt: Date.now(),
+      })
+      setPackCodeInput('')
+    } finally {
+      setPackChecking(false)
+    }
+  }
+
+  // テーマごとの取込済み判定: そのテーマ由来(sourceSetId一致)のレシピが1件でも端末にあるか
+  const importedThemeIds = new Set((recipes ?? []).map((r) => r.sourceSetId).filter(Boolean))
+
+  const addTheme = async (theme: ThemeManifestEntry) => {
+    setThemeBusyId(theme.id)
+    try {
+      const file = await fetchRecipeSet(theme.file)
+      showRecipeSetResult(await importRecipeSet(file))
+    } catch {
+      setMessage(ja.settings.recipeSetError)
+    } finally {
+      setThemeBusyId(null)
+    }
+  }
+
+  const addAllThemes = async () => {
+    const targets = themes.filter((t) => !importedThemeIds.has(t.id))
+    if (targets.length === 0) {
+      setMessage(ja.settings.themeAddAllNone)
+      return
+    }
+    setAddAllBusy(true)
+    try {
+      let added = 0
+      for (const theme of targets) {
+        try {
+          const file = await fetchRecipeSet(theme.file)
+          const result = await importRecipeSet(file)
+          added += result.added
+        } catch {
+          // 1テーマの失敗で全体を止めない。次のテーマへ続行する
+        }
+      }
+      setMessage(ja.settings.themeAddAllResult.replace('{n}', String(added)))
+    } finally {
+      setAddAllBusy(false)
+    }
+  }
+
+  const deleteTheme = async (theme: ThemeManifestEntry) => {
+    const confirmText = ja.settings.themeDeleteConfirm.replace('{name}', theme.title)
+    if (!window.confirm(confirmText)) return
+    const count = await deleteRecipesBySourceSet(theme.id)
+    setMessage(ja.settings.themeDeleteDone.replace('{name}', theme.title).replace('{n}', String(count)))
   }
 
   const homeWidgets = settings.homeWidgets
@@ -667,6 +773,110 @@ export default function SettingsPage() {
             </div>
             {proError && <p className="mt-1 text-sm font-bold text-warning">{proError}</p>}
           </>
+        )}
+      </section>
+
+      {/* 追加レシピパック */}
+      <section className={sectionCls}>
+        <h2 className="font-bold">{ja.settings.packTitle}</h2>
+        {settings.recipePackCode ? (
+          <>
+            <p className="mt-1 text-sm font-bold text-accent">{ja.settings.packActivatedTitle}</p>
+            {settings.recipePackActivatedAt && (
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {ja.settings.packActivatedDate.replace(
+                  '{date}',
+                  formatDate(settings.recipePackActivatedAt),
+                )}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-ink-muted">{ja.settings.packDescription}</p>
+            <div className="mt-[var(--space-sm)] flex gap-[var(--space-sm)]">
+              <input
+                type="text"
+                value={packCodeInput}
+                onChange={(e) => {
+                  setPackCodeInput(e.target.value)
+                  setPackError('')
+                }}
+                placeholder={ja.settings.packCodePlaceholder}
+                className="min-w-0 flex-1 rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+              />
+              <button
+                type="button"
+                onClick={() => void activatePack()}
+                disabled={packChecking || !packCodeInput.trim()}
+                className="inline-flex shrink-0 items-center rounded-sm bg-accent px-4 font-bold text-app disabled:opacity-40"
+              >
+                {packChecking ? ja.settings.packActivating : ja.settings.packActivate}
+              </button>
+            </div>
+            {packError && <p className="mt-1 text-sm font-bold text-warning">{packError}</p>}
+          </>
+        )}
+      </section>
+
+      {/* テーマ一覧: 追加レシピパック/Pro解錠者が、興味のあるテーマだけ選んで取り込める */}
+      <section className={sectionCls}>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold">{ja.settings.themeListTitle}</h2>
+          {hasPaidRecipeAccess(settings) && themes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void addAllThemes()}
+              disabled={addAllBusy}
+              className="shrink-0 rounded-sm border border-edge bg-surface px-3 py-1.5 text-sm font-bold text-accent shadow-sm disabled:opacity-40"
+            >
+              {ja.settings.themeAddAll}
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-ink-muted">{ja.settings.themeListDescription}</p>
+        {themesLoading ? (
+          <p className="mt-[var(--space-sm)] text-sm text-ink-muted">{ja.settings.themeListLoading}</p>
+        ) : themes.length === 0 ? (
+          <p className="mt-[var(--space-sm)] text-sm text-ink-muted">{ja.settings.themeListEmpty}</p>
+        ) : (
+          <ul className="mt-[var(--space-sm)] space-y-[var(--space-sm)]">
+            {themes.map((theme) => {
+              const imported = importedThemeIds.has(theme.id)
+              return (
+                <li
+                  key={theme.id}
+                  className="rounded-md border border-edge p-[var(--space-sm)]"
+                >
+                  <p className="font-bold">{theme.title}</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">{theme.description}</p>
+                  <div className="mt-[var(--space-sm)]">
+                    {imported ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-accent">{ja.settings.themeAdded}</span>
+                        <button
+                          type="button"
+                          onClick={() => void deleteTheme(theme)}
+                          className="text-sm font-bold text-warning underline"
+                        >
+                          {ja.settings.themeDelete}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void addTheme(theme)}
+                        disabled={!hasPaidRecipeAccess(settings) || themeBusyId === theme.id}
+                        className="w-full rounded-sm border border-edge bg-surface py-2 text-sm font-bold text-accent shadow-sm disabled:opacity-40"
+                      >
+                        {ja.settings.themeAdd}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
       </section>
 

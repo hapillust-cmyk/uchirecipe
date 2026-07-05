@@ -60,6 +60,18 @@ export async function deleteRecipe(id: number): Promise<void> {
 }
 
 /**
+ * 配布レシピ（テーマ/セット）由来のレシピをまとめて削除し、削除件数を返す。
+ * 今日の献立・週間/月間プランナーはrecipeIdで参照するだけなので、
+ * 単品削除(deleteRecipe)と同じくここでは追加の後始末は不要
+ * （読み出し側が「該当レシピが見つからない」を無視して除外する既存の作りに委ねる）。
+ */
+export async function deleteRecipesBySourceSet(setId: string): Promise<number> {
+  const ids = await db.recipes.where('sourceSetId').equals(setId).primaryKeys()
+  await db.recipes.bulkDelete(ids)
+  return ids.length
+}
+
+/**
  * 食材名の読み仮名辞書（表記ゆれ対策）が更新されていたら、
  * 全レシピのsearchWordsを作り直す（保存済みsearchWordsは古い変換のまま
  * 残ってしまうため）。updatedAtは変えない（一覧の並び順を崩さないため）。

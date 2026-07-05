@@ -1,0 +1,11 @@
+{
+  "themes": [
+    {
+      "id": "kintore",
+      "file": "/sets/data/kintore.json",
+      "title": "筋トレ・高たんぱくセット",
+      "description": "高たんぱく・低脂質を意識した定番10品",
+      "addedDate": "2026-07-04"
+    }
+  ]
+}
