@@ -104,6 +104,9 @@ export default function RecipeDetailPage() {
   const [focusOpen, setFocusOpen] = useState(false)
   const [focusStep, setFocusStep] = useState(0)
 
+  // 時短モード（レンジ活用など、通常より手早い代替手順がある料理だけ切り替えを表示。表示中だけの一時的な選択）
+  const [quickMode, setQuickMode] = useState(false)
+
   if (recipe === undefined) {
     // 読み込み中(undefined)は何も出さない。id が存在しない場合は下の分岐へ
     return null
@@ -177,6 +180,18 @@ export default function RecipeDetailPage() {
 
   const showPhoto = photoUrl && !recipe.showIconInsteadOfPhoto
 
+  // 時短版の手順があるレシピだけ切り替えを表示する
+  const hasQuickVariant = (recipe.quickSteps?.length ?? 0) > 0
+  const useQuick = quickMode && hasQuickVariant
+  const displaySteps = useQuick ? recipe.quickSteps! : recipe.steps
+  const displayCookMinutes = useQuick
+    ? recipe.quickCookMinutes ?? recipe.cookMinutes
+    : recipe.cookMinutes
+  // フォーカスモードには手順・時間だけ差し替えたレシピを渡す(FocusMode側の変更は不要)
+  const focusRecipe = useQuick
+    ? { ...recipe, steps: recipe.quickSteps!, cookMinutes: displayCookMinutes }
+    : recipe
+
   return (
     <div className={`mx-auto w-full max-w-md ${timers.length > 0 ? 'pb-48' : 'pb-[var(--space-lg)]'}`}>
       <BackHeader
@@ -219,10 +234,10 @@ export default function RecipeDetailPage() {
 
         {/* 時間・手間・概算価格 */}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-muted">
-          {recipe.cookMinutes != null && recipe.cookMinutes > 0 && (
+          {displayCookMinutes != null && displayCookMinutes > 0 && (
             <span className="inline-flex items-center gap-1">
               <Clock size={16} aria-hidden />
-              {recipe.cookMinutes}
+              {displayCookMinutes}
               {ja.detail.minutesSuffix}
             </span>
           )}
@@ -367,8 +382,30 @@ export default function RecipeDetailPage() {
               {ja.focus.open}
             </button>
           </div>
+          {hasQuickVariant && (
+            <div className="mt-[var(--space-sm)] inline-flex rounded-sm border border-edge p-0.5">
+              <button
+                type="button"
+                onClick={() => setQuickMode(false)}
+                className={`rounded-sm px-3 py-1 text-sm font-bold ${
+                  !quickMode ? 'bg-accent text-app' : 'text-ink-muted'
+                }`}
+              >
+                {ja.detail.normalMode}
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickMode(true)}
+                className={`rounded-sm px-3 py-1 text-sm font-bold ${
+                  quickMode ? 'bg-accent text-app' : 'text-ink-muted'
+                }`}
+              >
+                {ja.detail.quickMode}
+              </button>
+            </div>
+          )}
           <ol className="mt-[var(--space-sm)] space-y-[var(--space-sm)]">
-            {recipe.steps.map((step, index) => {
+            {displaySteps.map((step, index) => {
               const stepNumber = index + 1
               const isHighlighted = highlightStepIndex === index
               return (
@@ -620,7 +657,7 @@ export default function RecipeDetailPage() {
 
       {focusOpen && (
         <FocusMode
-          recipe={recipe}
+          recipe={focusRecipe}
           recipeId={id}
           initialStep={focusStep}
           onClose={() => setFocusOpen(false)}

@@ -6,6 +6,8 @@ import type { EffortLevel, Recipe } from '../db/types'
 /** 調理時間の絞り込み: すべて / 〜10分 / 〜30分 / 30分超 */
 export type TimeFilter = 'all' | 'under10' | 'under30' | 'over30'
 export type EffortFilter = 'all' | EffortLevel
+/** タグ絞り込み: 'all' またはタグ文字列そのもの（例: '作り置き'） */
+export type TagFilter = 'all' | string
 
 export interface SearchOptions {
   /** 料理名・材料名・タグのテキスト検索 */
@@ -14,6 +16,7 @@ export interface SearchOptions {
   ingredients: string
   time: TimeFilter
   effort: EffortFilter
+  tag: TagFilter
   favoriteOnly: boolean
   /** NG食材を含むレシピを結果から隠す */
   excludeNg: boolean
@@ -25,6 +28,7 @@ export const defaultSearchOptions: Omit<SearchOptions, 'ngIngredients'> = {
   ingredients: '',
   time: 'all',
   effort: 'all',
+  tag: 'all',
   favoriteOnly: false,
   excludeNg: false,
 }
@@ -71,6 +75,7 @@ export function searchRecipes(recipes: Recipe[], options: SearchOptions): Search
     if (!matchesQuery(recipe, queryTerms)) continue
     if (!matchesTime(recipe, options.time)) continue
     if (options.effort !== 'all' && recipe.effortLevel !== options.effort) continue
+    if (options.tag !== 'all' && !recipe.tags.includes(options.tag)) continue
     if (options.favoriteOnly && !recipe.isFavorite) continue
     if (options.excludeNg && hasNgIngredient(recipe, options.ngIngredients)) continue
 

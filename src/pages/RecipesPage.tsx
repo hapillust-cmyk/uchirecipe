@@ -10,6 +10,7 @@ import { pantryAvailableNames } from '../logic/pantry'
 import {
   searchRecipes,
   type EffortFilter,
+  type TagFilter,
   type TimeFilter,
 } from '../logic/search'
 import { sortResults, type RecipeSortOption } from '../logic/recipeSort'
@@ -31,6 +32,14 @@ const effortOptions: { value: EffortFilter; label: string }[] = [
   { value: 'easy', label: ja.effort.easy },
   { value: 'normal', label: ja.effort.normal },
   { value: 'fancy', label: ja.effort.fancy },
+]
+
+/** よく使う用途タグの絞り込み。タグは自由入力だが、ここでは既存レシピで使用実績のある少数だけをチップ化する */
+const tagOptions: { value: TagFilter; label: string }[] = [
+  { value: 'all', label: ja.search.tagAll },
+  { value: '作り置き', label: '作り置き' },
+  { value: 'お弁当', label: 'お弁当' },
+  { value: '時短', label: '時短' },
 ]
 
 const sortOptions: { value: RecipeSortOption; label: string }[] = [
@@ -73,6 +82,7 @@ export default function RecipesPage() {
   }, [query, ingredients])
   const [time, setTime] = useState<TimeFilter>('all')
   const [effort, setEffort] = useState<EffortFilter>('all')
+  const [tag, setTag] = useState<TagFilter>('all')
   const [favoriteOnly, setFavoriteOnly] = useState(false)
   const [excludeNg, setExcludeNg] = useState(false)
   const [sort, setSort] = useState<RecipeSortOption>('updated')
@@ -99,6 +109,7 @@ export default function RecipesPage() {
       ingredients: ingredients.join(' '),
       time,
       effort,
+      tag,
       favoriteOnly,
       excludeNg,
       ngIngredients: ngIngredients ?? [],
@@ -111,6 +122,7 @@ export default function RecipesPage() {
     ingredients,
     time,
     effort,
+    tag,
     favoriteOnly,
     excludeNg,
     ngIngredients,
@@ -123,6 +135,7 @@ export default function RecipesPage() {
     ingredients.length > 0 ||
     time !== 'all' ||
     effort !== 'all' ||
+    tag !== 'all' ||
     favoriteOnly ||
     excludeNg ||
     sort !== 'updated'
@@ -132,6 +145,7 @@ export default function RecipesPage() {
     setIngredients([])
     setTime('all')
     setEffort('all')
+    setTag('all')
     setFavoriteOnly(false)
     setExcludeNg(false)
     setSort('updated')
@@ -260,6 +274,23 @@ export default function RecipesPage() {
                 type="button"
                 onClick={() => setEffort(option.value)}
                 className={chipCls(effort === option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* よく使うタグ */}
+          <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">
+            {ja.search.tagTitle}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+            {tagOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTag(option.value)}
+                className={chipCls(tag === option.value)}
               >
                 {option.label}
               </button>

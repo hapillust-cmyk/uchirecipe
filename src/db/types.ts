@@ -66,6 +66,13 @@ export interface Recipe {
   tags: string[]
   ingredients: Ingredient[]
   steps: Step[]
+  /**
+   * 時短版の手順（任意。レンジ活用など、通常より手早く作る代替手順）。
+   * ある場合のみ詳細画面に「通常/時短」の切り替えを表示する
+   */
+  quickSteps?: Step[]
+  /** 時短版の合計時間（任意。未指定なら通常の cookMinutes を流用表示） */
+  quickCookMinutes?: number
   sourceUrl?: string
   memo?: string
   isFavorite: boolean
@@ -233,6 +240,8 @@ export type RecipeInput = Pick<
   | 'tags'
   | 'ingredients'
   | 'steps'
+  | 'quickSteps'
+  | 'quickCookMinutes'
   | 'sourceUrl'
   | 'memo'
   | 'iconKey'
