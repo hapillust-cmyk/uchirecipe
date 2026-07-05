@@ -120,11 +120,22 @@ export const starterDefs: StarterDef[] = [
       s('タレを回し入れ、照りが出るまで1分ほど絡める', 1),
       s('せん切りキャベツを添えて盛り付ける'),
     ],
+    quickSteps: [
+      s('しょうがをすりおろし、しょうゆ・みりん・酒と合わせてタレを作る'),
+      s('耐熱皿に薄切り玉ねぎを敷き、豚肉を広げてタレをかける'),
+      s(
+        'ふんわりラップをかけて電子レンジ600Wで4分加熱する',
+        4,
+        '肉に赤い部分が残っていたら1分ずつ追加加熱すること。',
+      ),
+      s('全体を軽く混ぜ、せん切りキャベツを添えて盛り付ける'),
+    ],
+    quickCookMinutes: 8,
   },
   {
     title: 'ツナキャベツ丼',
     servings: 1, cookMinutes: 8, effortLevel: 'easy',
-    tags: ['和食', 'ご飯もの', '時短'],
+    tags: ['和食', 'ご飯もの'],
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -141,7 +152,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: '野菜炒め',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
-    tags: ['中華', '時短'],
+    tags: ['中華'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -281,7 +292,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: 'ペペロンチーノ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
-    tags: ['洋食', '麺', '時短'],
+    tags: ['洋食', '麺'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -355,7 +366,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: 'チャーハン',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
-    tags: ['中華', 'ご飯もの', '時短'],
+    tags: ['中華', 'ご飯もの'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -374,7 +385,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: 'ソース焼きそば',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
-    tags: ['中華', '麺', '時短'],
+    tags: ['中華', '麺'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -403,7 +414,11 @@ export const starterDefs: StarterDef[] = [
       i('塩こしょう', '少々'),
     ],
     steps: [
-      s('じゃがいもは皮をむいて切り、柔らかくなるまで12分ゆでる', 12),
+      s(
+        'じゃがいもは皮をむいて切り、柔らかくなるまで12分ゆでる',
+        12,
+        '耐熱皿に並べてふんわりラップをかけ、電子レンジ600Wで5分ほど加熱してもやわらかくなる（茹でるより時短）。',
+      ),
       s('湯を切って粉ふきにし、熱いうちにつぶして酢と塩こしょうを混ぜる'),
       s('薄切りにして塩もみしたきゅうり、ゆでたにんじん、ハムを加える'),
       s('粗熱が取れてからマヨネーズで和える'),
@@ -444,6 +459,17 @@ export const starterDefs: StarterDef[] = [
       s('さばを皮を上にして入れ、落としぶたをして中火で10分煮る', 10),
       s('煮汁で味噌を溶いて加え、とろみが付くまで5分煮からめる', 5),
     ],
+    quickSteps: [
+      s('さばの皮に十字の切り込みを入れ、熱湯をかけて臭みを抜く'),
+      s('耐熱皿にさばを皮を上にして並べ、味噌・砂糖・酒・みりん・水・薄切りしょうがを混ぜたたれをかける'),
+      s(
+        'ふんわりラップをかけて電子レンジ600Wで6分加熱する',
+        6,
+        '中心まで火が通り身がふっくらするまで。生っぽければ1分ずつ追加加熱すること。',
+      ),
+      s('皿に残ったたれをスプーンでかけて仕上げる'),
+    ],
+    quickCookMinutes: 12,
     memo: '味噌を2回に分けて入れると香りとコクの両方が生きる。生の魚にふれたまな板・包丁・手は、ほかの食材にさわる前に洗うこと。',
   },
   {
@@ -459,7 +485,11 @@ export const starterDefs: StarterDef[] = [
     ],
     steps: [
       s('具材を一口大に切る。ブロッコリーは別に2分塩ゆでしておく', 2),
-      s('鍋で鶏肉と野菜を炒め、水を加えて中火で15分煮る', 15),
+      s(
+        '鍋で鶏肉と野菜を炒め、水を加えて中火で15分煮る',
+        15,
+        'じゃがいも・にんじん・玉ねぎを先に耐熱皿でレンジ600Wを5分ほど加熱してから鍋に加えると、野菜がやわらかくなる時間を短縮できる。ただし鶏肉に火が通るまでは鍋での加熱を続けること（野菜の時短分だけで煮込み全体を短くしない）。',
+      ),
       s('火を止めてルーを溶かし、牛乳を加えて弱火で5分とろみを付ける', 5),
       s('仕上げにブロッコリーを加えてさっと混ぜる'),
     ],

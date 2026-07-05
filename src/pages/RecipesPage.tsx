@@ -34,12 +34,14 @@ const effortOptions: { value: EffortFilter; label: string }[] = [
   { value: 'fancy', label: ja.effort.fancy },
 ]
 
-/** よく使う用途タグの絞り込み。タグは自由入力だが、ここでは既存レシピで使用実績のある少数だけをチップ化する */
+/**
+ * よく使う用途タグの絞り込み。タグは自由入力だが、ここでは既存レシピで使用実績のある少数だけをチップ化する。
+ * 「時短」タグは調理時間の絞り込みと役割が重なり内容も薄くなるため廃止した（2026-07-05）
+ */
 const tagOptions: { value: TagFilter; label: string }[] = [
   { value: 'all', label: ja.search.tagAll },
   { value: '作り置き', label: '作り置き' },
   { value: 'お弁当', label: 'お弁当' },
-  { value: '時短', label: '時短' },
 ]
 
 const sortOptions: { value: RecipeSortOption; label: string }[] = [
