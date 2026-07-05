@@ -32,6 +32,7 @@ import { useTimers } from '../components/TimerProvider'
 import { useWakeLock } from '../components/useWakeLock'
 import BackHeader from '../components/BackHeader'
 import FocusMode from '../components/FocusMode'
+import NutritionTeaser from '../components/NutritionTeaser'
 import { RecipePlaceholder, seasonIcons } from '../components/RecipeCard'
 import StepBadge from '../components/StepBadge'
 import TimeText from '../components/TimeText'
@@ -346,6 +347,9 @@ export default function RecipeDetailPage() {
             })}
           </ul>
         </section>
+
+        {/* 栄養価のめやす（M6-1）: 公開前はティーザー、公開後は未解錠ゲート/実表示(③Opus担当) */}
+        <NutritionTeaser isPro={!!settings?.proCode} />
 
         {/* 手順 */}
         <section className="mt-[var(--space-lg)]">

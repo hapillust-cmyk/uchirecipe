@@ -23,3 +23,6 @@ dev-dist
 *.njsproj
 *.sln
 *.sw?
+
+# 栄養価概算の元データ(文科省公式Excel、build-nutrition.mjsが自動DLするキャッシュ)
+scripts/data/*.xlsx

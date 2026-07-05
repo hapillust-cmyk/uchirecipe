@@ -18,7 +18,8 @@ const s = (text: string, minutes?: number, memo?: string) => ({
   ...(memo ? { memo } : {}),
 })
 
-const starterDefs: StarterDef[] = [
+// exportは栄養価概算の回帰スモークテスト(scripts/test-nutrition.mjs)が原稿を読むため（アプリ動作は不変）
+export const starterDefs: StarterDef[] = [
   {
     title: '肉じゃが',
     servings: 2, cookMinutes: 35, effortLevel: 'normal',

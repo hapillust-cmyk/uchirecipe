@@ -470,6 +470,19 @@ export const ja = {
     micHint: '声で操作:「次へ」「戻って」「もう一回」「タイマー」「ストップ」',
     micListening: '聞いています…',
   },
+  nutrition: {
+    // 栄養価のめやす(M6-1)のティーザー(公開前)・Proゲート(公開後の未解錠)文言。
+    // トーンは既存のPro案内(月間献立・並行調理ナビのゲート)と同じ控えめ路線を保つこと
+    title: '栄養価のめやす',
+    proBadge: 'Pro',
+    comingSoonBadge: '近日公開',
+    teaserDescription:
+      '材料からエネルギー・たんぱく質などのめやすを自動計算する機能を準備中です。Pro版の機能として公開予定です。',
+    gateTitle: '栄養価のめやすはPro版の機能です',
+    gateDescription:
+      '材料からエネルギー・たんぱく質・脂質・炭水化物・塩分のめやすを自動で計算します（あくまで概算です）。',
+    gateLink: 'Pro版について見る',
+  },
   timer: {
     start: 'タイマー開始',
     done: '終わり',
