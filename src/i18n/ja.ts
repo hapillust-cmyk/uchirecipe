@@ -171,6 +171,7 @@ export const ja = {
     rebuild: 'レシピを選び直す',
     totalEstimate: '全体の目安 約{n}分',
     totalNote: '手作業のおおよその時間も含んだ目安です。実際の火加減で前後します。',
+    orderNote: '番号は手を付ける順番の目安です。待ち時間の間は、次の番号の作業と並行して進みます。',
     legendTitle: '組み合わせる{n}品',
     kindWait: '待ち',
     kindActive: '手を動かす',

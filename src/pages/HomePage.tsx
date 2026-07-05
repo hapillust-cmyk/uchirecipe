@@ -374,12 +374,8 @@ export default function HomePage() {
             <p className="font-bold text-ink">{latestNews.title}</p>
             <p className="text-ink-muted">{latestNews.body}</p>
             {latestNews.link && (
-              <a
-                href={latestNews.link}
-                target="_blank"
-                rel="noopener"
-                className="font-bold text-accent underline"
-              >
+              // アプリ内のリンク(#/…)も外部リンクも同じタブで開く(PWAとしては別タブより自然)
+              <a href={latestNews.link} className="font-bold text-accent underline">
                 {ja.home.newsLinkLabel}
               </a>
             )}

@@ -110,7 +110,7 @@ export default function CookNaviPage() {
   const isPro = !!settings?.proCode
   const recipes = useLiveQuery(listRecipes, [])
   const todayList = useTodayList()
-  const { startTimer } = useTimers()
+  const { startTimer, timers } = useTimers()
 
   const recipeById = useMemo(() => {
     const map = new Map<number, Recipe>()
@@ -173,7 +173,7 @@ export default function CookNaviPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md pb-[var(--space-lg)]">
+    <div className={`mx-auto w-full max-w-md ${timers.length > 0 ? 'pb-48' : 'pb-[var(--space-lg)]'}`}>
       <BackHeader fallback="/meal-plan" title={ja.cookNavi.title} />
       <div className="px-[var(--space-md)]">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
@@ -188,7 +188,7 @@ export default function CookNaviPage() {
             <p className="mt-[var(--space-sm)] font-bold">{ja.cookNavi.gateTitle}</p>
             <p className="mt-1 text-sm text-ink-muted">{ja.cookNavi.gateDescription}</p>
             <Link
-              to="/settings"
+              to="/settings?section=pro"
               className="mt-[var(--space-sm)] inline-block text-sm font-bold text-accent underline"
             >
               {ja.cookNavi.gateLink}
@@ -300,6 +300,7 @@ export default function CookNaviPage() {
                         {ja.cookNavi.totalEstimate.replace('{n}', String(timeline.totalMinutes))}
                       </p>
                       <p className="mt-1 text-xs text-ink-muted">{ja.cookNavi.totalNote}</p>
+                      <p className="mt-1 text-xs text-ink-muted">{ja.cookNavi.orderNote}</p>
                     </div>
 
                     <ol className="mt-[var(--space-md)] space-y-[var(--space-sm)]">

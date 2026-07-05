@@ -105,6 +105,18 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  // Pro版の紹介リンク(例: /settings?section=pro)から開いたとき、Pro版セクションまで自動スクロール。
+  // settings読み込み前はコンポーネントがnullを返す(下記)ため#pro-sectionがまだ無く、
+  // settingsが揃ってから改めて試す必要がある(1回だけ実行するようscrolledRefで防ぐ)
+  const scrolledToProRef = useRef(false)
+  useEffect(() => {
+    if (scrolledToProRef.current) return
+    if (searchParams.get('section') !== 'pro') return
+    if (!settings) return
+    scrolledToProRef.current = true
+    document.getElementById('pro-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [searchParams, settings])
+
   if (!settings) return null // 読み込み中
 
   /** 現在の入力欄の文字が今の時点で何件のレシピに一致するか（登録前のその場プレビュー） */
@@ -619,7 +631,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Pro版 */}
-      <section className={sectionCls}>
+      <section id="pro-section" className={sectionCls}>
         <h2 className="font-bold">{ja.settings.proTitle}</h2>
         {settings.proCode ? (
           <>

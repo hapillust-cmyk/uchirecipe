@@ -465,7 +465,7 @@ export default function MealPlanPage() {
             <p className="mt-[var(--space-sm)] font-bold">{ja.mealPlan.monthProGateTitle}</p>
             <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.monthProGateDescription}</p>
             <Link
-              to="/settings"
+              to="/settings?section=pro"
               className="mt-[var(--space-sm)] inline-block text-sm font-bold text-accent underline"
             >
               {ja.mealPlan.monthProGateLink}
