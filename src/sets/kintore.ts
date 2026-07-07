@@ -198,7 +198,7 @@ export const recipes: SetRecipeDef[] = [
   {
     title: 'エビとブロッコリーの卵炒め',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
-    tags: ['高たんぱく', '中華', '時短'],
+    tags: ['高たんぱく', '中華'],
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('むきえび', '100', 'g'), i('ブロッコリー', '1/2', '株'), i('卵', '2', '個'),

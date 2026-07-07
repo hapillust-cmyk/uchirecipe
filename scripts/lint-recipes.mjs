@@ -1,0 +1,151 @@
+// レシピ原稿の機械チェック(記法ルールR1〜R7・カタログ全体の整合性)。
+// 人間・QAが見るべきもの(味の妥当性・D-④の解釈)は対象外、機械で潰せるものだけを見る。
+// 実行: npx tsx scripts/lint-recipes.mjs
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import { readdirSync } from 'node:fs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// タグのホワイトリスト(2026-07-06時点の実使用タグから作成。増やす場合はここに追記する)
+const TAG_WHITELIST = new Set([
+  '和食', '洋食', '中華', 'おやつ',
+  '高たんぱく', '作り置き', 'お弁当', '定番',
+  '汁物', '麺', 'ご飯もの', 'サラダ', '煮物', '鍋', '魚',
+])
+
+const WEIGHT_VOLUME_UNITS = new Set(['g', 'ml', 'cc'])
+
+/** @typedef {{name:string, amount:string, unit:string, memo?:string, seasoningGroup?:number}} Ingredient */
+/** @typedef {{text:string, minutes?:number, memo?:string}} Step */
+/** @typedef {{title:string, servings:number, cookMinutes?:number, tags:string[], ingredients:Ingredient[], steps:Step[], quickSteps?:Step[], memo?:string}} RecipeLike */
+
+/** @type {{source: string, recipe: RecipeLike}[]} */
+const entries = []
+
+// 基本レシピ21品
+const startersMod = await import('../src/db/starters.ts')
+for (const r of startersMod.starterDefs) {
+  entries.push({ source: 'starters.ts', recipe: r })
+}
+
+// 配布セット(src/sets/*.ts を全部読む。新しいセットを追加してもここは自動で拾う)
+const setsDir = path.join(__dirname, '..', 'src', 'sets')
+for (const file of readdirSync(setsDir).sort()) {
+  if (!file.endsWith('.ts')) continue
+  const mod = await import(`../src/sets/${file}`)
+  for (const r of mod.recipes) {
+    entries.push({ source: `sets/${file}`, recipe: r })
+  }
+}
+
+const findings = []
+const add = (severity, rule, source, title, detail) => {
+  findings.push({ severity, rule, source, title, detail })
+}
+
+// --- 1. 混合分数の禁止(「1と1/2」のような表記) ---
+const mixedFractionRe = /\d+\s*と\s*\d+\s*\/\s*\d+/
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients) {
+    if (mixedFractionRe.test(ing.amount)) {
+      add('高', '混合分数', source, recipe.title, `材料「${ing.name}」の分量「${ing.amount}」が混合分数`)
+    }
+  }
+  for (const st of [...recipe.steps, ...(recipe.quickSteps ?? [])]) {
+    if (mixedFractionRe.test(st.text)) {
+      add('高', '混合分数', source, recipe.title, `手順文に混合分数表記の疑い: 「${st.text}」`)
+    }
+  }
+}
+
+// --- 2. タグのホワイトリスト外 ---
+for (const { source, recipe } of entries) {
+  for (const tag of recipe.tags) {
+    if (!TAG_WHITELIST.has(tag)) {
+      add('中', 'タグ逸脱', source, recipe.title, `ホワイトリストに無いタグ「${tag}」`)
+    }
+  }
+}
+
+// --- 3. 料理名の全カタログ重複 ---
+const titleMap = new Map()
+for (const { source, recipe } of entries) {
+  const key = recipe.title
+  if (!titleMap.has(key)) titleMap.set(key, [])
+  titleMap.get(key).push(source)
+}
+for (const [title, sources] of titleMap) {
+  if (sources.length > 1) {
+    add('高', '料理名重複', sources.join(' / '), title, `「${title}」がカタログ内に${sources.length}件`)
+  }
+}
+
+// --- 4. cookMinutesが5の倍数でない ---
+for (const { source, recipe } of entries) {
+  if (recipe.cookMinutes !== undefined && recipe.cookMinutes % 5 !== 0) {
+    add('低', 'cookMinutes丸め', source, recipe.title, `cookMinutes=${recipe.cookMinutes}が5の倍数でない`)
+  }
+}
+
+// --- 5. g/ml/cc表記が1未満(数値化されている場合のみ。「少々」等の非数値はスケール対象外なので除外) ---
+const numericAmountRe = /^\d+(\.\d+)?$/
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients) {
+    if (WEIGHT_VOLUME_UNITS.has(ing.unit) && numericAmountRe.test(ing.amount)) {
+      const value = Number.parseFloat(ing.amount)
+      if (value > 0 && value < 1) {
+        add(
+          '中',
+          'g表記1g未満',
+          source,
+          recipe.title,
+          `材料「${ing.name}」が${ing.amount}${ing.unit}(落とし穴3: 最小値フロアで丸め後の表示が意図と食い違う恐れ)`,
+        )
+      }
+    }
+  }
+}
+
+// --- 6. unit欄に数字が紛れている(本来グラム目安等はmemoに書くべきものが単位欄に入っている実バグパターン) ---
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients) {
+    if (ing.unit && /\d/.test(ing.unit)) {
+      add('高', '単位欄に数値', source, recipe.title, `材料「${ing.name}」のunit「${ing.unit}」に数字が含まれる`)
+    }
+  }
+}
+
+// --- 7. 半角/全角括弧の不整合(食材名の短いqualifierは半角、memo文中の説明は全角、が既存の慣習) ---
+// memo文中で開き括弧と閉じ括弧の半角/全角が食い違っているものだけを機械的に検出する(誤検知を避けるため、
+// 「開始が半角なのに終わりが全角」「開始が全角なのに終わりが半角」の対だけを見る)
+const mismatchedParenRe = /\(([^()（）]*)）|（([^()（）]*)\)/
+function checkParens(source, title, field, text) {
+  if (!text) return
+  if (mismatchedParenRe.test(text)) {
+    add('中', '括弧の半角全角不整合', source, title, `${field}: 「${text}」`)
+  }
+}
+for (const { source, recipe } of entries) {
+  checkParens(source, recipe.title, 'レシピmemo', recipe.memo)
+  for (const ing of recipe.ingredients) checkParens(source, recipe.title, `材料「${ing.name}」memo`, ing.memo)
+  for (const st of [...recipe.steps, ...(recipe.quickSteps ?? [])]) checkParens(source, recipe.title, '手順memo', st.memo)
+}
+
+// --- 出力 ---
+const bySeverity = { 高: [], 中: [], 低: [] }
+for (const f of findings) bySeverity[f.severity].push(f)
+
+console.log(`チェック対象: ${entries.length}品`)
+console.log(`指摘件数: 高${bySeverity['高'].length} / 中${bySeverity['中'].length} / 低${bySeverity['低'].length}`)
+console.log()
+for (const sev of ['高', '中', '低']) {
+  for (const f of bySeverity[sev]) {
+    console.log(`[${f.severity}][${f.rule}] ${f.source} 「${f.title}」: ${f.detail}`)
+  }
+}
+if (findings.length === 0) {
+  console.log('指摘なし。')
+}
+
+process.exit(findings.some((f) => f.severity === '高') ? 1 : 0)

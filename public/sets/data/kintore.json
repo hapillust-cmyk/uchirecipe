@@ -1,7 +1,7 @@
 {
   "app": "uchi-recipe",
   "version": 1,
-  "exportedAt": "2026-07-07T03:28:47.972Z",
+  "exportedAt": "2026-07-07T03:31:07.137Z",
   "setId": "kintore",
   "setName": "筋トレ・高たんぱくセット",
   "setVersion": 1,
@@ -483,8 +483,7 @@
       "effortLevel": "easy",
       "tags": [
         "高たんぱく",
-        "中華",
-        "時短"
+        "中華"
       ],
       "suitableFor": [
         "lunch",
