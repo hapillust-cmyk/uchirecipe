@@ -43,8 +43,8 @@ export const recipes: SetRecipeDef[] = [
     tags: ['高たんぱく', '作り置き'],
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
-      i('鶏むね肉', '1', '枚'), i('塩', '1/2', '小さじ'), i('酒', '1', '大さじ'),
-      i('砂糖', '1/2', '小さじ'),
+      i('鶏むね肉', '1', '枚'), i('塩', '1/2', '小さじ', undefined, 1), i('酒', '1', '大さじ', undefined, 1),
+      i('砂糖', '1/2', '小さじ', undefined, 1),
     ],
     steps: [
       s(
@@ -97,8 +97,8 @@ export const recipes: SetRecipeDef[] = [
     tags: ['高たんぱく', '作り置き', '和食'],
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
-      i('鶏ささみ', '4', '本'), i('ブロッコリー', '1', '株'), i('すりごま', '2', '大さじ'),
-      i('しょうゆ', '1', '大さじ'), i('砂糖', '2', '小さじ'), i('酒', '1', '大さじ'),
+      i('鶏ささみ', '4', '本'), i('ブロッコリー', '1', '株'), i('すりごま', '2', '大さじ', undefined, 1),
+      i('しょうゆ', '1', '大さじ', undefined, 1), i('砂糖', '2', '小さじ', undefined, 1), i('酒', '1', '大さじ'),
     ],
     steps: [
       s(

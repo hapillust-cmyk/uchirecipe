@@ -1,7 +1,7 @@
 {
   "app": "uchi-recipe",
   "version": 1,
-  "exportedAt": "2026-07-07T03:31:07.137Z",
+  "exportedAt": "2026-07-07T13:25:50.806Z",
   "setId": "kintore",
   "setName": "筋トレ・高たんぱくセット",
   "setVersion": 1,
@@ -28,17 +28,20 @@
         {
           "name": "塩",
           "amount": "1/2",
-          "unit": "小さじ"
+          "unit": "小さじ",
+          "seasoningGroup": 1
         },
         {
           "name": "酒",
           "amount": "1",
-          "unit": "大さじ"
+          "unit": "大さじ",
+          "seasoningGroup": 1
         },
         {
           "name": "砂糖",
           "amount": "1/2",
-          "unit": "小さじ"
+          "unit": "小さじ",
+          "seasoningGroup": 1
         }
       ],
       "steps": [
@@ -177,17 +180,20 @@
         {
           "name": "すりごま",
           "amount": "2",
-          "unit": "大さじ"
+          "unit": "大さじ",
+          "seasoningGroup": 1
         },
         {
           "name": "しょうゆ",
           "amount": "1",
-          "unit": "大さじ"
+          "unit": "大さじ",
+          "seasoningGroup": 1
         },
         {
           "name": "砂糖",
           "amount": "2",
-          "unit": "小さじ"
+          "unit": "小さじ",
+          "seasoningGroup": 1
         },
         {
           "name": "酒",
