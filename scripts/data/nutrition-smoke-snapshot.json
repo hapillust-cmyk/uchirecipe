@@ -80,7 +80,9 @@
       "carbG": 65.7,
       "saltG": 3.2
     },
-    "excluded": []
+    "excluded": [
+      "三つ葉(または刻みのり)(food)"
+    ]
   },
   "starter:ハンバーグ": {
     "servings": 2,

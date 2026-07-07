@@ -26,3 +26,7 @@ dev-dist
 
 # 栄養価概算の元データ(文科省公式Excel、build-nutrition.mjsが自動DLするキャッシュ)
 scripts/data/*.xlsx
+
+# レビュー用レシピセット(docs/12原稿からscripts/build-review-pack.mjsが生成する一時物。
+# 本番に混入させないためコミットしない)
+public/sets/data/review.json

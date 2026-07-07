@@ -1,9 +1,10 @@
 // レシピ原稿の機械チェック(記法ルールR1〜R7・カタログ全体の整合性)。
 // 人間・QAが見るべきもの(味の妥当性・D-④の解釈)は対象外、機械で潰せるものだけを見る。
 // 実行: npx tsx scripts/lint-recipes.mjs
+// 対象: starters.ts + src/sets/*.ts + (存在すれば)public/sets/data/review.json(docs/12原稿のレビュー用コピー)
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { readdirSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync } from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -36,6 +37,15 @@ for (const file of readdirSync(setsDir).sort()) {
   const mod = await import(`../src/sets/${file}`)
   for (const r of mod.recipes) {
     entries.push({ source: `sets/${file}`, recipe: r })
+  }
+}
+
+// レビュー用コピー(docs/12原稿から生成される未承認レシピ。あればそれも同じ基準で見る)
+const reviewPath = path.join(__dirname, '..', 'public', 'sets', 'data', 'review.json')
+if (existsSync(reviewPath)) {
+  const reviewFile = JSON.parse(readFileSync(reviewPath, 'utf-8'))
+  for (const r of reviewFile.recipes) {
+    entries.push({ source: 'review.json(docs/12原稿)', recipe: r })
   }
 }
 
@@ -130,6 +140,102 @@ for (const { source, recipe } of entries) {
   checkParens(source, recipe.title, 'レシピmemo', recipe.memo)
   for (const ing of recipe.ingredients) checkParens(source, recipe.title, `材料「${ing.name}」memo`, ing.memo)
   for (const st of [...recipe.steps, ...(recipe.quickSteps ?? [])]) checkParens(source, recipe.title, '手順memo', st.memo)
+}
+
+// --- 8. seasoningGroupの単独使用(1つの色に1材料しか居ない=合わせ調味料の意味を成さない) ---
+for (const { source, recipe } of entries) {
+  const groupCount = new Map()
+  for (const ing of recipe.ingredients) {
+    if (ing.seasoningGroup) {
+      groupCount.set(ing.seasoningGroup, (groupCount.get(ing.seasoningGroup) ?? 0) + 1)
+    }
+  }
+  for (const [group, count] of groupCount) {
+    if (count < 2) {
+      add('高', 'seasoningGroup単独', source, recipe.title, `グループ${group}の材料が${count}件しかない(2件以上でないと色分けの意味が無い)`)
+    }
+  }
+}
+
+// --- 9. 分量・単位欄の全角数字(scaleAmountは正規化するが、原稿は半角が正) ---
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients) {
+    if (/[０-９]/.test(ing.amount) || /[０-９]/.test(ing.unit)) {
+      add('高', '全角数字', source, recipe.title, `材料「${ing.name}」の分量/単位に全角数字: 「${ing.amount}${ing.unit}」`)
+    }
+  }
+}
+
+// --- 10. 「器に盛る」だけの単独手順(添え物・盛り方の説明が無ければ前の手順に統合する方針・2026-07-07ユーザー決定) ---
+for (const { source, recipe } of entries) {
+  for (const st of recipe.steps) {
+    if (st.text.trim() === '器に盛る' && !st.memo) {
+      add('中', '器に盛る単独手順', source, recipe.title, '説明なしの「器に盛る」だけで手順を1つ使っている(前の手順に統合する)')
+    }
+  }
+}
+
+// --- 11. お好みで使う食材が材料欄に無い(memo/手順にだけ書くと買い物段階で気づけない・2026-07-08ユーザー発見) ---
+// 例外: 挙げた食材のどれかが材料欄に既にあれば意図的な運用(オムライスの仕上げケチャップ等)とみなす
+const optionalMentionRe = /お好みで([^。]{1,30}?)を?(?:添え|かけ|振|ふっ|のせ|散ら)/g
+for (const { source, recipe } of entries) {
+  const ingredientNames = recipe.ingredients.map((i) => i.name)
+  const textsToCheck = [recipe.memo ?? '', ...recipe.steps.map((s) => s.text)]
+  for (const text of textsToCheck) {
+    for (const m of text.matchAll(optionalMentionRe)) {
+      const items = m[1].split(/[やと、・]/).map((s) => s.replace(/[()（）\s]/g, '').trim()).filter(Boolean)
+      const anyListed = items.some((item) =>
+        ingredientNames.some((n) => n.includes(item) || item.includes(n.replace(/[（(].*/, ''))),
+      )
+      if (!anyListed && items.length > 0) {
+        add('中', 'お好みで食材の材料欄漏れ', source, recipe.title, `「お好みで${m[1]}〜」が材料欄に無い(買い物・下ごしらえで気づけない)`)
+      }
+    }
+  }
+}
+
+// --- 12. 用語説明の欠落(初心者が知らない用語は、そのレシピ内で意味を説明する・落とし穴6) ---
+// 用語 → そのレシピのどこかに含まれるべき説明の断片
+const TERM_EXPLANATIONS = [
+  [/小口切り/, /端から薄/, '小口切り（端から薄い輪切りにすること）'],
+  [/炒め煮/, /炒めてから調味料/, '炒め煮（炒めてから調味料を加えて煮詰めること）'],
+  [/落と?し(ぶた|蓋)/, /直接のせる/, '落としぶた（鍋の中身に直接のせる小さめのふたやアルミホイル）'],
+  [/含め煮/, /煮物の技法|しみ込ませる煮物/, '含め煮とは〜煮物の技法(レシピmemo)'],
+  [/土佐酢/, /合わせ酢/, '土佐酢とは〜合わせ酢(レシピmemo)'],
+  [/ハリハリ漬け/, /名前の由来/, 'ハリハリ漬けとは〜(レシピmemo)'],
+  [/アク|あくを取/, /泡|えぐみ/, 'アク（煮汁に浮く泡／切り口から出るえぐみ成分）'],
+]
+for (const { source, recipe } of entries) {
+  const usageText = [recipe.title, ...recipe.steps.map((s) => s.text)].join('\n')
+  const allText = [
+    recipe.title,
+    recipe.memo ?? '',
+    ...recipe.steps.flatMap((s) => [s.text, s.memo ?? '']),
+    ...(recipe.quickSteps ?? []).flatMap((s) => [s.text, s.memo ?? '']),
+    ...recipe.ingredients.flatMap((i) => [i.name, i.memo ?? '']),
+  ].join('\n')
+  for (const [termRe, explainRe, example] of TERM_EXPLANATIONS) {
+    if (termRe.test(usageText) && !explainRe.test(allText)) {
+      add('中', '用語説明の欠落', source, recipe.title, `「${usageText.match(termRe)[0]}」の説明が同じレシピ内に無い(例: ${example})`)
+    }
+  }
+}
+
+// --- 13. 「袋の表示時間」とアプリ内固定タイマーの矛盾(袋に従えと言いながら固定分数のタイマーを付けている) ---
+for (const { source, recipe } of entries) {
+  for (const st of [...recipe.steps, ...(recipe.quickSteps ?? [])]) {
+    if (/袋の表示時間/.test(st.text) && st.minutes !== undefined) {
+      add('中', '袋表示とタイマー矛盾', source, recipe.title, `「袋の表示時間を目安に」なのに固定タイマー(${st.minutes}分)が付いている: 「${st.text}」`)
+    }
+  }
+}
+
+// --- 14. グリル使用レシピで両面焼き/片面焼きの機種差に触れていない(2026-07-08ユーザー発見) ---
+for (const { source, recipe } of entries) {
+  const allStepText = recipe.steps.map((s) => `${s.text} ${s.memo ?? ''}`).join('\n')
+  if (/グリル/.test(allStepText) && /裏返/.test(allStepText) && !/両面焼き/.test(allStepText)) {
+    add('低', 'グリル機種差', source, recipe.title, 'グリルで裏返す手順があるが、両面焼きグリル(裏返し不要)への言及が無い')
+  }
 }
 
 // --- 出力 ---
