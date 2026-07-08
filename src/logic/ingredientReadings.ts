@@ -12,7 +12,7 @@
  * 辞書を追記・変更したら必ず READINGS_VERSION を +1 すること
  * （既存レシピのsearchWordsを再構築するトリガーに使われている。src/logic/kana.ts参照）。
  */
-export const READINGS_VERSION = 1
+export const READINGS_VERSION = 2 // v2: 「酒→さけ」を削除(鮭との衝突対策)+調味料を検索語から除外する変更の反映
 
 export const INGREDIENT_READINGS: Record<string, string> = {
   // 野菜
@@ -105,7 +105,9 @@ export const INGREDIENT_READINGS: Record<string, string> = {
   塩: 'しお',
   塩こしょう: 'しおこしょう',
   胡椒: 'こしょう',
-  酒: 'さけ',
+  // 「酒: さけ」は登録しない: 魚の「鮭(さけ)」と同じキーに収束してしまい、
+  // 鮭の検索で酒を使うレシピが誤ヒットするため(2026-07-09 ペルソナテスト第1波)。
+  // 調味料の酒は「酒」の表記のまま検索できる
   料理酒: 'りょうりしゅ',
   日本酒: 'にほんしゅ',
   片栗粉: 'かたくりこ',

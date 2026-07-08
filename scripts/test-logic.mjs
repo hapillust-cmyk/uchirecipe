@@ -7,6 +7,7 @@ import {
   normalizeDigits,
 } from '../src/logic/amount.ts'
 import { parseRecipeText, splitQuantity, autoSplitAmountUnit } from '../src/logic/parseRecipeText.ts'
+import { buildSearchWords, toHiragana } from '../src/logic/kana.ts'
 import { normalizeProCode, normalizePackCode, hasPaidRecipeAccess } from '../src/logic/pro.ts'
 import { isAtFreeLimit, isNearFreeLimit } from '../src/logic/freeLimit.ts'
 import { parseAmountNumber } from '../src/logic/nutrition.ts'
@@ -103,6 +104,37 @@ const ideal = `肉じゃが
   const r = parseRecipeText('材料（４人分）\n・豚肉２００ｇ\n・ねぎ　１本')
   eq('全角人数', r.servings, 4)
   eq('全角くっつき形', r.ingredients[0], { name: '豚肉', amount: '200', unit: 'g' })
+}
+
+// ---------- buildSearchWords(「鮭」検索が調味料「酒」に誤ヒットする回帰・2026-07-09ペルソナ第1波) ----------
+{
+  // さばの味噌煮の実データ相当(酒50ml=単位付きでも、鮭(さけ)で引っかからないこと)
+  const words = buildSearchWords(
+    'さばの味噌煮',
+    [
+      { name: 'さば(切り身)', amount: '2', unit: '切れ' },
+      { name: 'しょうが', amount: '1', unit: 'かけ' },
+      { name: '味噌', amount: '2', unit: '大さじ' },
+      { name: '酒', amount: '50', unit: 'ml' },
+    ],
+    ['和食', '魚'],
+  )
+  const salmonKey = toHiragana('鮭')
+  eq('鮭検索が調味料の酒にヒットしない', words.some((w) => w.includes(salmonKey)), false)
+  eq('タイトルの味噌は引き続きヒット', words.some((w) => w.includes(toHiragana('味噌'))), true)
+  eq('タグ(魚)は引き続きヒット', words.some((w) => w.includes(toHiragana('魚'))), true)
+  eq('主材料(さば)は引き続きヒット', words.some((w) => w.includes('さば')), true)
+  // 調味料(大さじ)の酒も検索語に含めない
+  const words2 = buildSearchWords(
+    '豚の生姜焼き',
+    [
+      { name: '豚ロース薄切り', amount: '250', unit: 'g' },
+      { name: '酒', amount: '1', unit: '大さじ' },
+    ],
+    ['和食'],
+  )
+  eq('大さじの酒も検索語から除外', words2.some((w) => w.includes(salmonKey)), false)
+  eq('主材料(豚)は引き続きヒット', words2.some((w) => w.includes(toHiragana('豚'))), true)
 }
 
 // ---------- pro.ts(コード正規化) ----------
