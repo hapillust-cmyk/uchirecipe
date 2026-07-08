@@ -414,6 +414,27 @@ function RecipeFormInner() {
     setSteps((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
   }
 
+  /** 材料行を削除する（入力内容がある行だけ確認を挟む。空行は従来どおり即削除） */
+  const removeIngredientRow = (index: number) => {
+    const row = ingredients[index]
+    const hasContent = !!(
+      row &&
+      (row.name.trim() || row.amount.trim() || row.unit.trim() || row.price.trim() || row.memo.trim())
+    )
+    if (hasContent && !window.confirm(ja.form.confirmRemoveRow)) return
+    setIngredients((rows) =>
+      rows.length > 1 ? rows.filter((_, i) => i !== index) : [{ ...emptyIngredient }],
+    )
+  }
+
+  /** 手順行を削除する（入力内容がある行だけ確認を挟む。空行は従来どおり即削除） */
+  const removeStepRow = (index: number) => {
+    const row = steps[index]
+    const hasContent = !!(row && (row.text.trim() || row.minutes.trim() || row.memo.trim()))
+    if (hasContent && !window.confirm(ja.form.confirmRemoveRow)) return
+    setSteps((rows) => (rows.length > 1 ? rows.filter((_, i) => i !== index) : [{ ...emptyStep }]))
+  }
+
   const addTag = () => {
     const tag = tagInput.trim()
     if (tag && !tags.includes(tag)) setTags([...tags, tag])
@@ -911,11 +932,7 @@ function RecipeFormInner() {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    setIngredients((rows) =>
-                      rows.length > 1 ? rows.filter((_, i) => i !== index) : [{ ...emptyIngredient }],
-                    )
-                  }
+                  onClick={() => removeIngredientRow(index)}
                   aria-label={ja.form.removeRow}
                   className={`${iconBtnCls} text-warning`}
                 >
@@ -994,11 +1011,7 @@ function RecipeFormInner() {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    setSteps((rows) =>
-                      rows.length > 1 ? rows.filter((_, i) => i !== index) : [{ ...emptyStep }],
-                    )
-                  }
+                  onClick={() => removeStepRow(index)}
                   aria-label={ja.form.removeRow}
                   className={`${iconBtnCls} text-warning`}
                 >

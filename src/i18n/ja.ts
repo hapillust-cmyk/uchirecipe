@@ -446,6 +446,7 @@ export const ja = {
     moveUp: '上へ移動',
     moveDown: '下へ移動',
     removeRow: 'この行を削除',
+    confirmRemoveRow: 'この行を削除しますか？',
     deleteRecipe: 'このレシピを削除',
     confirmDelete: 'このレシピを削除します。よろしいですか？',
   },
