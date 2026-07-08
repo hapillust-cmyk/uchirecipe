@@ -16,7 +16,7 @@ import { createRecipe, deleteRecipe, getRecipe, listRecipes, updateRecipe } from
 import { useSettings } from '../db/settings'
 import { countFreeLimitRecipes, isAtFreeLimit } from '../logic/freeLimit'
 import { resizePhoto } from '../logic/image'
-import { parseRecipeText } from '../logic/parseRecipeText'
+import { parseRecipeText, autoSplitAmountUnit } from '../logic/parseRecipeText'
 import { pickIconKey, iconKeyOrder } from '../logic/icon'
 import { nextSeasoningGroup, seasoningGroupColorToken } from '../logic/seasoningGroup'
 import { normalizeDigits } from '../logic/amount'
@@ -436,14 +436,19 @@ function RecipeFormInner() {
         cookMinutes: cookMinutes.trim() ? Number(cookMinutes) : undefined,
         effortLevel,
         tags: effectiveTags,
-        ingredients: ingredients.map((row) => ({
-          name: row.name,
-          amount: normalizeDigits(row.amount.trim()),
-          unit: row.unit.trim(),
-          price: row.price.trim() ? Number(row.price) : undefined,
-          memo: row.memo.trim() || undefined,
-          seasoningGroup: row.group,
-        })),
+        ingredients: ingredients.map((row) => {
+          // 単位欄が空のまま分量欄に「大さじ3」等と書かれていたら自動で分ける
+          // (そのままだと人数変更が効かないため。「少々」「適量」はそのまま)
+          const { amount, unit } = autoSplitAmountUnit(normalizeDigits(row.amount.trim()), row.unit)
+          return {
+            name: row.name,
+            amount,
+            unit,
+            price: row.price.trim() ? Number(row.price) : undefined,
+            memo: row.memo.trim() || undefined,
+            seasoningGroup: row.group,
+          }
+        }),
         steps: steps.map((row) => ({
           text: row.text,
           minutes: row.minutes.trim() ? Number(row.minutes) : undefined,

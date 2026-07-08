@@ -66,6 +66,23 @@ export function splitQuantity(raw: string): { amount: string; unit: string } {
   return { amount: raw.trim(), unit: '' }
 }
 
+/**
+ * 手入力フォームの保存時の救済: 単位欄が空のまま分量欄に「大さじ3」「1/2本」のように
+ * 単位ごと書かれていたら、分量と単位に自動で分ける（そのままだと人数変更が効かないため）。
+ * 「少々」「適量」など分けられないものは何もしない。単位欄に入力があるときも触らない。
+ */
+export function autoSplitAmountUnit(
+  amount: string,
+  unit: string,
+): { amount: string; unit: string } {
+  const trimmedAmount = amount.trim()
+  const trimmedUnit = unit.trim()
+  if (trimmedUnit || !trimmedAmount) return { amount: trimmedAmount, unit: trimmedUnit }
+  const split = splitQuantity(trimmedAmount)
+  if (!split.unit) return { amount: trimmedAmount, unit: '' }
+  return { amount: split.amount, unit: split.unit }
+}
+
 /** 1行を材料として解釈してみる。材料らしくなければ undefined */
 function parseIngredientLine(rawLine: string): ParsedIngredient | undefined {
   const line = rawLine.replace(BULLET, '').trim()

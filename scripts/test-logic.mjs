@@ -6,7 +6,7 @@ import {
   formatAmountUnit,
   normalizeDigits,
 } from '../src/logic/amount.ts'
-import { parseRecipeText, splitQuantity } from '../src/logic/parseRecipeText.ts'
+import { parseRecipeText, splitQuantity, autoSplitAmountUnit } from '../src/logic/parseRecipeText.ts'
 import { normalizeProCode, normalizePackCode, hasPaidRecipeAccess } from '../src/logic/pro.ts'
 import { isAtFreeLimit, isNearFreeLimit } from '../src/logic/freeLimit.ts'
 import { parseAmountNumber } from '../src/logic/nutrition.ts'
@@ -62,6 +62,17 @@ eq('数字前置形', splitQuantity('200g'), { amount: '200', unit: 'g' })
 eq('分数', splitQuantity('1/2個'), { amount: '1/2', unit: '個' })
 eq('適量', splitQuantity('適量'), { amount: '適量', unit: '' })
 eq('全角数字', splitQuantity('２００ｇ'), { amount: '200', unit: 'g' })
+
+// ---------- autoSplitAmountUnit(手入力の分量欄「大さじ3」等を保存時に分離・2026-07-09ペルソナ第1波) ----------
+// 分量欄に単位ごと書くと人数変更が効かないバグの再発防止
+eq('保存時分離: 大さじ3', autoSplitAmountUnit('大さじ3', ''), { amount: '3', unit: '大さじ' })
+eq('保存時分離: 1/2本', autoSplitAmountUnit('1/2本', ''), { amount: '1/2', unit: '本' })
+eq('保存時分離: 200g', autoSplitAmountUnit('200g', ''), { amount: '200', unit: 'g' })
+eq('保存時分離: 少々はそのまま', autoSplitAmountUnit('少々', ''), { amount: '少々', unit: '' })
+eq('保存時分離: 適量はそのまま', autoSplitAmountUnit('適量', ''), { amount: '適量', unit: '' })
+eq('保存時分離: 数字だけはそのまま', autoSplitAmountUnit('3', ''), { amount: '3', unit: '' })
+eq('保存時分離: 単位入力済みなら触らない', autoSplitAmountUnit('大さじ3', '個'), { amount: '大さじ3', unit: '個' })
+eq('保存時分離: 全角もOK', autoSplitAmountUnit('大さじ３', ''), { amount: '3', unit: '大さじ' })
 
 // ---------- parseRecipeText(理想フォーマット+ゆらぎのコーパス) ----------
 const ideal = `肉じゃが
