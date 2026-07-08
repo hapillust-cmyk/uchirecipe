@@ -489,6 +489,7 @@ export const ja = {
   },
   focus: {
     open: '調理中モードで見る',
+    openHint: '大きな文字で1手順ずつ表示',
     stepCounter: '手順 {n}/{t}',
     close: '閉じる',
     prev: '前へ',
