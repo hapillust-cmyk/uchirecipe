@@ -260,9 +260,13 @@ export default function MealPlanPage() {
     entries?.forEach((e) => {
       if (visibleSlots.includes(e.slot)) ids.add(e.recipeId)
     })
+    // 「今日の献立」(今日つくるリスト)の分も買い物候補に含める。
+    // 週の表を使わず今日の献立だけで運用する人の材料が漏れないように
+    // (2026-07-09 ペルソナテスト第1波)。重複は既存の合算ロジックがまとめる
+    todayList?.forEach((item) => ids.add(item.recipeId))
     return Array.from(ids)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, settings?.visibleMealSlots])
+  }, [entries, settings?.visibleMealSlots, todayList])
 
   const goShopping = () => {
     if (weekRecipeIds.length === 0) return
