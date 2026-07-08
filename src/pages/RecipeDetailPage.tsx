@@ -89,6 +89,12 @@ export default function RecipeDetailPage() {
   const [logOpen, setLogOpen] = useState(false)
   const [logDate, setLogDate] = useState(todayString)
   const [logNote, setLogNote] = useState('')
+  // 記録フォームが開いたら見える位置までスクロールする
+  // (調理中モードの「完成！」から自動で開いたとき、画面上部にいると気づけないため)
+  const logFormRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (logOpen) logFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [logOpen])
 
   // 過去の記録を後から編集する
   const [editingLogIndex, setEditingLogIndex] = useState<number | null>(null)
@@ -558,9 +564,12 @@ export default function RecipeDetailPage() {
           </section>
         )}
 
-        {/* 記録の入力欄（「作った！」を押すと開く） */}
+        {/* 記録の入力欄（「作った！」または調理中モードの「完成！」で開く） */}
         {logOpen && (
-          <div className="mt-[var(--space-lg)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-md">
+          <div
+            ref={logFormRef}
+            className="mt-[var(--space-lg)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-md"
+          >
             <h3 className="font-bold">{ja.detail.cookedDialogTitle}</h3>
             <label className="mt-[var(--space-sm)] block text-sm text-ink-muted">
               {ja.detail.cookedDate}
@@ -663,6 +672,12 @@ export default function RecipeDetailPage() {
           recipeId={id}
           initialStep={focusStep}
           onClose={() => setFocusOpen(false)}
+          onComplete={() => {
+            // 完成！→ そのまま「作った！」の記録フォームを開く(達成感と記録導線をつなぐ)
+            setFocusOpen(false)
+            setLogDate(todayString())
+            setLogOpen(true)
+          }}
         />
       )}
     </div>

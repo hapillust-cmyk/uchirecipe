@@ -23,6 +23,8 @@ type Props = {
   recipeId: number
   initialStep: number
   onClose: () => void
+  /** 最終手順の「完成！」を押したとき(未指定ならonCloseと同じ)。作った記録への導線に使う */
+  onComplete?: () => void
 }
 
 const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
@@ -34,7 +36,7 @@ const micSupported =
  * スワイプ or 大ボタンで前後に移動でき、読み上げ・音声操作・タイマーもその場で使える。
  * 「画面を暗くしない」設定は詳細画面(呼び出し元)側のWake Lockがそのまま効く。
  */
-export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Props) {
+export default function FocusMode({ recipe, recipeId, initialStep, onClose, onComplete }: Props) {
   const { startTimer, timers, now, dismissTimer } = useTimers()
   const [index, setIndex] = useState(initialStep)
   const [speaking, setSpeaking] = useState(false)
@@ -336,7 +338,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose }: Pr
         {index === total - 1 ? (
           <button
             type="button"
-            onClick={onClose}
+            onClick={onComplete ?? onClose}
             className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
           >
             <Check size={22} aria-hidden />
