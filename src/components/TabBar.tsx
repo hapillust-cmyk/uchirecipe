@@ -17,6 +17,9 @@ const otherTabs = [
  * 「レシピ」タブだけは特別扱い: 一覧・詳細・編集のどこにいたかを覚えておき、
  * 他のタブを経由してから戻ってきたとき、直前に見ていたレシピにそのまま戻れるようにする
  * （一覧に戻されると「今見ていたレシピ」を探し直す手間が生まれるため）。
+ * ただし今いる場所が/recipes配下のときは一覧(/recipes)へ向ける: 覚えたパス＝現在地になり
+ * タップしても何も起きなくなるため（詳細を開いたままリロードすると「タブが効かない」ように
+ * 見えるバグの原因だった。2026-07-09ペルソナテスト第2波）。
  * アクティブ表示（タブが光る条件）は覚えた個別パスに関わらず「/recipes配下ならすべて」で判定する。
  */
 export default function TabBar() {
@@ -28,8 +31,10 @@ export default function TabBar() {
     }
   }, [location.pathname])
 
-  const recipesTarget = sessionStorage.getItem(LAST_RECIPES_PATH_KEY) || '/recipes'
   const isRecipesActive = location.pathname.startsWith('/recipes')
+  const recipesTarget = isRecipesActive
+    ? '/recipes'
+    : sessionStorage.getItem(LAST_RECIPES_PATH_KEY) || '/recipes'
 
   return (
     <nav

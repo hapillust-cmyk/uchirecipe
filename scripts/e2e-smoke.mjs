@@ -63,6 +63,20 @@ try {
   await page.getByRole('button', { name: '閉じる' }).click()
   await page.waitForTimeout(300)
 
+  // --- TAB-01: 詳細を開いたままリロード→下タブ「レシピ」で一覧へ戻れる ---
+  // (覚えた「最後のレシピパス」＝現在地となりタップが無反応になる回帰の防止。2026-07-09第2波)
+  currentCheck = 'TAB-01'
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.waitForTimeout(800)
+  check('TAB-01 リロードで詳細が復元される', /#\/recipes\/\d+/.test(page.url()))
+  await page.locator('nav').getByText('レシピ', { exact: true }).click()
+  await page.waitForTimeout(500)
+  check(
+    'TAB-01 リロード後もレシピタブで一覧へ戻れる',
+    page.url().includes('#/recipes') && !/#\/recipes\/\d/.test(page.url()),
+    `現在URL: ${page.url()}`,
+  )
+
   // --- SMK-04+02: テキスト貼り付け→登録 ---
   currentCheck = 'SMK-04'
   await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
