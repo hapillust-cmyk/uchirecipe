@@ -20,7 +20,7 @@ import { useSettings } from '../db/settings'
 import { useTimers } from '../components/TimerProvider'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { isMinutesShownInText } from '../logic/time'
-import { buildCookTimeline, type TimelineItem } from '../logic/cookNavi'
+import { buildCookTimeline, hasLaterHandsOnStep, type TimelineItem } from '../logic/cookNavi'
 import type { Recipe } from '../db/types'
 import { ja } from '../i18n/ja'
 
@@ -43,9 +43,12 @@ function RecipePill({ title, colorIndex }: { title: string; colorIndex: number }
 /** タイムラインの1手順カード */
 function TimelineCard({
   item,
+  showFillHint,
   onStartTimer,
 }: {
   item: TimelineItem
+  /** 待ちブロックに「この間に、次の手作業を進められます」を出すか（後続に手作業があるときだけ） */
+  showFillHint: boolean
   onStartTimer: (item: TimelineItem, seconds: number) => void
 }) {
   const isWait = item.kind === 'wait'
@@ -98,7 +101,9 @@ function TimelineCard({
               </button>
             )}
           </div>
-          <p className="mt-1 text-xs text-ink-muted">{ja.cookNavi.waitFillHint}</p>
+          {showFillHint && (
+            <p className="mt-1 text-xs text-ink-muted">{ja.cookNavi.waitFillHint}</p>
+          )}
         </div>
       )}
     </li>
@@ -304,10 +309,11 @@ export default function CookNaviPage() {
                     </div>
 
                     <ol className="mt-[var(--space-md)] space-y-[var(--space-sm)]">
-                      {timeline.items.map((item) => (
+                      {timeline.items.map((item, index) => (
                         <TimelineCard
                           key={`${item.recipeId}-${item.stepIndex}`}
                           item={item}
+                          showFillHint={hasLaterHandsOnStep(timeline.items, index)}
                           onStartTimer={startStepTimer}
                         />
                       ))}

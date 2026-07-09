@@ -238,6 +238,15 @@ export function buildCookTimeline(recipes: Recipe[]): CookTimeline {
   return { items, totalMinutes, recipes: recipes2 }
 }
 
+/**
+ * タイムライン上で index の手順より後に「手作業系」の手順が残っているか。
+ * 待ち手順の「この間に、次の手作業を進められます」ヒントは、実際に後続の手作業が
+ * あるときだけ表示する（最後の待ち工程にまで出るのを防ぐ。2026-07-09ペルソナ第2波）
+ */
+export function hasLaterHandsOnStep(items: readonly { kind: StepKind }[], index: number): boolean {
+  return items.some((item, i) => i > index && item.kind === 'active')
+}
+
 function makeItem(
   order: number,
   job: Job,

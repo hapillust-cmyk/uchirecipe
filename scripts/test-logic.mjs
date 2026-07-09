@@ -14,6 +14,7 @@ import { parseAmountNumber } from '../src/logic/nutrition.ts'
 import { isNewsSuppressed } from '../src/logic/news.ts'
 import { suggestForSlot } from '../src/logic/mealPlan.ts'
 import { buildShoppingCandidates } from '../src/logic/shopping.ts'
+import { hasLaterHandsOnStep } from '../src/logic/cookNavi.ts'
 
 let passed = 0
 const failures = []
@@ -279,6 +280,19 @@ eq('news: 未記録(起動直後の一瞬)は抑制', isNewsSuppressed(undefined
   eq('買い物候補: だし汁は通常どおりチェック側', byName.get('だし汁')?.isSeasoningLike, false)
   eq('買い物候補: 主材料はチェック側のまま', byName.get('鶏むね肉')?.isSeasoningLike, false)
   eq('買い物候補: 調味料は従来どおり未チェック側', byName.get('しょうゆ')?.isSeasoningLike, true)
+}
+
+// ---------- hasLaterHandsOnStep(並行調理ナビ: 最後の待ち工程に「この間に〜」を出さない・2026-07-09ペルソナ第2波) ----------
+{
+  const items = [
+    { kind: 'active' },
+    { kind: 'wait' }, // 後ろに手作業がある待ち → ヒントを出す
+    { kind: 'active' },
+    { kind: 'wait' }, // 最後の待ち(後続の手作業なし) → ヒントを出さない
+  ]
+  eq('ナビ: 後続に手作業がある待ちはヒントあり', hasLaterHandsOnStep(items, 1), true)
+  eq('ナビ: 最後の待ちはヒントなし', hasLaterHandsOnStep(items, 3), false)
+  eq('ナビ: 後続が待ちだけでもヒントなし', hasLaterHandsOnStep([{ kind: 'active' }, { kind: 'wait' }, { kind: 'wait' }], 1), false)
 }
 
 // ---------- freeLimit(本番はフラグOFF=絶対にブロックしない不変条件) ----------
