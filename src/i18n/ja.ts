@@ -274,8 +274,17 @@ export const ja = {
     proActivate: '解錠する',
     proActivating: '確認中…',
     proInvalidCode: 'コードが正しくありません。ご購入時のコードをご確認ください',
+    proCodeIsPackCode:
+      'そのコードは追加レシピパック用です。下の追加レシピパック欄に入力してください',
     proActivatedTitle: 'Pro版をご利用いただきありがとうございます',
     proActivatedDate: '解錠日: {date}',
+    // Pro解錠直後に「何が使えるようになったか」を控えめに案内する(2026-07-09ペルソナ第2波)
+    proActivatedFeaturesTitle: '使えるようになった機能',
+    proActivatedFeatures: [
+      '並行調理ナビ（献立タブから）',
+      '月間ビュー（献立の週・月切替から）',
+      'レシピテーマ（下のテーマ一覧から）',
+    ] as string[],
     packTitle: '追加レシピパック',
     packDescription:
       '配布されているレシピテーマがすべて使えるようになる買い切りのパックです。今後追加されるテーマも、すべて追加料金なしで使えます（Pro版には最初から含まれています）。',
@@ -283,6 +292,7 @@ export const ja = {
     packActivate: '解錠する',
     packActivating: '確認中…',
     packInvalidCode: 'コードが正しくありません。ご購入時のコードをご確認ください',
+    packCodeIsProCode: 'そのコードはPro版用です。上のPro版欄に入力してください',
     packActivatedTitle: '追加レシピパックをご利用いただきありがとうございます',
     packActivatedDate: '解錠日: {date}',
     themeListTitle: 'テーマ一覧',
@@ -515,6 +525,9 @@ export const ja = {
     comingSoonBadge: '開発中',
     teaserDescription:
       '材料からエネルギー・たんぱく質などのめやすを自動計算する機能を開発中です。Pro版の機能として提供を検討しています。',
+    // Pro解錠済みユーザー向け: 「解錠したのに使えない」と誤解させない文言(2026-07-09ペルソナ第2波)
+    teaserDescriptionPro:
+      '材料からエネルギー・たんぱく質などのめやすを自動計算する機能を、Pro特典として開発中です。公開されると自動で使えるようになります。',
     gateTitle: '栄養価のめやすはPro版の機能です',
     gateDescription:
       '材料からエネルギー・たんぱく質・脂質・炭水化物・塩分のめやすを自動で計算します（あくまで概算です）。',

@@ -49,7 +49,11 @@ export default function NutritionTeaser({
               {ja.nutrition.comingSoonBadge}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-muted">{ja.nutrition.teaserDescription}</p>
+          {/* 解錠済みユーザーには「Pro特典として開発中・公開時に自動で使える」ことを明示する
+              (「解錠したのに使えない」という誤解を防ぐ。2026-07-09ペルソナ第2波) */}
+          <p className="mt-1 text-sm text-ink-muted">
+            {isPro ? ja.nutrition.teaserDescriptionPro : ja.nutrition.teaserDescription}
+          </p>
         </div>
       </section>
     )

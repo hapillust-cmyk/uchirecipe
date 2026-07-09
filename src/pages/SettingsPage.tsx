@@ -65,6 +65,8 @@ export default function SettingsPage() {
   const [proCodeInput, setProCodeInput] = useState('')
   const [proChecking, setProChecking] = useState(false)
   const [proError, setProError] = useState('')
+  // このセッションでPro解錠に成功した直後だけ「使えるようになった機能」を案内する
+  const [proJustActivated, setProJustActivated] = useState(false)
   const [packCodeInput, setPackCodeInput] = useState('')
   const [packChecking, setPackChecking] = useState(false)
   const [packError, setPackError] = useState('')
@@ -272,6 +274,11 @@ export default function SettingsPage() {
     setProChecking(true)
     setProError('')
     try {
+      // パック用コード(UP-)を間違えてPro欄に入れたときは、正しい欄へ相互誘導する
+      if (normalizeProCode(proCodeInput).startsWith('UP-')) {
+        setProError(ja.settings.proCodeIsPackCode)
+        return
+      }
       const valid = await isValidProCode(proCodeInput)
       if (!valid) {
         setProError(ja.settings.proInvalidCode)
@@ -282,6 +289,7 @@ export default function SettingsPage() {
         proActivatedAt: Date.now(),
       })
       setProCodeInput('')
+      setProJustActivated(true)
     } finally {
       setProChecking(false)
     }
@@ -291,6 +299,11 @@ export default function SettingsPage() {
     setPackChecking(true)
     setPackError('')
     try {
+      // Pro用コード(UR-)を間違えてパック欄に入れたときは、正しい欄へ相互誘導する
+      if (normalizePackCode(packCodeInput).startsWith('UR-')) {
+        setPackError(ja.settings.packCodeIsProCode)
+        return
+      }
       const valid = await isValidPackCode(packCodeInput)
       if (!valid) {
         setPackError(ja.settings.packInvalidCode)
@@ -753,6 +766,17 @@ export default function SettingsPage() {
               <p className="mt-0.5 text-xs text-ink-muted">
                 {ja.settings.proActivatedDate.replace('{date}', formatDate(settings.proActivatedAt))}
               </p>
+            )}
+            {/* 解錠直後だけ、どこで何が使えるようになったかを控えめに案内する */}
+            {proJustActivated && (
+              <div className="mt-[var(--space-sm)] rounded-md border border-edge bg-app p-[var(--space-sm)]">
+                <p className="text-sm font-bold">{ja.settings.proActivatedFeaturesTitle}</p>
+                <ul className="mt-1 space-y-0.5 text-sm text-ink-muted">
+                  {ja.settings.proActivatedFeatures.map((feature) => (
+                    <li key={feature}>・{feature}</li>
+                  ))}
+                </ul>
+              </div>
             )}
           </>
         ) : (
