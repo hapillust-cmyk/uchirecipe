@@ -327,6 +327,7 @@ export const ja = {
     addRecipe: 'レシピを登録',
     minutesSuffix: '分',
     freeLimitNearBanner: '無料版はあと{n}件登録できます（既存のレシピはこのまま全部使えます）',
+    themeShortcut: 'レシピテーマを見る →',
   },
   search: {
     placeholder: '料理名・材料・タグで検索',
