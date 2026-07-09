@@ -277,7 +277,8 @@ export const ja = {
     proActivatedTitle: 'Pro版をご利用いただきありがとうございます',
     proActivatedDate: '解錠日: {date}',
     packTitle: '追加レシピパック',
-    packDescription: '配布されているレシピテーマがすべて使えるようになります（Pro版には最初から含まれています）。',
+    packDescription:
+      '配布されているレシピテーマがすべて使えるようになる買い切りのパックです。今後追加されるテーマも、すべて追加料金なしで使えます（Pro版には最初から含まれています）。',
     packCodePlaceholder: '解錠コード (例: UP-XXXX-XXXX)',
     packActivate: '解錠する',
     packActivating: '確認中…',
