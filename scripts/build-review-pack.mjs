@@ -33,6 +33,11 @@ for (const line of lines) {
 }
 if (current) blocks.push(current)
 
+// R12(2026-07-11): 原稿の1行記法ではmemo内の改行を literal「\n」で書く。ここで実改行へ変換する
+function unescapeNewlines(s) {
+  return s.replace(/\\n/g, '\n')
+}
+
 function cleanTitle(t) {
   // 「（第1弾パック「〜」差替用）」のような注記を除去
   return t.replace(/[（(][^（）()]*(パック|差替)[^（）()]*[）)]/g, '').trim()
@@ -68,7 +73,7 @@ function parseIngredientToken(token) {
   let memo
   const memoMatch = t.match(/\(材料memo:\s*(.+?)\)\s*$/)
   if (memoMatch) {
-    memo = memoMatch[1].trim()
+    memo = unescapeNewlines(memoMatch[1].trim())
     t = t.slice(0, memoMatch.index).trim()
   }
   // 「名前 数量 単位」の空白区切り(全角スペースも許容)。名前に半角/全角括弧の食材注記・ふりがなが付くことがある
@@ -126,7 +131,7 @@ function parseStepLine(raw) {
     const minMatch = inner.match(/^(\d+)分/)
     const memoMatch = inner.match(/手順memo:\s*(.+)$/)
     if (minMatch) minutes = Number(minMatch[1])
-    if (memoMatch) memo = memoMatch[1].trim()
+    if (memoMatch) memo = unescapeNewlines(memoMatch[1].trim())
     if (minMatch || memoMatch) t = t.slice(0, trailing.index).trim()
   }
   const step = { text: t }
@@ -165,7 +170,7 @@ for (const block of blocks) {
     ...(header.suitableFor && header.suitableFor.length ? { suitableFor: header.suitableFor } : {}),
     ingredients,
     steps,
-    ...(memoMatch ? { memo: memoMatch[1].trim() } : {}),
+    ...(memoMatch ? { memo: unescapeNewlines(memoMatch[1].trim()) } : {}),
     isFavorite: false,
     cookedLogs: [],
     searchWords: [],

@@ -28,6 +28,7 @@ import { shareText, shareImageCard } from '../logic/share'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { isMinutesShownInText } from '../logic/time'
 import { usePhotoUrl } from '../components/usePhotoUrl'
+import { MemoText } from '../components/MemoText'
 import { useTimers } from '../components/TimerProvider'
 import { useWakeLock } from '../components/useWakeLock'
 import BackHeader from '../components/BackHeader'
@@ -365,7 +366,7 @@ export default function RecipeDetailPage() {
                       )}
                     </span>
                   </div>
-                  {ing.memo && <p className="mt-0.5 text-sm text-ink-muted">{ing.memo}</p>}
+                  {ing.memo && <MemoText text={ing.memo} className="mt-0.5 text-sm text-ink-muted" />}
                 </li>
               )
             })}
@@ -449,7 +450,7 @@ export default function RecipeDetailPage() {
                         }
                       />
                     </p>
-                    {step.memo && <p className="mt-0.5 text-sm text-ink-muted">{step.memo}</p>}
+                    {step.memo && <MemoText text={step.memo} className="mt-0.5 text-sm text-ink-muted" />}
                     {step.minutes != null &&
                       step.minutes > 0 &&
                       !isMinutesShownInText(step.text, step.minutes) && (
@@ -484,9 +485,10 @@ export default function RecipeDetailPage() {
         {recipe.memo && (
           <section className="mt-[var(--space-lg)]">
             <h2 className="text-xl font-bold">{ja.detail.memo}</h2>
-            <p className="mt-[var(--space-sm)] whitespace-pre-wrap rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
-              {recipe.memo}
-            </p>
+            <MemoText
+              text={recipe.memo}
+              className="mt-[var(--space-sm)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm"
+            />
           </section>
         )}
         {recipe.sourceUrl && (

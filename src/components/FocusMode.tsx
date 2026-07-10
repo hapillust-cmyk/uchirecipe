@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react'
+import { MemoText } from './MemoText'
 import {
   X,
   Check,
@@ -309,7 +310,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
         <p className="w-full text-2xl font-bold leading-relaxed">
           <TimeText text={step.text} onStart={(_tokenText, seconds) => startStepTimer(seconds)} />
         </p>
-        {step.memo && <p className="w-full text-ink-muted">{step.memo}</p>}
+        {step.memo && <MemoText text={step.memo} className="w-full text-ink-muted" />}
         {step.minutes != null && step.minutes > 0 && !isMinutesShownInText(step.text, step.minutes) && (
           <button
             type="button"
