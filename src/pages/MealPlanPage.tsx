@@ -255,6 +255,13 @@ export default function MealPlanPage() {
   const weeklyBudget = settings?.weeklyBudget
   const budgetDiff = weeklyBudget != null ? weeklyBudget - weekCost : undefined
 
+  // 材料に価格が1件も入力されていなければ「週の概算食費」セクションごと非表示にする
+  // (価格入力していない人には無意味な表示のため。2026-07-10 オーナー要望)
+  const hasPricedRecipe = useMemo(
+    () => (recipes ?? []).some((r) => r.ingredients.some((i) => (i.price ?? 0) > 0)),
+    [recipes],
+  )
+
   const weekRecipeIds = useMemo(() => {
     const ids = new Set<number>()
     entries?.forEach((e) => {
@@ -557,24 +564,26 @@ export default function MealPlanPage() {
         </p>
       )}
 
-      {/* 週の概算食費 */}
-      <section className="mt-[var(--space-md)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
-        <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
-        <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
-        <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
-        <Link to="/recipes" className="mt-1 inline-block text-sm font-bold text-accent underline">
-          {ja.mealPlan.weekCostNoteLink}
-        </Link>
-        {weeklyBudget != null && budgetDiff != null ? (
-          <p className="mt-1 text-sm font-bold text-ink-muted">
-            {budgetDiff >= 0
-              ? ja.mealPlan.budgetCompareUnder.replace('{n}', String(budgetDiff.toLocaleString()))
-              : ja.mealPlan.budgetCompareOver.replace('{n}', String(Math.abs(budgetDiff).toLocaleString()))}
-          </p>
-        ) : (
-          <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.budgetNotSet}</p>
-        )}
-      </section>
+      {/* 週の概算食費（材料に価格を1件も入力していない場合はセクションごと非表示） */}
+      {hasPricedRecipe && (
+        <section className="mt-[var(--space-md)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
+          <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
+          <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
+          <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
+          <Link to="/recipes" className="mt-1 inline-block text-sm font-bold text-accent underline">
+            {ja.mealPlan.weekCostNoteLink}
+          </Link>
+          {weeklyBudget != null && budgetDiff != null ? (
+            <p className="mt-1 text-sm font-bold text-ink-muted">
+              {budgetDiff >= 0
+                ? ja.mealPlan.budgetCompareUnder.replace('{n}', String(budgetDiff.toLocaleString()))
+                : ja.mealPlan.budgetCompareOver.replace('{n}', String(Math.abs(budgetDiff).toLocaleString()))}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.budgetNotSet}</p>
+          )}
+        </section>
+      )}
 
       {/* 7日分のカード */}
       <div className="mt-[var(--space-md)] space-y-[var(--space-sm)]">
