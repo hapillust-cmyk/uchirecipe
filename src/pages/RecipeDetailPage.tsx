@@ -202,6 +202,7 @@ export default function RecipeDetailPage() {
     <div className={`mx-auto w-full max-w-md ${timers.length > 0 ? 'pb-48' : 'pb-[var(--space-lg)]'}`}>
       <BackHeader
         fallback="/recipes"
+        alwaysFallback
         title={recipe.title}
         onTitleClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         right={

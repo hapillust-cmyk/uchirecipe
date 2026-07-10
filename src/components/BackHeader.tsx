@@ -12,18 +12,28 @@ type Props = {
   onTitleClick?: () => void
   /** タイトル右側に置く追加の操作（例: お気に入り・編集ボタン） */
   right?: ReactNode
+  /**
+   * true の場合、ブラウザ履歴の有無に関わらず常に fallback へ移動する
+   * （例: レシピ詳細の戻るボタンは常に一覧へ、というオーナー要望。2026-07-10）
+   */
+  alwaysFallback?: boolean
 }
 
 /**
  * 階層が深い画面（詳細・編集・設定サブページ等）の上部に置く「← 戻る」ヘッダー。
  * PWAとしてホーム画面から起動するとブラウザの戻るUIが無いため、
  * ブラウザ履歴があればそこへ戻り、無ければ親画面（fallback）へ移動する。
+ * alwaysFallback が true の画面だけは、履歴の有無に関わらず常に fallback へ移動する。
  * sticky表示なので、常に画面上部で「今どのレシピを見ているか」が分かる。
  */
-export default function BackHeader({ fallback, title, onTitleClick, right }: Props) {
+export default function BackHeader({ fallback, title, onTitleClick, right, alwaysFallback }: Props) {
   const navigate = useNavigate()
 
   const goBack = () => {
+    if (alwaysFallback) {
+      navigate(fallback)
+      return
+    }
     // react-router(HashRouter)は window.history.state.idx にスタック位置を持つ。
     // idx が 0 より大きい = このアプリ内で遷移してきた履歴がある、とみなせる。
     const idx = (window.history.state as { idx?: number } | null)?.idx

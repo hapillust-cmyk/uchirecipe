@@ -78,6 +78,22 @@ try {
     `現在URL: ${page.url()}`,
   )
 
+  // --- DET-01: 詳細の戻るボタンは、一覧以外の画面(ホーム)から来た場合でも常に一覧へ戻る ---
+  // (ブラウザ履歴があると直前の画面に戻ってしまっていた不具合の再発防止。2026-07-10)
+  currentCheck = 'DET-01'
+  await page.goto(`${BASE}/#/`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(800)
+  await page.locator('a[href^="#/recipes/"]').first().click()
+  await page.waitForTimeout(500)
+  check('DET-01 ホームからレシピ詳細へ遷移', /#\/recipes\/\d+/.test(page.url()), `現在URL: ${page.url()}`)
+  await page.getByRole('button', { name: '戻る' }).click()
+  await page.waitForTimeout(400)
+  check(
+    'DET-01 詳細の戻るボタンは常に一覧へ(直前の画面(ホーム)には戻らない)',
+    page.url().endsWith('#/recipes'),
+    `現在URL: ${page.url()}`,
+  )
+
   // --- SMK-04+02: テキスト貼り付け→登録 ---
   currentCheck = 'SMK-04'
   await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
