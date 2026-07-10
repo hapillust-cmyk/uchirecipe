@@ -156,8 +156,8 @@ export interface ShoppingItem {
   fromRecipeIds?: number[]
 }
 
-/** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 */
-export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown'
+/** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 / グリーン固定 */
+export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown' | 'green'
 
 /** ホーム画面に置ける表示パーツ */
 export type HomeWidgetKey = 'mealPlan' | 'suggestion' | 'ingredientSearch' | 'pantry' | 'history'

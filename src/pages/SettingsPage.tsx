@@ -29,6 +29,7 @@ const themeOptions: { value: ThemeSetting; label: string }[] = [
   { value: 'light', label: ja.settings.themeLight },
   { value: 'dark', label: ja.settings.themeDark },
   { value: 'brown', label: ja.settings.themeBrown },
+  { value: 'green', label: ja.settings.themeGreen },
 ]
 
 const allHomeWidgets: HomeWidgetKey[] = [

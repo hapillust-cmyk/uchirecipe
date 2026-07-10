@@ -227,6 +227,7 @@ export const ja = {
     themeLight: 'ライト',
     themeDark: 'ダーク',
     themeBrown: 'ブラウン',
+    themeGreen: 'グリーン',
     timerSoundTitle: 'タイマー音',
     timerSoundDescription: 'タイマー終了時に音を鳴らします（各タイマーごとの消音は常駐バーの🔔で切り替えられます）',
     timerWakeLockTitle: 'タイマー中は画面を暗くしない',

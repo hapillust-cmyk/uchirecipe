@@ -85,6 +85,20 @@
   --shadow-md: 0 4px 14px rgb(64 48 31 / 0.18);
 }
 
+/* グリーンテーマ: 淡い抹茶系。アクセントは指定値(#6f9440系)から
+   文字コントラストがWCAG AA相当(4.5:1前後)を満たす濃さへ微調整した(2026-07-10) */
+:root[data-theme="green"] {
+  --bg: #f0f4e8;
+  --text: #2f3628;
+  --accent: #557a30;
+  --warning: #a8351f;
+  --surface: #fbfdf7;
+  --text-muted: #66735a;
+  --border: #d9e2c8;
+  --shadow-sm: 0 1px 3px rgb(47 54 40 / 0.14);
+  --shadow-md: 0 4px 14px rgb(47 54 40 / 0.18);
+}
+
 /* トークンを Tailwind のクラス名（bg-app, text-accent 等）として使えるようにする */
 @theme inline {
   --color-app: var(--bg);
