@@ -20,6 +20,8 @@ export interface SearchOptions {
   favoriteOnly: boolean
   /** NG食材を含むレシピを結果から隠す */
   excludeNg: boolean
+  /** 時短版の手順(quickSteps)があるレシピだけに絞る */
+  quickOnly: boolean
   ngIngredients: string[]
 }
 
@@ -31,6 +33,7 @@ export const defaultSearchOptions: Omit<SearchOptions, 'ngIngredients'> = {
   tag: 'all',
   favoriteOnly: false,
   excludeNg: false,
+  quickOnly: false,
 }
 
 export interface SearchResult {
@@ -78,6 +81,7 @@ export function searchRecipes(recipes: Recipe[], options: SearchOptions): Search
     if (options.tag !== 'all' && !recipe.tags.includes(options.tag)) continue
     if (options.favoriteOnly && !recipe.isFavorite) continue
     if (options.excludeNg && hasNgIngredient(recipe, options.ngIngredients)) continue
+    if (options.quickOnly && (recipe.quickSteps?.length ?? 0) === 0) continue
 
     let usedCount = 0
     if (wantedTerms.length > 0) {

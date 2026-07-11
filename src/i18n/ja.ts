@@ -360,6 +360,7 @@ export const ja = {
     favoriteOnly: 'お気に入りのみ',
     excludeNg: 'NG食材を含むレシピを隠す',
     myRecipesOnly: '自分の登録のみ',
+    quickOnly: '時短',
     sortTitle: '並べ替え',
     sortUpdated: '更新順',
     sortPantryMatch: '在庫との一致が多いレシピ順',
@@ -377,6 +378,8 @@ export const ja = {
     ngBadge: 'NG食材を含む',
     todayBadge: '今日の献立に追加済み',
     starterBadge: '基本レシピ',
+    /** 「時短」絞り込み中、調理時間をquickCookMinutesに切り替えたときに数字の前に添える */
+    quickTimePrefix: '時短',
   },
   paste: {
     open: 'テキスト貼り付けで自動入力',

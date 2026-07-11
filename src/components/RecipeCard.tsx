@@ -95,14 +95,28 @@ type Props = {
   subLabel?: string
   /** 今日の献立（今日つくるリスト）に入っていればバッジを表示 */
   inTodayList?: boolean
+  /**
+   * 「時短」絞り込みが有効な間 true。true のときは調理時間をquickCookMinutes
+   * （無ければcookMinutesを流用）に切り替え、「時短」ラベルを添えて表示する
+   */
+  showQuickTime?: boolean
 }
 
 /** レシピ一覧のカード1枚分（写真＋名前＋時間・手間バッジ） */
-export default function RecipeCard({ recipe, ngIngredients, subLabel, inTodayList }: Props) {
+export default function RecipeCard({
+  recipe,
+  ngIngredients,
+  subLabel,
+  inTodayList,
+  showQuickTime,
+}: Props) {
   const photoUrl = usePhotoUrl(recipe.photo)
   const hasNg = ngIngredients ? hasNgIngredient(recipe, ngIngredients) : false
   const showPhoto = photoUrl && !recipe.showIconInsteadOfPhoto
   const topIngredients = pickMainIngredients(recipe.ingredients)
+  const displayMinutes = showQuickTime
+    ? recipe.quickCookMinutes ?? recipe.cookMinutes
+    : recipe.cookMinutes
 
   return (
     <Link
@@ -169,10 +183,11 @@ export default function RecipeCard({ recipe, ngIngredients, subLabel, inTodayLis
           )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-ink-muted">
-          {recipe.cookMinutes != null && recipe.cookMinutes > 0 && (
+          {displayMinutes != null && displayMinutes > 0 && (
             <span className="inline-flex items-center gap-0.5">
               <Clock size={12} aria-hidden />
-              {recipe.cookMinutes}
+              {showQuickTime && ja.card.quickTimePrefix}
+              {displayMinutes}
               {ja.recipes.minutesSuffix}
             </span>
           )}

@@ -3,8 +3,9 @@
 // 実行: 開発サーバー(npm run dev)またはpreviewを起動した状態で
 //   npx tsx scripts/e2e-smoke.mjs             (既定: http://localhost:5173)
 //   BASE_URL=http://localhost:4173 npx tsx scripts/e2e-smoke.mjs   (preview等)
-// カバー: SMK-01(起動) / SMK-02+03(登録・削除) / SMK-04(貼り付け整形) /
-//         SMK-05(人数変更・帯分数表示) / SMK-08簡易(調理中モード) / SMK-14簡易(未解錠ゲート) /
+// カバー: SMK-01(起動) / QF-01(時短絞り込みで件数が変わる) / SMK-02+03(登録・削除) /
+//         SMK-04(貼り付け整形) / SMK-05(人数変更・帯分数表示) / SMK-08簡易(調理中モード) /
+//         SMK-14簡易(未解錠ゲート) /
 //         SMK-19(静的ページがアプリ本体にすり替わらない。SWが動くpreviewでの実行時に実質検証) /
 //         合わせ調味料ライン表示。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
 import { chromium } from 'playwright'
@@ -38,6 +39,26 @@ try {
   await page.waitForTimeout(1800) // 初回シード完了待ち
   const listText = await page.textContent('body')
   check('SMK-01 起動・基本レシピのシード', listText.includes('肉じゃが') && listText.includes('カレーライス'))
+
+  // --- QF-01: 絞り込み「時短」でカード件数が変わる(quickStepsを持つレシピだけに絞られる。
+  // UI改善バッチ 2026-07-11) ---
+  currentCheck = 'QF-01'
+  const allCardCount = await page.locator('div.grid.grid-cols-2 a[href^="#/recipes/"]').count()
+  await page.locator('button[aria-label="絞り込み"]').click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: '時短', exact: true }).click()
+  await page.waitForTimeout(400)
+  const quickCardCount = await page.locator('div.grid.grid-cols-2 a[href^="#/recipes/"]').count()
+  check(
+    'QF-01 時短絞り込みで件数が変わる',
+    quickCardCount > 0 && quickCardCount < allCardCount,
+    `全件=${allCardCount} 時短=${quickCardCount}`,
+  )
+  // 絞り込みを解除して以降のチェックに影響しないようにする
+  await page.getByRole('button', { name: '時短', exact: true }).click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: '決定' }).click()
+  await page.waitForTimeout(300)
 
   // --- SMK-05: 人数変更で帯分数表示(2人分→3人分でじゃがいも3個→4と1/2個) ---
   currentCheck = 'SMK-05'

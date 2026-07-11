@@ -87,6 +87,7 @@ export default function RecipesPage() {
   const [tag, setTag] = useState<TagFilter>('all')
   const [favoriteOnly, setFavoriteOnly] = useState(false)
   const [excludeNg, setExcludeNg] = useState(false)
+  const [quickOnly, setQuickOnly] = useState(false)
   const [sort, setSort] = useState<RecipeSortOption>('updated')
 
   const recipes = useLiveQuery(listRecipes, [])
@@ -114,6 +115,7 @@ export default function RecipesPage() {
       tag,
       favoriteOnly,
       excludeNg,
+      quickOnly,
       ngIngredients: ngIngredients ?? [],
     })
     return sortResults(found, sort, pantryNames)
@@ -127,6 +129,7 @@ export default function RecipesPage() {
     tag,
     favoriteOnly,
     excludeNg,
+    quickOnly,
     ngIngredients,
     sort,
     pantryNames,
@@ -140,6 +143,7 @@ export default function RecipesPage() {
     tag !== 'all' ||
     favoriteOnly ||
     excludeNg ||
+    quickOnly ||
     sort !== 'updated'
 
   const clearFilters = () => {
@@ -150,6 +154,7 @@ export default function RecipesPage() {
     setTag('all')
     setFavoriteOnly(false)
     setExcludeNg(false)
+    setQuickOnly(false)
     setSort('updated')
   }
 
@@ -263,6 +268,15 @@ export default function RecipesPage() {
                 {option.label}
               </button>
             ))}
+            {/* 時短版の手順(quickSteps)があるレシピだけに絞る。有効な間は一覧カードの
+                調理時間表示もquickCookMinutesに切り替わる(2026-07-11 オーナー実機フィードバック) */}
+            <button
+              type="button"
+              onClick={() => setQuickOnly((v) => !v)}
+              className={chipCls(quickOnly)}
+            >
+              {ja.search.quickOnly}
+            </button>
           </div>
 
           {/* 手間レベル */}
@@ -385,6 +399,7 @@ export default function RecipesPage() {
             ngIngredients={ngIngredients}
             subLabel={subLabelFor(usedCount, wantedCount)}
             inTodayList={todayRecipeIds.has(recipe.id!)}
+            showQuickTime={quickOnly}
           />
         ))}
       </div>

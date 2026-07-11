@@ -17,6 +17,7 @@ import { buildShoppingCandidates } from '../src/logic/shopping.ts'
 import { hasLaterHandsOnStep } from '../src/logic/cookNavi.ts'
 import { resolveDuplicateTitleAction } from '../src/logic/backup.ts'
 import { pickMainIngredients } from '../src/logic/mainIngredients.ts'
+import { searchRecipes } from '../src/logic/search.ts'
 
 let passed = 0
 const failures = []
@@ -427,6 +428,36 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
     '主要食材: 先頭から最大3件',
     pickMainIngredients(many).map((i) => i.name),
     ['じゃがいも', '玉ねぎ', '人参'],
+  )
+}
+
+// ---------- searchRecipes: 「時短」絞り込み(quickStepsを持つレシピだけに絞る。
+// UI改善バッチ 2026-07-11) ----------
+{
+  const baseOptions = {
+    query: '',
+    ingredients: '',
+    time: 'all',
+    effort: 'all',
+    tag: 'all',
+    favoriteOnly: false,
+    excludeNg: false,
+    quickOnly: false,
+    ngIngredients: [],
+  }
+  const recipes = [
+    { id: 1, title: '通常のみ', tags: [], searchWords: [], ingredients: [], quickSteps: undefined },
+    { id: 2, title: '時短あり', tags: [], searchWords: [], ingredients: [], quickSteps: [{ text: 'レンジで加熱する' }] },
+  ]
+  eq(
+    '時短絞り込みOFFは全件',
+    searchRecipes(recipes, baseOptions).map((r) => r.recipe.id),
+    [1, 2],
+  )
+  eq(
+    '時短絞り込みONはquickStepsありのみ',
+    searchRecipes(recipes, { ...baseOptions, quickOnly: true }).map((r) => r.recipe.id),
+    [2],
   )
 }
 
