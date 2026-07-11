@@ -565,6 +565,13 @@ export const ja = {
     freeDescriptionPro:
       'たんぱく質・脂質・炭水化物などの残りの項目は、Pro特典として開発中です。公開されると自動で使えるようになります。',
   },
+  term: {
+    // 用語タップ辞書(2026-07-11)。タップ可能な語のaria-label・調理中モードのチップ欄・
+    // ポップオーバーの文言をここに集約する
+    openAria: '{term}の説明を見る',
+    closeAria: '説明を閉じる',
+    chipLabel: '用語: ',
+  },
   timer: {
     start: 'タイマー開始',
     done: '終わり',

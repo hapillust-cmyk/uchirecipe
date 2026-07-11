@@ -15,8 +15,11 @@ import type { Recipe } from '../db/types'
 import { useTimers } from './TimerProvider'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
+import { collectUniqueTerms } from '../logic/termSplit'
 import StepBadge from './StepBadge'
 import TimeText from './TimeText'
+import TermText from './TermText'
+import TermPopover, { useTermPopover } from './TermPopover'
 import { ja } from '../i18n/ja'
 
 type Props = {
@@ -47,6 +50,10 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
   const total = recipe.steps.length
   const step = recipe.steps[index]
   const stepNumber = index + 1
+  // 用語タップ辞書(2026-07-11): この手順(本文+memo)内で同じ語は最初の1回だけタップ可能にする
+  const stepTermSeen = new Set<string>()
+  const stepTerms = collectUniqueTerms(step.text, step.memo)
+  const { state: termPopoverState, open: openTerm, close: closeTermPopover } = useTermPopover()
   // 調理中モードは全画面表示で常駐タイマー(TimerBar)を覆い隠してしまうため、
   // 動作中のタイマーをここにも表示する(押しても反応が無いように見える不具合の対策)
   const recipeTimers = timers.filter((t) => t.recipeId === recipeId)
@@ -308,9 +315,42 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
       >
         <StepBadge number={stepNumber} size={56} />
         <p className="ja-phrase w-full text-2xl font-bold leading-relaxed">
-          <TimeText text={step.text} onStart={(_tokenText, seconds) => startStepTimer(seconds)} />
+          <TermText
+            text={step.text}
+            seen={stepTermSeen}
+            onOpenTerm={openTerm}
+            renderPlain={(t) => (
+              <TimeText text={t} onStart={(_tokenText, seconds) => startStepTimer(seconds)} />
+            )}
+          />
         </p>
-        {step.memo && <MemoText text={step.memo} className="w-full text-ink-muted" />}
+        {step.memo && (
+          <MemoText
+            text={step.memo}
+            className="w-full text-ink-muted"
+            onOpenTerm={openTerm}
+            seen={stepTermSeen}
+          />
+        )}
+        {stepTerms.length > 0 && (
+          <p className="w-full text-sm text-ink-muted">
+            {ja.term.chipLabel}
+            <span className="ml-1 inline-flex flex-wrap justify-center gap-x-1 gap-y-1.5">
+              {stepTerms.map((term) => (
+                <button
+                  key={term.term}
+                  type="button"
+                  onClick={(e) => openTerm(term, e.currentTarget)}
+                  aria-label={ja.term.openAria.replace('{term}', term.term)}
+                  className="rounded-sm px-1.5 py-0.5 font-bold text-accent underline decoration-dotted underline-offset-2"
+                  style={{ background: 'color-mix(in oklab, var(--accent) 8%, var(--bg))' }}
+                >
+                  {term.term}
+                </button>
+              ))}
+            </span>
+          </p>
+        )}
         {step.minutes != null && step.minutes > 0 && !isMinutesShownInText(step.text, step.minutes) && (
           <button
             type="button"
@@ -356,6 +396,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
           </button>
         )}
       </div>
+      <TermPopover state={termPopoverState} onClose={closeTermPopover} />
     </div>
   )
 }

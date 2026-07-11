@@ -37,6 +37,8 @@ import NutritionTeaser from '../components/NutritionTeaser'
 import { RecipePlaceholder, seasonIcons } from '../components/RecipeCard'
 import StepBadge from '../components/StepBadge'
 import TimeText from '../components/TimeText'
+import TermText from '../components/TermText'
+import TermPopover, { useTermPopover } from '../components/TermPopover'
 import { todayString } from '../logic/date'
 import { ja } from '../i18n/ja'
 
@@ -120,6 +122,9 @@ export default function RecipeDetailPage() {
 
   // 時短モード（レンジ活用など、通常より手早い代替手順がある料理だけ切り替えを表示。表示中だけの一時的な選択）
   const [quickMode, setQuickMode] = useState(false)
+
+  // 用語タップ辞書(2026-07-11): ポップオーバーの開閉はページ単位で1つ持つ
+  const { state: termPopoverState, open: openTerm, close: closeTermPopover } = useTermPopover()
 
   if (recipe === undefined) {
     // 読み込み中(undefined)は何も出さない。id が存在しない場合は下の分岐へ
@@ -388,7 +393,13 @@ export default function RecipeDetailPage() {
                       )}
                     </span>
                   </div>
-                  {ing.memo && <MemoText text={ing.memo} className="mt-0.5 text-sm text-ink-muted" />}
+                  {ing.memo && (
+                    <MemoText
+                      text={ing.memo}
+                      className="mt-0.5 text-sm text-ink-muted"
+                      onOpenTerm={openTerm}
+                    />
+                  )}
                 </li>
               )
             })}
@@ -444,6 +455,8 @@ export default function RecipeDetailPage() {
             {displaySteps.map((step, index) => {
               const stepNumber = index + 1
               const isHighlighted = highlightStepIndex === index
+              // 用語タップ辞書: 同じ手順内(本文+memo)では同じ語は最初の1回だけタップ可能にする
+              const stepTermSeen = new Set<string>()
               return (
                 <li
                   key={index}
@@ -456,23 +469,37 @@ export default function RecipeDetailPage() {
                 >
                   <StepBadge number={stepNumber} />
                   <div className="min-w-0 flex-1">
-                    {/* 文中の「10分」などはタップでタイマー開始 */}
+                    {/* 文中の「10分」などはタップでタイマー開始、辞書語はタップで説明 */}
                     <p className="ja-phrase">
-                      <TimeText
+                      <TermText
                         text={step.text}
-                        onStart={(_tokenText, seconds) =>
-                          startTimer({
-                            key: `${id}-${index}-${seconds}`,
-                            label: recipe.title,
-                            doneLabel: deriveDoneLabel(step.text),
-                            seconds,
-                            recipeId: id,
-                            stepNumber,
-                          })
-                        }
+                        seen={stepTermSeen}
+                        onOpenTerm={openTerm}
+                        renderPlain={(t) => (
+                          <TimeText
+                            text={t}
+                            onStart={(_tokenText, seconds) =>
+                              startTimer({
+                                key: `${id}-${index}-${seconds}`,
+                                label: recipe.title,
+                                doneLabel: deriveDoneLabel(step.text),
+                                seconds,
+                                recipeId: id,
+                                stepNumber,
+                              })
+                            }
+                          />
+                        )}
                       />
                     </p>
-                    {step.memo && <MemoText text={step.memo} className="mt-0.5 text-sm text-ink-muted" />}
+                    {step.memo && (
+                      <MemoText
+                        text={step.memo}
+                        className="mt-0.5 text-sm text-ink-muted"
+                        onOpenTerm={openTerm}
+                        seen={stepTermSeen}
+                      />
+                    )}
                     {step.minutes != null &&
                       step.minutes > 0 &&
                       !isMinutesShownInText(step.text, step.minutes) && (
@@ -510,6 +537,7 @@ export default function RecipeDetailPage() {
             <MemoText
               text={recipe.memo}
               className="mt-[var(--space-sm)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm"
+              onOpenTerm={openTerm}
             />
           </section>
         )}
@@ -709,6 +737,7 @@ export default function RecipeDetailPage() {
           }}
         />
       )}
+      <TermPopover state={termPopoverState} onClose={closeTermPopover} />
     </div>
   )
 }

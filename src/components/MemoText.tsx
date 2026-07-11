@@ -24,9 +24,28 @@ function splitSentences(line: string): string[] {
 }
 
 import { wrapJaPhrases } from '../logic/jaWrap'
+import TermText from './TermText'
+import type { OpenTerm } from './TermPopover'
 
-export function MemoText({ text, className }: { text: string; className?: string }) {
+type Props = {
+  text: string
+  className?: string
+  /** 用語タップ辞書(2026-07-11)。渡すとmemo内の辞書語がタップ可能になる */
+  onOpenTerm?: OpenTerm
+  /** 手順の本文と用語の既出集合を共有したいとき(同一手順内は1回だけタップ可能にする)に渡す */
+  seen?: Set<string>
+}
+
+export function MemoText({ text, className, onOpenTerm, seen }: Props) {
   const lines = text.split('\n')
+  // 呼び出しごとに1つの集合を使い回し、この関数内(=このmemo1つ分)で用語の既出判定を揃える
+  const localSeen = seen ?? new Set<string>()
+  const renderSentence = (s: string, key: number) =>
+    onOpenTerm ? (
+      <TermText key={key} text={s} seen={localSeen} onOpenTerm={onOpenTerm} />
+    ) : (
+      wrapJaPhrases(s)
+    )
   return (
     <div className={className ? `ja-phrase ${className}` : 'ja-phrase'}>
       {lines.map((line, i) =>
@@ -39,7 +58,7 @@ export function MemoText({ text, className }: { text: string; className?: string
             <span className="min-w-0 flex-1">
               {splitSentences(line.slice(1)).map((s, j) => (
                 <span key={j} className="block">
-                  {wrapJaPhrases(s)}
+                  {renderSentence(s, j)}
                 </span>
               ))}
             </span>
@@ -48,7 +67,7 @@ export function MemoText({ text, className }: { text: string; className?: string
           <p key={i}>
             {splitSentences(line).map((s, j) => (
               <span key={j} className="block">
-                {wrapJaPhrases(s)}
+                {renderSentence(s, j)}
               </span>
             ))}
           </p>
