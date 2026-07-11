@@ -8,30 +8,34 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DOCS_PATH = path.join(__dirname, '..', '..', 'docs', '12_基本レシピ増枠_原稿.md')
-const OUT_PATH = path.join(__dirname, '..', 'public', 'sets', 'data', 'review.json')
-
-const md = readFileSync(DOCS_PATH, 'utf-8')
+// 対象原稿: docs/12(41品→review.json)に加え、docs/18(第8弾+だし→review8.json)も同じ記法なのでまとめて生成する(2026-07-11)
+const TARGETS = [
+  { doc: '12_基本レシピ増枠_原稿.md', out: 'review.json' },
+  { doc: '18_第8弾_夏のさっぱり和食_原稿.md', out: 'review8.json' },
+]
 
 // 「### 1. タイトル」〜次の「### 」または「## 」の手前までを1レシピブロックとする
-const lines = md.split('\n')
-const blocks = []
-let current = null
-for (const line of lines) {
-  const h3 = line.match(/^### \d+\.\s*(.+?)\s*$/)
-  if (h3) {
-    if (current) blocks.push(current)
-    current = { title: h3[1].trim(), lines: [] }
-    continue
+function parseBlocks(md) {
+  const lines = md.split('\n')
+  const blocks = []
+  let current = null
+  for (const line of lines) {
+    const h3 = line.match(/^### \d+\.\s*(.+?)\s*$/)
+    if (h3) {
+      if (current) blocks.push(current)
+      current = { title: h3[1].trim(), lines: [] }
+      continue
+    }
+    if (/^## /.test(line)) {
+      if (current) blocks.push(current)
+      current = null
+      continue
+    }
+    if (current) current.lines.push(line)
   }
-  if (/^## /.test(line)) {
-    if (current) blocks.push(current)
-    current = null
-    continue
-  }
-  if (current) current.lines.push(line)
+  if (current) blocks.push(current)
+  return blocks
 }
-if (current) blocks.push(current)
 
 // R12(2026-07-11): 原稿の1行記法ではmemo内の改行を literal「\n」で書く。ここで実改行へ変換する
 function unescapeNewlines(s) {
@@ -140,8 +144,14 @@ function parseStepLine(raw) {
   return step
 }
 
-const recipes = []
-for (const block of blocks) {
+for (const target of TARGETS) {
+  const docPath = path.join(__dirname, '..', '..', 'docs', target.doc)
+  const outPath = path.join(__dirname, '..', 'public', 'sets', 'data', target.out)
+  const md = readFileSync(docPath, 'utf-8')
+  const blocks = parseBlocks(md)
+
+  const recipes = []
+  for (const block of blocks) {
   const text = block.lines.join('\n')
   const header = parseHeader(text)
 
@@ -179,17 +189,18 @@ for (const block of blocks) {
   })
 }
 
-const file = {
-  app: 'uchi-recipe',
-  version: 1,
-  exportedAt: new Date().toISOString(),
-  // setIdをあえて付けない: 課金ゲート(hasPaidRecipeAccess)の対象外にするため(レビュー専用)
-  recipes,
-}
+  const file = {
+    app: 'uchi-recipe',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    // setIdをあえて付けない: 課金ゲート(hasPaidRecipeAccess)の対象外にするため(レビュー専用)
+    recipes,
+  }
 
-mkdirSync(path.dirname(OUT_PATH), { recursive: true })
-writeFileSync(OUT_PATH, JSON.stringify(file, null, 2) + '\n')
-console.log(`生成: ${OUT_PATH}（${recipes.length}品）`)
-for (const r of recipes) {
-  console.log(`  - ${r.title}（材料${r.ingredients.length}・手順${r.steps.length}）`)
+  mkdirSync(path.dirname(outPath), { recursive: true })
+  writeFileSync(outPath, JSON.stringify(file, null, 2) + '\n')
+  console.log(`生成: ${outPath}（${recipes.length}品）`)
+  for (const r of recipes) {
+    console.log(`  - ${r.title}（材料${r.ingredients.length}・手順${r.steps.length}）`)
+  }
 }

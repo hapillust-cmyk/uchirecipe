@@ -40,12 +40,17 @@ for (const file of readdirSync(setsDir).sort()) {
   }
 }
 
-// レビュー用コピー(docs/12原稿から生成される未承認レシピ。あればそれも同じ基準で見る)
-const reviewPath = path.join(__dirname, '..', 'public', 'sets', 'data', 'review.json')
-if (existsSync(reviewPath)) {
-  const reviewFile = JSON.parse(readFileSync(reviewPath, 'utf-8'))
-  for (const r of reviewFile.recipes) {
-    entries.push({ source: 'review.json(docs/12原稿)', recipe: r })
+// レビュー用コピー(原稿から生成される未承認レシピ。あればそれも同じ基準で見る)
+for (const [reviewFileName, reviewLabel] of [
+  ['review.json', 'review.json(docs/12原稿)'],
+  ['review8.json', 'review8.json(docs/18原稿)'],
+]) {
+  const reviewPath = path.join(__dirname, '..', 'public', 'sets', 'data', reviewFileName)
+  if (existsSync(reviewPath)) {
+    const reviewFile = JSON.parse(readFileSync(reviewPath, 'utf-8'))
+    for (const r of reviewFile.recipes) {
+      entries.push({ source: reviewLabel, recipe: r })
+    }
   }
 }
 
@@ -162,6 +167,15 @@ for (const { source, recipe } of entries) {
   for (const ing of recipe.ingredients) {
     if (/[０-９]/.test(ing.amount) || /[０-９]/.test(ing.unit)) {
       add('高', '全角数字', source, recipe.title, `材料「${ing.name}」の分量/単位に全角数字: 「${ing.amount}${ing.unit}」`)
+    }
+  }
+}
+
+// --- 9b. 分量欄への単位語の混入(「大さじ1」形式は数値と単位が分離されずscaleAmountが効かない・2026-07-11第8弾起草で実発生) ---
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients) {
+    if (/(大さじ|小さじ|カップ)/.test(ing.amount)) {
+      add('高', '分量欄に単位語', source, recipe.title, `材料「${ing.name}」の分量欄に単位語が混入: 「${ing.amount}」(「1 大さじ」の分離形式にすること。人数変更のスケールが効かなくなる)`)
     }
   }
 }

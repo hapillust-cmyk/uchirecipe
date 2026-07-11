@@ -52,6 +52,7 @@ export type ExcludedReason =
   | 'food' // 成分表サブセットに該当食材が無い
   | 'unit' // 単位をグラムに換算できない
   | 'amount' // 分量が数値でない（少々・適量など）
+  | 'prep' // 塩もみ・板ずり用の塩など、洗い流し・絞りで大半が食べる分に残らない下ごしらえ用
 
 export interface ExcludedIngredient {
   name: string
@@ -232,6 +233,8 @@ function computeIngredient(
   ing: Ingredient,
 ): { item: IngredientNutrition } | { reason: ExcludedReason } | 'zero' {
   if (isZeroIngredient(ing.name)) return 'zero'
+  // 塩もみ・板ずり用の塩は、洗い流し・絞りで大半が食べる分に残らないため計算に含めない(2026-07-11)
+  if (ing.name.includes('塩') && /(塩もみ|板ずり)用/.test(ing.memo ?? '')) return { reason: 'prep' }
   const food = matchNutritionFood(ing.name)
   if (!food) return { reason: 'food' }
   const value = parseAmountNumber(ing.amount)

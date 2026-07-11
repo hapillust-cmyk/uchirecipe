@@ -47,7 +47,7 @@ export const NUTRITION_DATA: NutritionData = {
   "source": "日本食品標準成分表（八訂）増補2023年（文部科学省）",
   "sourcePage": "https://www.mext.go.jp/a_menu/syokuhinseibun/mext_00001.html",
   "sourceFile": "https://www.mext.go.jp/content/20260327-mxt_kagsei-mext-000029402_02.xlsx",
-  "generatedAt": "2026-07-10",
+  "generatedAt": "2026-07-11",
   "dbVersion": 1,
   "foods": [
     {
@@ -712,6 +712,28 @@ export const NUTRITION_DATA: NutritionData = {
       "unitGrams": {
         "本": 7
       }
+    },
+    {
+      "id": "06205",
+      "label": "ゴーヤ",
+      "mextName": "にがうり 果実 生",
+      "aliases": [
+        "ゴーヤ",
+        "ゴーヤー",
+        "にがうり",
+        "苦瓜"
+      ],
+      "per100g": {
+        "kcal": 15,
+        "proteinG": 1,
+        "fatG": 0.1,
+        "carbG": 3.9,
+        "saltG": 0
+      },
+      "unitGrams": {
+        "本": 250
+      },
+      "note": "第8弾ゴーヤチャンプルーで初登場(2026-07-11)"
     },
     {
       "id": "06036",
@@ -2111,23 +2133,24 @@ export const NUTRITION_DATA: NutritionData = {
       }
     },
     {
-      "id": "01043",
+      "id": "01044",
       "label": "そうめん",
-      "mextName": "こむぎ ［うどん・そうめん類］ そうめん・ひやむぎ 乾",
+      "mextName": "こむぎ ［うどん・そうめん類］ そうめん・ひやむぎ ゆで",
       "aliases": [
         "そうめん",
         "ひやむぎ"
       ],
       "per100g": {
-        "kcal": 333,
-        "proteinG": 9.5,
-        "fatG": 1.1,
-        "carbG": 72.7,
-        "saltG": 3.8
+        "kcal": 114,
+        "proteinG": 3.5,
+        "fatG": 0.4,
+        "carbG": 25.8,
+        "saltG": 0.2
       },
       "unitGrams": {
-        "束": 50
-      }
+        "束": 135
+      },
+      "note": "乾1束50g→ゆで約135gの換算。乾(01043)基準だと練り込み塩(3.8g/100g)が茹でこぼし分まで計上され塩分過大になるためゆで基準(2026-07-11)"
     },
     {
       "id": "01047",
