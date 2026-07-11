@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Heart,
@@ -48,6 +48,19 @@ export default function RecipeDetailPage() {
   const params = useParams()
   const id = Number(params.id)
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+
+  // 戻る先の決定（2026-07-12オーナー指示）:
+  // 「今日の献立」（ホームのmealPlanウィジェット・献立タブの今日の献立セクション）から
+  // 開いた場合はそこへ、それ以外（一覧・検索結果・提案カード・履歴・タイマー通知等、
+  // 従来どおり）は常にレシピ一覧へ（2026-07-10オーナー指示は据え置き）。
+  // 出所はLinkのstate（{from:'todayList', fromPath}）で受け渡す。ブラウザの実際の戻る操作
+  // （履歴のpop）は、この画面へ遷移してきた直前の画面へそのまま戻るため、上記の出所と
+  // 基本的に一致し乖離しない（今日の献立からのリンクはpush遷移のため、実際の1つ前の
+  // 履歴エントリも呼び出し元と同じになる）
+  const navState = location.state as { from?: string; fromPath?: string } | null
+  const backFallback =
+    navState?.from === 'todayList' ? (navState.fromPath ?? '/meal-plan') : '/recipes'
 
   // undefined = 読み込み中 / null = 該当レシピなし、を区別する
   const recipe = useLiveQuery(async () => (await db.recipes.get(id)) ?? null, [id])
@@ -230,7 +243,7 @@ export default function RecipeDetailPage() {
   return (
     <div className={`mx-auto w-full max-w-md ${timers.length > 0 ? 'pb-48' : 'pb-[var(--space-lg)]'}`}>
       <BackHeader
-        fallback="/recipes"
+        fallback={backFallback}
         alwaysFallback
         title={recipe.title}
         onTitleClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

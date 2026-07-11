@@ -53,16 +53,24 @@ function TodayListRow({
   onRemove: () => void
 }) {
   const photoUrl = usePhotoUrl(recipe.photo)
+  // state.from/fromPathで「今日の献立から開いた」ことを詳細画面へ持ち回る。
+  // RecipeDetailPageの戻るボタンが、通常の「常に一覧へ」ではなくここ(献立タブ)へ
+  // 戻るために参照する（2026-07-12オーナー指示）
+  const fromState = { from: 'todayList' as const, fromPath: '/meal-plan' }
   return (
     <li className="flex items-center gap-2 px-[var(--space-sm)] py-2">
-      <Link to={`/recipes/${recipe.id}`} className="h-10 w-10 shrink-0 overflow-hidden rounded-sm">
+      <Link
+        to={`/recipes/${recipe.id}`}
+        state={fromState}
+        className="h-10 w-10 shrink-0 overflow-hidden rounded-sm"
+      >
         {photoUrl ? (
           <img src={photoUrl} alt={recipe.title} className="h-full w-full object-cover" />
         ) : (
           <RecipePlaceholder recipe={recipe} iconSize={20} />
         )}
       </Link>
-      <Link to={`/recipes/${recipe.id}`} className="min-w-0 flex-1 truncate font-bold">
+      <Link to={`/recipes/${recipe.id}`} state={fromState} className="min-w-0 flex-1 truncate font-bold">
         {recipe.title}
       </Link>
       <button

@@ -191,10 +191,14 @@ export default function HomePage() {
         </h2>
         {todayListRecipes && todayListRecipes.length > 0 ? (
           <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-app">
+            {/* state.from/fromPathで「今日の献立から開いた」ことを詳細画面へ持ち回る。
+                RecipeDetailPageの戻るボタンが、通常の「常に一覧へ」ではなくここ(ホーム)へ
+                戻るために参照する（2026-07-12オーナー指示） */}
             {todayListRecipes.map((recipe) => (
               <li key={recipe.id}>
                 <Link
                   to={`/recipes/${recipe.id}`}
+                  state={{ from: 'todayList', fromPath: '/' }}
                   className="flex items-center gap-2 px-[var(--space-md)] py-2"
                 >
                   <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
