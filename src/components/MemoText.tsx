@@ -23,7 +23,7 @@ function splitSentences(line: string): string[] {
   return parts.length > 0 ? parts : [line]
 }
 
-import { wrapJaPhrases } from '../logic/jaWrap'
+import { renderJaUnits } from './jaUnits'
 import TermText from './TermText'
 import { findTermMatches } from '../logic/termSplit'
 import type { OpenTerm } from './TermPopover'
@@ -43,7 +43,7 @@ export function MemoText({ text, className, onOpenTerm, seen }: Props) {
   // この実行内で新規作成するコピー(propsのSetは書き換えない=StrictMode二重実行対策)
   const localSeen = new Set(seen)
   const renderSentence = (s: string, key: number) => {
-    if (!onOpenTerm) return wrapJaPhrases(s)
+    if (!onOpenTerm) return renderJaUnits(s)
     const node = <TermText key={key} text={s} seen={localSeen} onOpenTerm={onOpenTerm} />
     // 次の文のために、この文に含まれる用語を既出へ(splitByTermsは純粋化済みのため自前で更新)
     for (const m of findTermMatches(s)) localSeen.add(m.term.term)
@@ -61,7 +61,7 @@ export function MemoText({ text, className, onOpenTerm, seen }: Props) {
             const label = sep > 0 ? line.slice(1, sep) : line.slice(1)
             const detail = sep > 0 ? line.slice(sep + 1) : ''
             if (!onOpenTerm || !detail) {
-              return <p key={i}>{wrapJaPhrases(label + (detail ? '：' + detail : ''))}</p>
+              return <p key={i}>{renderJaUnits(label + (detail ? '：' + detail : ''))}</p>
             }
             return (
               <p key={i} className="text-left">

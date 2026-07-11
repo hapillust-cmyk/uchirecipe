@@ -32,6 +32,7 @@ import { MemoText } from '../components/MemoText'
 import { useTimers } from '../components/TimerProvider'
 import { useWakeLock } from '../components/useWakeLock'
 import BackHeader from '../components/BackHeader'
+import CookedLogModal from '../components/CookedLogModal'
 import FocusMode from '../components/FocusMode'
 import NutritionTeaser from '../components/NutritionTeaser'
 import { RecipePlaceholder, seasonIcons } from '../components/RecipeCard'
@@ -109,16 +110,11 @@ export default function RecipeDetailPage() {
   const [servingsOverride, setServingsOverride] = useState<number>()
   const servings = servingsOverride ?? recipe?.servings ?? 1
 
-  // 「作った！」記録の入力欄
+  // 「作った！」記録の入力欄(2026-07-12: 窓表示化。中央固定のモーダルなので、
+  // 開いたときにページ側をスクロールさせる必要がなくなった＝スクロール位置は動かない)
   const [logOpen, setLogOpen] = useState(false)
   const [logDate, setLogDate] = useState(todayString)
   const [logNote, setLogNote] = useState('')
-  // 記録フォームが開いたら見える位置までスクロールする
-  // (調理中モードの「完成！」から自動で開いたとき、画面上部にいると気づけないため)
-  const logFormRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (logOpen) logFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [logOpen])
 
   // 過去の記録を後から編集する
   const [editingLogIndex, setEditingLogIndex] = useState<number | null>(null)
@@ -635,51 +631,6 @@ export default function RecipeDetailPage() {
           </section>
         )}
 
-        {/* 記録の入力欄（「作った！」または調理中モードの「完成！」で開く） */}
-        {logOpen && (
-          <div
-            ref={logFormRef}
-            className="mt-[var(--space-lg)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-md"
-          >
-            <h3 className="font-bold">{ja.detail.cookedDialogTitle}</h3>
-            <label className="mt-[var(--space-sm)] block text-sm text-ink-muted">
-              {ja.detail.cookedDate}
-              <input
-                type="date"
-                value={logDate}
-                onChange={(e) => setLogDate(e.target.value)}
-                className="mt-1 block w-full rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink"
-              />
-            </label>
-            <label className="mt-[var(--space-sm)] block text-sm text-ink-muted">
-              {ja.detail.cookedNote}
-              <input
-                type="text"
-                value={logNote}
-                onChange={(e) => setLogNote(e.target.value)}
-                placeholder={ja.detail.cookedNotePlaceholder}
-                className="mt-1 block w-full rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink"
-              />
-            </label>
-            <div className="mt-[var(--space-md)] flex gap-2">
-              <button
-                type="button"
-                onClick={saveLog}
-                className="flex-1 rounded-md bg-accent py-3 text-lg font-bold text-app shadow-sm"
-              >
-                {ja.detail.cookedSave}
-              </button>
-              <button
-                type="button"
-                onClick={() => setLogOpen(false)}
-                className="rounded-md border border-edge bg-surface px-4 py-3 text-ink-muted"
-              >
-                {ja.detail.cookedCancel}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* シェア（テキスト / 画像カード） */}
         {shareOpen && (
           <div className="mt-[var(--space-lg)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-md">
@@ -752,6 +703,15 @@ export default function RecipeDetailPage() {
         />
       )}
       <TermPopover state={termPopoverState} onClose={closeTermPopover} />
+      <CookedLogModal
+        open={logOpen}
+        date={logDate}
+        note={logNote}
+        onDateChange={setLogDate}
+        onNoteChange={setLogNote}
+        onSave={saveLog}
+        onClose={() => setLogOpen(false)}
+      />
     </div>
   )
 }

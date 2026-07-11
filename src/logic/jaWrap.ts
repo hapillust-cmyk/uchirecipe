@@ -1,12 +1,20 @@
 // 日本語の折返し位置を文節のまとまりに揃える(BudouX・2026-07-11オーナー要望)。
-// さらに結合ルール(2026-07-11第2版・スマホ実機のオーナー指摘):
+// さらに結合ルール(2026-07-12第3版・iPad/iPhoneSE2実機のオーナー指摘11件を規則化):
 //  ・「◯分」等の時間トークンの直後では折り返さない(「2分/塩ゆで」→「2分塩ゆでしておく」)
-//  ・格助詞・並列助詞(を/に/へ/と/や/で)で終わる文節は次と結合(「酢と/塩こしょう」→「酢と塩こしょうを」)
+//  ・格助詞等(を/に/へ/と/や/で/の/が)で終わる文節は次と結合。ただし上限10文字
+//    (12文字まで許すと「唐辛子をじっくり香りが」のような句をまたぐ過結合が起きる)
 //  ・2文字以下の短い文節は前後に吸収する
-//  ・「、」「。」の直後は常に折返し可能(結合しない)
+//  ・「、」「。」の直後は常に折返し可能(BudouXが「加え、とろみが」のように句読点を
+//    セグメント中央に残しても、句読点の直後で必ず単位を切る)
+//  ・「・」の食材列挙は「・」を次の項目の先頭に付けて折り返す(「オリーブオイル・/薄切り…」
+//    ではなく「オリーブオイル/・薄切り…」。行頭の・は列挙の続きとして自然に読めるため)
+//  ・BudouXが語中で切る既知語(じゃがいも/だしの素等)は境界を除去して1語に戻す
 //  ・結合後の単位は最大12文字(超えると狭い画面で強制折返しが起きるため)
 // 使い方: wrapJaPhrases()で単位境界にゼロ幅スペースを挿し、表示側の要素に
 // .ja-phrase クラス(word-break: keep-all + overflow-wrap: anywhere)を付ける。
+// 注意: keep-allの下では inline-block/inline-flex 等のatomic inlineの前後が
+// 無条件の改行点になる(WebKit/Chromium共通・2026-07-12プローブで確認)。
+// タイマー・用語のボタン類はこの性質を前提に、TimeText/TermTextで境界を制御している。
 import { loadDefaultJapaneseParser } from 'budoux'
 
 const parser = loadDefaultJapaneseParser()
@@ -14,35 +22,93 @@ const parser = loadDefaultJapaneseParser()
 export const ZWSP = '\u200b'
 
 const TIME_END = /\d+(分|時間|秒)半?$/
-const BOND_END = /[をにへとやで]$/
+const BOND_END = /[をにへとやでのが]$/
 const PUNCT_END = /[、。」』）)]$/
-// 後方吸収してよい短い文節は補助動詞類のみ(「〜して|おく」等)。
+// 後方吸収してよい短い文節は補助動詞類のみ(「〜して|おく」「せん切りに|する」等)。
 // 任意の2文字を吸収するとBudouXの誤分割(「塩も|みする」)を巻き込み単語内で切れる
-const AUX_SHORT = /^(おく|いく|くる|みる|よい)$/
+const AUX_SHORT = /^(おく|いく|くる|みる|よい|する)[、。]?$/
 const MAX_UNIT = 12
+const BOND_MAX = 10
+
+// BudouXが語中で切ることが実機で確認された語。境界がこの語の内部に落ちたら除去する
+// (「じゃが|いも」「だしの|素」「い|ちょう|切り」「ささが|き」「麺とゆで|汁」の実例・2026-07-12)
+const KNOWN_WORDS = [
+  'じゃがいも',
+  'だしの素',
+  'ゆで汁',
+  'いちょう切り',
+  'ささがき',
+  '小口切り',
+  'こんにゃく',
+]
+
+/** BudouXの素分割に、句読点・中黒・既知語の補正をかけたセグメント列を返す */
+function normalizedSegments(text: string): string[] {
+  // 1) 境界オフセット集合を作る
+  const raw = parser.parse(text)
+  const boundaries = new Set<number>()
+  let pos = 0
+  for (const seg of raw) {
+    pos += seg.length
+    boundaries.add(pos)
+  }
+  // 2) 既知語の内部に落ちた境界を除去
+  for (const w of KNOWN_WORDS) {
+    let idx = text.indexOf(w)
+    while (idx !== -1) {
+      for (let k = idx + 1; k < idx + w.length; k++) boundaries.delete(k)
+      idx = text.indexOf(w, idx + 1)
+    }
+  }
+  // 3) 「、」「。」の直後は必ず境界(セグメント中央の句読点で切る)。
+  //    「・」の直前も境界(列挙の・は次項目の先頭に付ける)
+  for (let i = 0; i < text.length; i++) {
+    if ((text[i] === '、' || text[i] === '。') && i + 1 < text.length) boundaries.add(i + 1)
+    if (text[i] === '・' && i > 0) boundaries.add(i)
+  }
+  boundaries.add(text.length)
+  // 4) セグメント列へ復元
+  const out: string[] = []
+  let start = 0
+  for (const b of [...boundaries].sort((a, z) => a - z)) {
+    if (b <= start) continue
+    out.push(text.slice(start, b))
+    start = b
+  }
+  return out
+}
 
 /** 文節境界にゼロ幅スペースを挿入する(見た目・検索データは不変。表示専用) */
 export function wrapJaPhrases(text: string): string {
-  if (!text || text.length < 8) return text
+  if (!text) return text
   const units: string[] = []
-  for (const seg of parser.parse(text)) {
+  for (const seg of normalizedSegments(text)) {
     const prev = units[units.length - 1]
-    const canMerge =
-      prev !== undefined &&
-      !PUNCT_END.test(prev) &&
-      // 「豚肉→根菜→…」の矢印列は、列の最後の項目が言い終わるまで結合を続ける
-      // (「ちぎった|こんにゃく」「ご飯を|入れて」で切れる実バグへの対応・2026-07-12)。
-      // 連用形「て」か句読点で項目列の言い切りとみなして止める。上限16文字
-      ((prev.includes('→') && !/[て、。]$/.test(prev)
-        ? prev.length + seg.length <= 16
-        : prev.length + seg.length <= MAX_UNIT &&
-          (TIME_END.test(prev) ||
-            BOND_END.test(prev) ||
-            prev.length <= 2 ||
-            AUX_SHORT.test(seg) ||
-            // 「出るくらい（約170度）」等: 括弧は直前の語に密着させる(括弧の前で折り返さない)
-            seg.startsWith('（') ||
-            seg.startsWith('('))))
+    let canMerge = false
+    if (prev !== undefined && !PUNCT_END.test(prev)) {
+      const total = prev.length + seg.length
+      if (prev.includes('→') && !/[て、。]$/.test(prev)) {
+        // 「豚肉→根菜→…」の矢印列は、列の最後の項目が言い終わるまで結合を続ける
+        // (「ちぎった|こんにゃく」「ご飯を|入れて」で切れる実バグへの対応・2026-07-12)。
+        // 連用形「て」か句読点で項目列の言い切りとみなして止める。上限16文字
+        canMerge = total <= 16
+      } else if (
+        TIME_END.test(prev) ||
+        prev.length <= 2 ||
+        AUX_SHORT.test(seg) ||
+        // 「出るくらい（約170度）」等: 閉じ括弧まで含む短い括弧だけ直前の語に密着させる。
+        // 「（レンジ600Wで…」のような開きっぱなしの長い括弧は密着させず、
+        // 「〜にする/（レンジ…」と括弧の直前で折り返す(2026-07-12オーナー指摘の傾向反映)
+        (/^[（(]/.test(seg) && /[）)]/.test(seg))
+      ) {
+        canMerge = total <= MAX_UNIT
+      } else if (BOND_END.test(prev)) {
+        // 時間トークンが絡む結合は12文字まで許す(「別に2分塩ゆでしておく」
+        // 「弱火で5分とろみを付ける」等、◯分の前後を切らない規則が優先)
+        const hasTime = /\d+(分|時間|秒)/.test(prev) || /^\d+(分|時間|秒)/.test(seg)
+        canMerge = total <= (hasTime ? MAX_UNIT : BOND_MAX)
+      }
+    }
     if (canMerge) {
       units[units.length - 1] = prev + seg
     } else {
@@ -54,31 +120,36 @@ export function wrapJaPhrases(text: string): string {
 
 /**
  * タイマーボタンの前後テキストを「ボタンと一体化する部分/しない部分」に分ける。
- * 「中火で15分煮る」のように、直前の短い文節(中火で/別に/レンジで等)と
+ * 「中火で15分煮る」のように、直前の短い文節(中火で/とろみが付くまで等)と
  * 直後の文節はボタンとひとかたまりにし、その境界では折り返さない(2026-07-11オーナー指摘)。
- * 一体化の上限: 前=5文字、前後合計=9文字(超えると狭い画面で横はみ出しするため)。
+ * 一体化の上限: 前=8文字、前後合計=9文字。さらに前+トークン+後が12文字を超える場合は
+ * 前側の結合を諦める(ひとかたまりが狭い画面の1行に収まらなくなるため。後側の
+ * 「ほど」等の密着を優先する・2026-07-12)。
  */
 export function splitAroundTimeToken(
   before: string,
   after: string,
+  tokenLen = 3,
 ): { pre: string; bondPrev: string; bondNext: string; post: string } {
-  const afterUnits = after ? wrapJaPhrases(after).split(ZWSP) : []
-
-  // 前側の結合はrawの文節単位で「中火で」「レンジで」「◯◯の」型だけを拾う
+  // 前側の結合はrawの文節単位で「中火で」「レンジで」「◯◯の」「とろみが」型だけを拾う
   // (「取りながら」のような動詞の連用形は前の句に付くため結合しない・2026-07-11オーナー指摘の傾向反映)
   let bondPrev = ''
   let beforeRest = before
   if (before) {
-    const raw = parser.parse(before)
-    // 末尾がで/に/の止まりのときだけ、7文字を上限にraw文節を末尾から蓄積して結合
+    const raw = normalizedSegments(before)
+    // 末尾がで/に/の/が止まりのときだけ、8文字を上限にraw文節を末尾から蓄積して結合
     // (「ゆで|上がりの」のようにBudouXが語中で切っても「ゆで上がりの」ごと拾えるように)
-    if (raw.length > 0 && /[でにの]$/.test(raw[raw.length - 1]) && !PUNCT_END.test(raw[raw.length - 1])) {
+    if (
+      raw.length > 0 &&
+      /[でにのが]$/.test(raw[raw.length - 1]) &&
+      !PUNCT_END.test(raw[raw.length - 1])
+    ) {
       let acc = ''
       for (let i = raw.length - 1; i >= 0; i--) {
-        // 遡って取り込むのは修飾のまとまり(で/に/の止まり)だけ。「野菜を」「〜して」で止める
-        if (acc && !/[でにの]$/.test(raw[i])) break
+        // 遡って取り込むのは修飾のまとまり(で/に/の/が止まり)だけ。「野菜を」「〜して」で止める
+        if (acc && !/[でにのが]$/.test(raw[i])) break
         const candidate = raw[i] + acc
-        if (candidate.length > 7 || PUNCT_END.test(raw[i])) break
+        if (candidate.length > 8 || PUNCT_END.test(raw[i])) break
         acc = candidate
       }
       if (acc) {
@@ -87,13 +158,23 @@ export function splitAroundTimeToken(
       }
     }
   }
-  const beforeUnits = beforeRest ? wrapJaPhrases(beforeRest).split(ZWSP) : []
-  let bondNext = ''
+  // 後側: 「12分ほど」「1時間くらい」の助数詞尾はトークンに必ず密着させる
+  const tailMatch = after.match(/^(ほど|くらい|ぐらい|程度)/)
+  let bondNext = tailMatch ? tailMatch[0] : ''
+  // 幅ガード: ひとかたまりが12文字を超えるなら前側の結合を先に解く
+  // (後側の判定より先に解かないと、解いた分の余裕をbondNextに使えない)
+  if (bondPrev && bondPrev.length + tokenLen + bondNext.length > 12) {
+    beforeRest = before
+    bondPrev = ''
+  }
+  const afterRest = after.slice(bondNext.length)
+  const afterUnits = afterRest ? wrapJaPhrases(afterRest).split(ZWSP) : []
   const first = afterUnits[0]
-  if (first && first.length <= 7 && bondPrev.length + first.length <= 9) {
-    bondNext = first
+  if (first && first.length <= 7 && bondPrev.length + bondNext.length + first.length <= 9) {
+    bondNext += first
     afterUnits.shift()
   }
+  const beforeUnits = beforeRest ? wrapJaPhrases(beforeRest).split(ZWSP) : []
   return {
     pre: beforeUnits.join(ZWSP),
     bondPrev,

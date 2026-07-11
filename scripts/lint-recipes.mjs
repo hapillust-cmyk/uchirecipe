@@ -220,6 +220,15 @@ for (const { source, recipe } of entries) {
   }
 }
 
+// --- 9f. こしょう単独へ塩用グラム目安を転用しない(2026-07-12・第16弾QAで発見。こしょうの目安は「2〜3ふり」) ---
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients ?? []) {
+    if (/こしょう/.test(ing.name) && !/塩こしょう/.test(ing.name) && /少々/.test(ing.amount ?? '') && /\d+(\.\d+)?\s*g/.test(ing.memo ?? '')) {
+      add('中', 'こしょうへの塩用グラム目安の転用', source, recipe.title, `「${ing.name}」のmemoにグラム目安(${ing.memo})。こしょうは「2〜3ふり」で書く`)
+    }
+  }
+}
+
 // --- 10. 「器に盛る」だけの単独手順(添え物・盛り方の説明が無ければ前の手順に統合する方針・2026-07-07ユーザー決定) ---
 for (const { source, recipe } of entries) {
   for (const st of recipe.steps) {

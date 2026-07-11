@@ -16,7 +16,7 @@ import { useTimers } from './TimerProvider'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
 import { collectUniqueTerms } from '../logic/termSplit'
-import { wrapJaPhrases } from '../logic/jaWrap'
+import { renderJaUnits } from './jaUnits'
 import StepBadge from './StepBadge'
 import TimeText from './TimeText'
 import TermText from './TermText'
@@ -341,15 +341,19 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
           />
         )}
         {stepTerms.length > 0 && (
-          <div className="w-full text-sm text-ink-muted">
+          <div className="w-full text-sm text-ink-muted md:max-w-md">
             {/* 用語は常時表示にする(2026-07-11オーナー実機フィードバック: タップしないと説明が
                 見えないのが不便)。「用語＝説明文」を1行ずつ、最大3語まで表示する。
-                説明が長い場合も文節折返し(.ja-phrase)を適用する */}
+                説明が長い場合も文節折返し(.ja-phrase)を適用する。
+                PCなど広い画面だと左端に寄りすぎる(2026-07-12オーナー実機フィードバック)ため、
+                md(768px)以上だけ幅を絞る。親(text-center + items-center の縦flex)が
+                中央寄せしてくれるので、margin指定なしでも「中央気味」に収まる。
+                375px幅では w-full のまま挙動が変わらないことを確認済み */}
             {stepTerms.slice(0, 3).map((term) => (
               <p key={term.term} className="ja-phrase text-left leading-snug">
                 <span className="font-bold text-ink">{term.term}</span>
                 {ja.term.definitionSeparator}
-                {wrapJaPhrases(term.description)}
+                {renderJaUnits(term.description)}
               </p>
             ))}
             {/* 4語目以降は面積を取りすぎるため、従来どおりタップ式のチップに残す */}

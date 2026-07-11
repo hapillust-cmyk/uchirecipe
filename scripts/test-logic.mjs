@@ -478,7 +478,9 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   eq('「5分」の直後で切れない(弱火で5分とろみを付ける)', stew.includes('弱火で5分とろみを付ける'), true)
   const potato = wrapJaPhrases('湯を切って粉ふきにし、熱いうちにつぶして酢と塩こしょうを混ぜる').split(ZWSP)
   eq('「酢と」が単独文節にならない', potato.includes('酢と'), false)
-  eq('酢と塩こしょうがまとまる', potato.includes('酢と塩こしょうを混ぜる'), true)
+  // 2026-07-12第3版: 格助詞結合の上限を10文字に絞ったため「混ぜる」は次の単位でよい。
+  // オーナー指摘の本体は「酢と/塩こしょう」の分断防止(=「酢と塩こしょうを」が一体)
+  eq('酢と塩こしょうがまとまる', potato.some((u) => u.startsWith('酢と塩こしょうを')), true)
   const broc = wrapJaPhrases('具材を一口大に切る。ブロッコリーは別に2分塩ゆでしておく').split(ZWSP)
   eq('「2分」の直後で切れない(別に2分塩ゆでしておく)', broc.includes('別に2分塩ゆでしておく'), true)
   eq('主題の「ブロッコリーは」では切れてよい', broc.includes('ブロッコリーは'), true)
@@ -488,7 +490,11 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   const arrow2 = wrapJaPhrases('強火でごま油を熱し、溶き卵→すぐにご飯を入れて木べらで切るように混ぜる。').split(ZWSP)
   eq('矢印列は項目の言い切りまで一体(チャーハン)', arrow2.includes('溶き卵→すぐにご飯を入れて'), true)
   const kakko = wrapJaPhrases('菜箸を入れて細かい泡がシュワッと出るくらい（約170度）の油で4分揚げる。').split(ZWSP)
-  eq('括弧の直前で折り返さない', kakko.some((u) => u.endsWith('（約170度）の') || u.includes('くらい（約170度）')), true)
+  // 2026-07-12第3版: 「出るくらい+（約170度）の」は13文字で上限超のため旧版でも密着せず、
+  // 「（約170度）の」が単独ユニットだった。第3版は「の」の格助詞結合で修飾先の
+  // 「油で」と一体になる(括弧が宙に浮かない)。括弧の中で切れないことも確認
+  eq('括弧が修飾先の語と一体(（約170度）の油で)', kakko.includes('（約170度）の油で'), true)
+  eq('括弧の中で切れない', kakko.some((u) => u.includes('（') && !u.includes('）')), false)
   // タイマーボタン前後の結合(「中火で15分煮る」を一体化)
   const { splitAroundTimeToken } = await import('../src/logic/jaWrap.ts')
   const nagara = splitAroundTimeToken('あくを取りながら', '煮て、煮えたものから食べる。')
@@ -501,6 +507,42 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   eq('「煮る。」がボタン後に結合', bond.bondNext, '煮る。')
   const bond2 = splitAroundTimeToken('じゃがいもを柔らかくなるまでゆでる。ゆで上がりの', '前に、にんじんを同じ鍋に加える。')
   eq('句読点止まりの直前は結合しない仕様の確認(ゆで上がりの=5文字は結合)', bond2.bondPrev, 'ゆで上がりの')
+
+  // ---- 2026-07-12第3版: iPad/iPhoneSE2実機のオーナー改行訂正11件の規則化 ----
+  const u = (t) => wrapJaPhrases(t).split(ZWSP)
+  // 句読点はセグメント中央に残っても必ず直後で切れる(鯖の味噌煮)
+  const saba2 = u('煮汁で味噌を溶いて加え、とろみが付くまで5分煮からめる。')
+  eq('「加え、」の直後で切れる(セグメント中央の句読点)', saba2.includes('加え、'), true)
+  // 「の」「が」も格助詞結合の対象(親子丼・豆腐わかめの味噌汁・ペペロン)
+  const oyako = u('小さめのフライパンにめんつゆと水を入れ、鶏肉と玉ねぎを中火で7分煮る。')
+  eq('「小さめの+フライパンに」が一体', oyako.includes('小さめのフライパンに'), true)
+  eq('「めんつゆと+水を入れ、」が一体', oyako.includes('めんつゆと水を入れ、'), true)
+  const misoshiru = u('鍋に水とだしの素を入れて火にかける。')
+  eq('「だしの素」が語中で切れない(既知語の境界修復)', misoshiru[0], '鍋に水とだしの素を')
+  // 中黒の食材列挙は「・」を次項目の先頭に付けて折り返す(ペペロン)
+  const pepe = u('弱火のフライパンでオリーブオイル・薄切りにんにく・種を除いた唐辛子をじっくり香りが出るまで温める。')
+  eq('「弱火の+フライパンで」が一体', pepe.includes('弱火のフライパンで'), true)
+  eq('「・」が行末に残らない(・は次項目の先頭)', pepe.some((s) => s.endsWith('・')), false)
+  eq('「・薄切りにんにく」が項目として一体', pepe.includes('・薄切りにんにく'), true)
+  eq('句をまたぐ過結合をしない(唐辛子を|じっくり)', pepe.includes('唐辛子をじっくり香りが'), false)
+  // 既知語の境界修復(豚汁・ナポリタン・ポテサラ)
+  const tonjiru = u('野菜は薄めのいちょう切り、ごぼうはささがきにして水にさらす。ねぎは小口切りにする。')
+  eq('「いちょう切り」が語中で切れない', tonjiru.includes('薄めのいちょう切り、'), true)
+  eq('「ささがき」が語中で切れない', tonjiru.includes('ささがきにして'), true)
+  eq('「小口切りにする。」が一体(AUXする吸収)', tonjiru.includes('小口切りにする。'), true)
+  const napoli = u('ゆで上がった麺とゆで汁を少量加え、全体を絡めて塩こしょうで調える。')
+  eq('「ゆで汁」が語中で切れない', napoli.includes('麺とゆで汁を'), true)
+  eq('じゃがいもが語中で切れない', u('じゃがいもを12分ほどゆでる。')[0].startsWith('じゃがいも'), true)
+  // 開きっぱなしの長い括弧は直前に密着しない=括弧の前で折り返せる(ツナキャベツ丼)
+  const tuna = u('キャベツをせん切りにする（レンジ600Wで1分半ほど加熱すると時短になる）。')
+  eq('長い括弧の直前で折り返せる(せん切りにする|（レンジ…)', tuna.includes('キャベツをせん切りにする'), true)
+  // タイマー結合の第3版: が止まりの遡り+幅ガード+「ほど」密着
+  const saba2t = splitAroundTimeToken('煮汁で味噌を溶いて加え、とろみが付くまで', '煮からめる。', 2)
+  eq('「とろみが付くまで」がボタン前に結合(が止まりの遡り)', saba2t.bondPrev, 'とろみが付くまで')
+  const potatoT = splitAroundTimeToken('じゃがいもを柔らかくなるまで', 'ほどゆでる。ゆで上がりの', 3)
+  eq('幅ガード: 前結合を解いて「ほどゆでる。」を密着', potatoT.bondPrev === '' && potatoT.bondNext === 'ほどゆでる。', true)
+  const tunaT = splitAroundTimeToken('キャベツをせん切りにする（レンジ600Wで', 'ほど加熱すると時短になる）。', 3)
+  eq('「ほど」はトークンに必ず密着', tunaT.bondNext.startsWith('ほど'), true)
 }
 
 // ---------- termSplit: 用語タップ辞書の最長一致分割(2026-07-11) ----------

@@ -244,6 +244,67 @@ try {
     }
   }
 
+  // --- LOG-01: 「作った！」記録フォームの窓表示化(オーナー実機フィードバック 2026-07-12。
+  // 「『作った！』の位置が最下層のため、押下すると画面全体の表示が動いて見づらい」
+  // 「『作った！』の日付入力のバーの大きさが、はみだしている」の再発防止)。
+  // ・押下前後でページのスクロール位置(window.scrollY)が変わらない(以前はインライン展開で
+  //   scrollIntoViewが走り、レイアウトごと動いていた)
+  // ・<input type="date">がiPhone SE2相当(375x667・webkit)の画面幅からはみ出さない
+  // ・保存すると記録が一覧に反映される(既存の記録保存ロジックが壊れていないことの確認)
+  currentCheck = 'LOG-01'
+  {
+    const wkBrowser2 = await webkit.launch()
+    const wkContext2 = await wkBrowser2.newContext({ viewport: { width: 375, height: 667 } })
+    const wkPage2 = await wkContext2.newPage()
+    wkPage2.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@LOG-01] ${err.message}`)
+    })
+    try {
+      await wkPage2.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await wkPage2.waitForTimeout(1800) // 初回シード完了待ち
+      await wkPage2.evaluate(() => {
+        const link = document.querySelector('a[href^="#/recipes/"]')
+        if (link instanceof HTMLElement) link.click()
+      })
+      await wkPage2.waitForTimeout(600)
+      await wkPage2.evaluate(() => window.scrollTo(0, 200))
+      await wkPage2.waitForTimeout(300)
+      const scrollBeforeOpen = await wkPage2.evaluate(() => window.scrollY)
+      // 「作った！」はページ最下部のボタンなので、Playwrightの.click()に任せると
+      // 可視範囲へ自動スクロールしてしまい検証したいスクロール位置そのものを壊す(SCROLL-01と同じ理由)。
+      // DOMのclick()を直接呼んでスクロールを発生させない
+      await wkPage2.evaluate(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(
+          (b) => b.textContent?.trim() === '作った！',
+        )
+        if (btn instanceof HTMLElement) btn.click()
+      })
+      await wkPage2.waitForTimeout(400)
+      const dialogText = await wkPage2.textContent('body')
+      check('LOG-01 「作った！」で窓(モーダル)が開く', dialogText.includes('作った記録をつける'))
+      const scrollAfterOpen = await wkPage2.evaluate(() => window.scrollY)
+      check(
+        'LOG-01 窓を開いてもページのスクロール位置が変わらない',
+        scrollAfterOpen === scrollBeforeOpen,
+        `開く前=${scrollBeforeOpen} 開いた後=${scrollAfterOpen}`,
+      )
+      const dateBox = await wkPage2.locator('input[type="date"]').boundingBox()
+      check(
+        'LOG-01 日付入力が画面幅(375px)からはみ出さない',
+        !!dateBox && dateBox.x >= 0 && dateBox.x + dateBox.width <= 375,
+        `x=${dateBox?.x} width=${dateBox?.width}`,
+      )
+      // 窓(モーダル)の保存ボタンは「記録する」(過去記録を後から編集するときの「保存する」とは別物)
+      await wkPage2.getByRole('button', { name: '記録する', exact: true }).click()
+      await wkPage2.waitForTimeout(500)
+      const savedText = await wkPage2.textContent('body')
+      check('LOG-01 保存すると「作った記録」に反映される', savedText.includes('作った記録'))
+    } finally {
+      await wkBrowser2.close()
+    }
+  }
+
   // --- SCROLL-02: 一覧の絞り込み・並べ替え条件が「詳細→戻る」を経ても保持される
   // (2026-07-12深夜フィードバックの再調査で判明した本当の原因の再発防止テスト。PC Chrome相当・
   // デスクトップビューポート)。詳細の「戻る」は常に素の /recipes へ新規遷移するため、

@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Timer as TimerIcon } from 'lucide-react'
 import { findTimeTokens } from '../logic/time'
-import { wrapJaPhrases, splitAroundTimeToken } from '../logic/jaWrap'
+import { splitAroundTimeToken, ZWSP } from '../logic/jaWrap'
+import { renderJaUnits, wrappedToNodes } from './jaUnits'
 import { ja } from '../i18n/ja'
 
 type Props = {
@@ -18,7 +19,7 @@ type Props = {
  */
 export default function TimeText({ text, onStart }: Props) {
   const tokens = findTimeTokens(text)
-  if (tokens.length === 0) return <>{wrapJaPhrases(text)}</>
+  if (tokens.length === 0) return <>{renderJaUnits(text)}</>
 
   const parts: ReactNode[] = []
   let cursor = 0
@@ -26,9 +27,16 @@ export default function TimeText({ text, onStart }: Props) {
     const before = text.slice(cursor, token.start)
     const afterEnd = i + 1 < tokens.length ? tokens[i + 1].start : text.length
     const after = text.slice(token.start + token.text.length, afterEnd)
-    const { pre, bondPrev, bondNext, post } = splitAroundTimeToken(before, after)
+    const { pre, bondPrev, bondNext, post } = splitAroundTimeToken(
+      before,
+      after,
+      token.text.trim().length,
+    )
 
-    if (pre) parts.push(pre)
+    // nowrapスパンはatomic inline扱いになり、keep-allでも前後が無条件の改行点になる。
+    // ZWSPを挟まないと逆に前のテキストと癒着して巨大な折返し不能塊ができる
+    // (「あくを取りながら中火で15分煮る。」が一塊になる実バグ・2026-07-12プローブで確認)
+    if (pre) parts.push(<Fragment key={`pre-${i}`}>{wrappedToNodes(pre)}</Fragment>, ZWSP)
     parts.push(
       <span key={i} className="whitespace-nowrap">
         {bondPrev}
@@ -45,7 +53,7 @@ export default function TimeText({ text, onStart }: Props) {
         {bondNext}
       </span>,
     )
-    if (post) parts.push(post)
+    if (post) parts.push(ZWSP, <Fragment key={`post-${i}`}>{wrappedToNodes(post)}</Fragment>)
     cursor = afterEnd
   })
 
