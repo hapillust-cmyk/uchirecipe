@@ -190,6 +190,31 @@ for (const { source, recipe } of entries) {
   }
 }
 
+// --- 9d. 手順文の文末は「。」で終える(2026-07-11オーナー指示で全カタログ統一) ---
+for (const { source, recipe } of entries) {
+  for (const [idx, step] of (recipe.steps ?? []).entries()) {
+    const text = (step.text ?? '').trim()
+    if (text && !/[。！？…]$/.test(text)) {
+      add('中', '文末の句点', source, recipe.title, `手順${idx + 1}の文末に「。」が無い: 「${text.slice(-20)}」`)
+    }
+  }
+  for (const [idx, step] of (recipe.quickSteps ?? []).entries()) {
+    const text = (step.text ?? '').trim()
+    if (text && !/[。！？…]$/.test(text)) {
+      add('中', '文末の句点', source, recipe.title, `時短手順${idx + 1}の文末に「。」が無い: 「${text.slice(-20)}」`)
+    }
+  }
+}
+
+// --- 9e. こしょう系の「少々」は目安memoか(お好みで)を必ず添える(2026-07-11オーナー指示) ---
+for (const { source, recipe } of entries) {
+  for (const ing of recipe.ingredients ?? []) {
+    if (/こしょう/.test(ing.name) && /少々/.test(ing.amount ?? '') && !ing.memo && !/お好みで/.test(ing.name) && !/お好みで/.test(ing.amount ?? '')) {
+      add('中', 'こしょう少々の目安欠落', source, recipe.title, `「${ing.name} 少々」に目安memoも(お好みで)も無い`)
+    }
+  }
+}
+
 // --- 10. 「器に盛る」だけの単独手順(添え物・盛り方の説明が無ければ前の手順に統合する方針・2026-07-07ユーザー決定) ---
 for (const { source, recipe } of entries) {
   for (const st of recipe.steps) {

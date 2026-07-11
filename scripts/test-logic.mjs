@@ -481,6 +481,13 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   const broc = wrapJaPhrases('具材を一口大に切る。ブロッコリーは別に2分塩ゆでしておく').split(ZWSP)
   eq('「2分」の直後で切れない(別に2分塩ゆでしておく)', broc.includes('別に2分塩ゆでしておく'), true)
   eq('主題の「ブロッコリーは」では切れてよい', broc.includes('ブロッコリーは'), true)
+  // タイマーボタン前後の結合(「中火で15分煮る」を一体化)
+  const { splitAroundTimeToken } = await import('../src/logic/jaWrap.ts')
+  const bond = splitAroundTimeToken('水としょうゆ・みりん・砂糖を入れ、落としぶたをして中火で', '煮る。')
+  eq('「中火で」がボタン前に結合', bond.bondPrev, '中火で')
+  eq('「煮る。」がボタン後に結合', bond.bondNext, '煮る。')
+  const bond2 = splitAroundTimeToken('じゃがいもを柔らかくなるまでゆでる。ゆで上がりの', '前に、にんじんを同じ鍋に加える。')
+  eq('句読点止まりの直前は結合しない仕様の確認(ゆで上がりの=5文字は結合)', bond2.bondPrev, 'ゆで上がりの')
 }
 
 // ---------- 結果 ----------

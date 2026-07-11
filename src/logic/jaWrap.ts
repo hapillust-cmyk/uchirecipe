@@ -40,3 +40,36 @@ export function wrapJaPhrases(text: string): string {
   }
   return units.join(ZWSP)
 }
+
+/**
+ * タイマーボタンの前後テキストを「ボタンと一体化する部分/しない部分」に分ける。
+ * 「中火で15分煮る」のように、直前の短い文節(中火で/別に/レンジで等)と
+ * 直後の文節はボタンとひとかたまりにし、その境界では折り返さない(2026-07-11オーナー指摘)。
+ * 一体化の上限: 前=5文字、前後合計=9文字(超えると狭い画面で横はみ出しするため)。
+ */
+export function splitAroundTimeToken(
+  before: string,
+  after: string,
+): { pre: string; bondPrev: string; bondNext: string; post: string } {
+  const beforeUnits = before ? wrapJaPhrases(before).split(ZWSP) : []
+  const afterUnits = after ? wrapJaPhrases(after).split(ZWSP) : []
+
+  let bondPrev = ''
+  const last = beforeUnits[beforeUnits.length - 1]
+  if (last && last.length <= 7 && !PUNCT_END.test(last)) {
+    bondPrev = last
+    beforeUnits.pop()
+  }
+  let bondNext = ''
+  const first = afterUnits[0]
+  if (first && first.length <= 7 && bondPrev.length + first.length <= 9) {
+    bondNext = first
+    afterUnits.shift()
+  }
+  return {
+    pre: beforeUnits.join(ZWSP),
+    bondPrev,
+    bondNext,
+    post: afterUnits.join(ZWSP),
+  }
+}
