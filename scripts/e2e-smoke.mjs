@@ -7,8 +7,10 @@
 //         SMK-04(貼り付け整形) / SMK-05(人数変更・帯分数表示) / SMK-08簡易(調理中モード) /
 //         SMK-14簡易(未解錠ゲート) /
 //         SMK-19(静的ページがアプリ本体にすり替わらない。SWが動くpreviewでの実行時に実質検証) /
+//         SCROLL-01(一覧のスクロール位置復元。iPhone SE実機フィードバック 2026-07-11。
+//         webkit+375x667ビューポートで検証。他のチェックはchromiumのまま) /
 //         合わせ調味料ライン表示。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
-import { chromium } from 'playwright'
+import { chromium, webkit } from 'playwright'
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:5173'
 
@@ -164,6 +166,53 @@ try {
     'SMK-14 未解錠ゲート',
     (await page.textContent('body')).includes('追加レシピパックまたはPro版の解錠が必要'),
   )
+
+  // --- SCROLL-01: 一覧のスクロール位置復元(iPhone SE2実機フィードバック 2026-07-11)。
+  // 「詳細→戻る→スクロール位置が復元される」を、iOS Safari相当のwebkitエンジン+
+  // iPhone SEのビューポート(375x667)で検証する(実機の不具合はwebkit固有の挙動だったため)。
+  // 他のチェックと違うブラウザエンジンを使うので、ここだけ専用のbrowser/contextを開閉する ---
+  currentCheck = 'SCROLL-01'
+  {
+    const wkBrowser = await webkit.launch()
+    const wkContext = await wkBrowser.newContext({ viewport: { width: 375, height: 667 } })
+    const wkPage = await wkContext.newPage()
+    wkPage.on('pageerror', (err) => {
+      // Cloudflare計測ビーコンはlocalhostで常にCORSエラーになる既知の無害ノイズ。
+      // webkitではconsoleではなくpageerrorとして表面化するため、こちらでも同様に除外する
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@SCROLL-01] ${err.message}`)
+    })
+    try {
+      await wkPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await wkPage.waitForTimeout(1800) // 初回シード完了待ち
+      await wkPage.evaluate(() => window.scrollTo(0, 500))
+      await wkPage.waitForTimeout(400) // スクロール位置保存(rAFスロットル)の反映待ち
+      const scrollBefore = await wkPage.evaluate(() => window.scrollY)
+      check(
+        'SCROLL-01 事前条件: 一覧がスクロールできている(iPhone SE相当)',
+        scrollBefore > 100,
+        `scrollY=${scrollBefore}`,
+      )
+      // Playwrightの.click()は要素を可視範囲へ自動スクロールしてしまい、テスト対象の
+      // スクロール位置そのものを壊してしまうため、DOMのclick()を直接呼ぶ
+      await wkPage.evaluate(() => {
+        const link = document.querySelector('a[href^="#/recipes/"]')
+        if (link instanceof HTMLElement) link.click()
+      })
+      await wkPage.waitForTimeout(600)
+      check('SCROLL-01 詳細へ遷移', /#\/recipes\/\d+/.test(wkPage.url()), `現在URL: ${wkPage.url()}`)
+      await wkPage.getByRole('button', { name: '戻る' }).click()
+      await wkPage.waitForTimeout(800)
+      const scrollAfter = await wkPage.evaluate(() => window.scrollY)
+      check(
+        'SCROLL-01 詳細→戻るで一覧のスクロール位置が復元される(iPhone SE 375x667・webkit)',
+        Math.abs(scrollAfter - scrollBefore) < 60,
+        `復元前=${scrollBefore} 復元後=${scrollAfter}`,
+      )
+    } finally {
+      await wkBrowser.close()
+    }
+  }
 
   // --- SMK-19: 静的ページ(/about/配下・/sets/)がSW有効でも200でアプリ本体にすり替わらない ---
   // アプリ本体のtitleは「うちレシピ」単独。静的ページは必ず「◯◯｜うちレシピ」形式のtitleを持つ

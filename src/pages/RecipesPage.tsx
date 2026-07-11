@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, Refrigerator } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -162,31 +162,63 @@ export default function RecipesPage() {
   const restoredRef = useRef(false)
   useEffect(() => {
     if (restoredRef.current) return
-    if (!results) return // 結果がまだ描画されていない間は復元しない(高さ不足でクランプされるため)
+    if (!results) return // クエリ未解決の間は待つ
+    // レシピ一覧はDexieからの非同期ロードのため、初回起動直後(基本レシピのシード完了前)は
+    // recipesが一瞬「空配列」で解決することがある。この空の状態で復元すると、
+    // まだ縦に何も無く高さが足りないためscrollToがクランプされ0に固定されてしまう
+    // (iPhone SE2実機で再現。2026-07-11オーナー実機フィードバック)。
+    // recipes(絞り込み前の生データ。基本レシピが必ず含まれるため通常0件にはならない)が
+    // 実際に読み込まれる(非空になる)まで復元を待つ
+    if (!recipes || recipes.length === 0) return
     restoredRef.current = true
     const raw = sessionStorage.getItem(RECIPES_SCROLL_KEY)
     if (!raw) return
     try {
       const saved = JSON.parse(raw) as { filtersKey: string; y: number }
-      if (saved.filtersKey === filtersKey) window.scrollTo(0, saved.y)
+      if (saved.filtersKey !== filtersKey) return
+      // データが読み込まれた直後でも、カード画像等のレイアウト確定が1フレーム遅れることがあるため、
+      // 描画・レイアウトの反映を2フレーム分待ってからスクロールする(iPhone実機で有効だった対策)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, saved.y)
+        })
+      })
     } catch {
       // 壊れた保存値は無視
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results])
+  }, [results, recipes])
+  // カードタップ等で詳細へ遷移する瞬間、ページの中身が一覧から詳細へ切り替わって縦の高さが縮むと、
+  // ブラウザがwindow.scrollYを0付近に強制的にクランプし、その結果として非同期に発火する
+  // scrollイベントを(unmount途中でまだ生きている、またはReactのeffectクリーンアップと
+  // 競合して間に合わない)このページのscrollリスナーが拾って「0」を保存してしまう
+  // (iPhone実機で復元されなかった本当の原因。2026-07-11)。
+  // leavingRef はナビゲーション用リンクをタップした瞬間(クリックのcaptureフェーズ=
+  // 遷移が始まる前)にtrueにし、以降のscroll保存を(クリーンアップのタイミングに関わらず)
+  // 確実にブロックすることで、上書きされる隙を無くす
+  const leavingRef = useRef(false)
+  const saveScroll = (y: number) => {
+    if (leavingRef.current) return
+    sessionStorage.setItem(RECIPES_SCROLL_KEY, JSON.stringify({ filtersKey, y }))
+  }
   useEffect(() => {
     let ticking = false
     const onScroll = () => {
       if (ticking) return
       ticking = true
       requestAnimationFrame(() => {
-        sessionStorage.setItem(RECIPES_SCROLL_KEY, JSON.stringify({ filtersKey, y: window.scrollY }))
+        saveScroll(window.scrollY)
         ticking = false
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [filtersKey])
+  const onClickCapture = (e: ReactMouseEvent) => {
+    if (!(e.target instanceof Element) || !e.target.closest('a')) return // リンク以外の操作では固定しない
+    saveScroll(window.scrollY) // 遷移で高さが縮む前の、正しい位置を確定保存する
+    leavingRef.current = true
+  }
 
   const clearFilters = () => {
     setQuery('')
@@ -209,7 +241,10 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-[var(--space-md)] pt-[var(--space-lg)]">
+    <div
+      className="mx-auto w-full max-w-md px-[var(--space-md)] pt-[var(--space-lg)]"
+      onClickCapture={onClickCapture}
+    >
       <h1 className="text-2xl font-bold">{ja.recipes.title}</h1>
 
       {recipes && isNearFreeLimit(countFreeLimitRecipes(recipes), !!settings?.proCode) && (
