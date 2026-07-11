@@ -16,6 +16,7 @@ import { useTimers } from './TimerProvider'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
 import { collectUniqueTerms } from '../logic/termSplit'
+import { wrapJaPhrases } from '../logic/jaWrap'
 import StepBadge from './StepBadge'
 import TimeText from './TimeText'
 import TermText from './TermText'
@@ -239,9 +240,16 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
         >
           <X size={24} aria-hidden />
         </button>
-        <span className="font-bold text-ink-muted">
-          {ja.focus.stepCounter.replace('{n}', String(stepNumber)).replace('{t}', String(total))}
-        </span>
+        <div className="min-w-0 flex-1 px-1 text-center">
+          {/* 調理中モードは手順のみで料理名が分からなかった(2026-07-11オーナー実機フィードバック)ため、
+              「手順」表記の上に料理名を表示する。長い料理名はtruncateで省略する */}
+          <p className="truncate text-sm font-bold text-ink" title={recipe.title}>
+            {recipe.title}
+          </p>
+          <span className="font-bold text-ink-muted">
+            {ja.focus.stepCounter.replace('{n}', String(stepNumber)).replace('{t}', String(total))}
+          </span>
+        </div>
         <div className="flex items-center gap-3">
           {micSupported && (
             <button
@@ -333,23 +341,38 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
           />
         )}
         {stepTerms.length > 0 && (
-          <p className="w-full text-sm text-ink-muted">
-            {ja.term.chipLabel}
-            <span className="ml-1 inline-flex flex-wrap justify-center gap-x-1 gap-y-1.5">
-              {stepTerms.map((term) => (
-                <button
-                  key={term.term}
-                  type="button"
-                  onClick={(e) => openTerm(term, e.currentTarget)}
-                  aria-label={ja.term.openAria.replace('{term}', term.term)}
-                  className="rounded-sm px-1.5 py-0.5 font-bold text-accent underline decoration-dotted underline-offset-2"
-                  style={{ background: 'color-mix(in oklab, var(--accent) 8%, var(--bg))' }}
-                >
-                  {term.term}
-                </button>
-              ))}
-            </span>
-          </p>
+          <div className="w-full text-sm text-ink-muted">
+            {/* 用語は常時表示にする(2026-07-11オーナー実機フィードバック: タップしないと説明が
+                見えないのが不便)。「用語＝説明文」を1行ずつ、最大3語まで表示する。
+                説明が長い場合も文節折返し(.ja-phrase)を適用する */}
+            {stepTerms.slice(0, 3).map((term) => (
+              <p key={term.term} className="ja-phrase text-left leading-snug">
+                <span className="font-bold text-ink">{term.term}</span>
+                {ja.term.definitionSeparator}
+                {wrapJaPhrases(term.description)}
+              </p>
+            ))}
+            {/* 4語目以降は面積を取りすぎるため、従来どおりタップ式のチップに残す */}
+            {stepTerms.length > 3 && (
+              <p className="mt-1 text-left">
+                {ja.term.chipLabel}
+                <span className="ml-1 inline-flex flex-wrap gap-x-1 gap-y-1.5">
+                  {stepTerms.slice(3).map((term) => (
+                    <button
+                      key={term.term}
+                      type="button"
+                      onClick={(e) => openTerm(term, e.currentTarget)}
+                      aria-label={ja.term.openAria.replace('{term}', term.term)}
+                      className="rounded-sm px-1.5 py-0.5 font-bold text-accent underline decoration-dotted underline-offset-2"
+                      style={{ background: 'color-mix(in oklab, var(--accent) 8%, var(--bg))' }}
+                    >
+                      {term.term}
+                    </button>
+                  ))}
+                </span>
+              </p>
+            )}
+          </div>
         )}
         {step.minutes != null && step.minutes > 0 && !isMinutesShownInText(step.text, step.minutes) && (
           <button

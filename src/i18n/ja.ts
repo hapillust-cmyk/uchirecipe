@@ -573,6 +573,8 @@ export const ja = {
     openAria: '{term}の説明を見る',
     closeAria: '説明を閉じる',
     chipLabel: '用語: ',
+    // 用語の常時表示(2026-07-11オーナー実機フィードバック): 「用語＝説明文」形式の区切り記号
+    definitionSeparator: '＝',
   },
   timer: {
     start: 'タイマー開始',
