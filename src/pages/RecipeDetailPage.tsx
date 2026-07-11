@@ -457,7 +457,7 @@ export default function RecipeDetailPage() {
                   <StepBadge number={stepNumber} />
                   <div className="min-w-0 flex-1">
                     {/* 文中の「10分」などはタップでタイマー開始 */}
-                    <p>
+                    <p className="ja-phrase">
                       <TimeText
                         text={step.text}
                         onStart={(_tokenText, seconds) =>

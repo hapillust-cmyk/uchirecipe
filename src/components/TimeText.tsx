@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Timer as TimerIcon } from 'lucide-react'
 import { findTimeTokens } from '../logic/time'
+import { wrapJaPhrases } from '../logic/jaWrap'
 import { ja } from '../i18n/ja'
 
 type Props = {
@@ -15,12 +16,12 @@ type Props = {
  */
 export default function TimeText({ text, onStart }: Props) {
   const tokens = findTimeTokens(text)
-  if (tokens.length === 0) return <>{text}</>
+  if (tokens.length === 0) return <>{wrapJaPhrases(text)}</>
 
   const parts: ReactNode[] = []
   let cursor = 0
   tokens.forEach((token, i) => {
-    if (token.start > cursor) parts.push(text.slice(cursor, token.start))
+    if (token.start > cursor) parts.push(wrapJaPhrases(text.slice(cursor, token.start)))
     parts.push(
       <button
         key={i}
@@ -36,7 +37,7 @@ export default function TimeText({ text, onStart }: Props) {
     )
     cursor = token.start + token.text.length
   })
-  if (cursor < text.length) parts.push(text.slice(cursor))
+  if (cursor < text.length) parts.push(wrapJaPhrases(text.slice(cursor)))
 
   return <>{parts}</>
 }

@@ -138,4 +138,11 @@
     /* 対応ブラウザ(Safari系)では行末の読点をわずかにはみ出させ、行末を揃える */
     hanging-punctuation: allow-end;
   }
+
+  /* BudouX(logic/jaWrap.ts)でゼロ幅スペースを挿した文章用: 文節のまとまりでだけ折り返す。
+     overflow-wrap: anywhere は1文節が行幅を超える例外時の保険 */
+  .ja-phrase {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
 }

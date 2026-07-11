@@ -72,7 +72,7 @@ function TimelineCard({
         </span>
       </div>
 
-      <p className="mt-[var(--space-sm)] leading-relaxed">
+      <p className="ja-phrase mt-[var(--space-sm)] leading-relaxed">
         <span className="mr-1 text-xs font-bold text-ink-muted">
           {ja.cookNavi.stepNumberLabel.replace('{n}', String(item.stepNumber))}
         </span>

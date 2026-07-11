@@ -23,10 +23,12 @@ function splitSentences(line: string): string[] {
   return parts.length > 0 ? parts : [line]
 }
 
+import { wrapJaPhrases } from '../logic/jaWrap'
+
 export function MemoText({ text, className }: { text: string; className?: string }) {
   const lines = text.split('\n')
   return (
-    <div className={className}>
+    <div className={className ? `ja-phrase ${className}` : 'ja-phrase'}>
       {lines.map((line, i) =>
         line.startsWith('・') ? (
           // 中央揃えの文脈(調理中モード)でも箇条書きは左揃えで読ませる
@@ -37,7 +39,7 @@ export function MemoText({ text, className }: { text: string; className?: string
             <span className="min-w-0 flex-1">
               {splitSentences(line.slice(1)).map((s, j) => (
                 <span key={j} className="block">
-                  {s}
+                  {wrapJaPhrases(s)}
                 </span>
               ))}
             </span>
@@ -46,7 +48,7 @@ export function MemoText({ text, className }: { text: string; className?: string
           <p key={i}>
             {splitSentences(line).map((s, j) => (
               <span key={j} className="block">
-                {s}
+                {wrapJaPhrases(s)}
               </span>
             ))}
           </p>

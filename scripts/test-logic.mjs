@@ -461,6 +461,18 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   )
 }
 
+// ---------- jaWrap: 文節折返し(BudouX・2026-07-11) ----------
+{
+  const { wrapJaPhrases, ZWSP } = await import('../src/logic/jaWrap.ts')
+  const sample = '火を止めてかつお節を加えて混ぜ合わせ、器に盛る'
+  const wrapped = wrapJaPhrases(sample)
+  eq('ZWSPを除くと原文と一致(データ不変)', wrapped.split(ZWSP).join(''), sample)
+  const segments = wrapped.split(ZWSP)
+  eq('文節に分割されている(3つ以上)', segments.length >= 3, true)
+  eq('句読点が文節の先頭に来ない', segments.some((s) => s.startsWith('、') || s.startsWith('。')), false)
+  eq('短い文字列は素通し', wrapJaPhrases('混ぜる'), '混ぜる')
+}
+
 // ---------- 結果 ----------
 console.log(`合格: ${passed}件 / 失敗: ${failures.length}件`)
 for (const f of failures) console.log(`  NG ${f}`)
