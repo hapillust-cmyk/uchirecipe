@@ -30,6 +30,10 @@ for (const r of startersMod.starterDefs) {
   entries.push({ source: 'starters.ts', recipe: r })
 }
 
+// 用語タップ辞書(2026-07-11導入)。収載語は本文の括弧説明を持たなくても「説明済み」とみなす(ルール12で使用)。
+const { COOKING_TERMS } = await import('../src/data/cookingTerms.ts')
+const DICTIONARY_TERM_STRINGS = COOKING_TERMS.flatMap((t) => [t.term, ...(t.aliases ?? [])])
+
 // 配布セット(src/sets/*.ts を全部読む。新しいセットを追加してもここは自動で拾う)
 const setsDir = path.join(__dirname, '..', 'src', 'sets')
 for (const file of readdirSync(setsDir).sort()) {
@@ -269,6 +273,12 @@ const TERM_EXPLANATIONS = [
   [/粉ふき/, /表面の水気を飛ばす/, '粉ふき（湯を切って鍋を揺すり、表面の水気を飛ばすこと）'],
   [/乳化/, /白っぽくとろりと/, '乳化（油とゆで汁が混ざって白っぽくとろりとすること）'],
 ]
+for (const [termRe] of TERM_EXPLANATIONS) {
+  // 用語タップ辞書(cookingTerms.ts)に収載済みの語は、本文の括弧説明が無くても
+  // タップで説明を確認できるため「説明済み」とみなし、このルールでは検出しない。
+  // 辞書に無い語だけ従来どおり本文中の説明有無を機械チェックする。
+  termRe.coveredByDictionary = DICTIONARY_TERM_STRINGS.some((t) => termRe.test(t))
+}
 for (const { source, recipe } of entries) {
   const usageText = [recipe.title, ...recipe.steps.map((s) => s.text)].join('\n')
   const allText = [
@@ -279,6 +289,7 @@ for (const { source, recipe } of entries) {
     ...recipe.ingredients.flatMap((i) => [i.name, i.memo ?? '']),
   ].join('\n')
   for (const [termRe, explainRe, example] of TERM_EXPLANATIONS) {
+    if (termRe.coveredByDictionary) continue
     if (termRe.test(usageText) && !explainRe.test(allText)) {
       add('中', '用語説明の欠落', source, recipe.title, `「${usageText.match(termRe)[0]}」の説明が同じレシピ内に無い(例: ${example})`)
     }
