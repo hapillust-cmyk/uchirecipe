@@ -3027,6 +3027,41 @@ export const NUTRITION_DATA: NutritionData = {
       }
     },
     {
+      "id": "04101",
+      "label": "こしあん",
+      "mextName": "あずき あん こし練りあん （並あん）",
+      "aliases": [
+        "こしあん",
+        "こし餡",
+        "漉しあん"
+      ],
+      "per100g": {
+        "kcal": 255,
+        "proteinG": 5.6,
+        "fatG": 0.3,
+        "carbG": 58.8,
+        "saltG": 0
+      },
+      "note": "市販の加糖こしあん想定(水ようかん・2026-07-11追加)"
+    },
+    {
+      "id": "09049",
+      "label": "粉寒天",
+      "mextName": "てんぐさ 粉寒天",
+      "aliases": [
+        "粉寒天",
+        "寒天"
+      ],
+      "per100g": {
+        "kcal": 160,
+        "proteinG": 0.2,
+        "fatG": 0.3,
+        "carbG": 81.7,
+        "saltG": 0.4
+      },
+      "note": "水ようかん・2026-07-11追加"
+    },
+    {
       "id": "05018",
       "label": "いりごま",
       "mextName": "ごま いり",
