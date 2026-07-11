@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
@@ -53,6 +53,13 @@ export default function RecipeDetailPage() {
   const { startTimer, timers } = useTimers()
   const todayList = useTodayList()
   const isInTodayList = todayList?.some((item) => item.recipeId === id) ?? false
+
+  // 一覧からの遷移でスクロール位置が引き継がれることがあるため、詳細を開いたら必ず先頭から
+  // 表示する（2026-07-11 オーナー実機フィードバック）。?step= の自動スクロールより先に効くよう
+  // 描画前（useLayoutEffect）で同期的に行う
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
 
   // 常駐タイマー・完了ポップアップからのタップ（?step=手順番号）で該当手順へスクロール＆一時ハイライト
   const stepRefs = useRef<(HTMLLIElement | null)[]>([])
