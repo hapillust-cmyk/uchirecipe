@@ -73,6 +73,18 @@ try {
   // --- 合わせ調味料の色ライン(共通説明文の表示) ---
   check('合わせ調味料ヒント表示', detailText.includes('先にまとめて計量してOK'))
 
+  // --- TERM-01: 用語タップでポップオーバーが開き、外タップで閉じる(用語タップ辞書 2026-07-11)。
+  // 肉じゃが手順1「玉ねぎはくし形に切る」の「くし形」をタップして説明を確認する ---
+  currentCheck = 'TERM-01'
+  await page.getByRole('button', { name: 'くし形切りの説明を見る' }).click()
+  await page.waitForTimeout(300)
+  const termOpenText = await page.textContent('body')
+  check('TERM-01 用語タップでポップオーバーが開く', termOpenText.includes('縦半分に切った玉ねぎ'))
+  await page.mouse.click(5, 5) // ポップオーバーの外をタップ
+  await page.waitForTimeout(300)
+  const termClosedText = await page.textContent('body')
+  check('TERM-01 外タップでポップオーバーが閉じる', !termClosedText.includes('縦半分に切った玉ねぎ'))
+
   // --- SMK-08(簡易): 調理中モードを開いて手順送り・閉じる ---
   currentCheck = 'SMK-08'
   await page.getByText('調理中モードで見る').click()
