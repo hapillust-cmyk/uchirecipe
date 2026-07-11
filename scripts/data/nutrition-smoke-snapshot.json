@@ -46,7 +46,7 @@
     ]
   },
   "starter:ツナキャベツ丼": {
-    "servings": 1,
+    "servings": 2,
     "perServing": {
       "kcal": 453,
       "proteinG": 17.2,
@@ -110,10 +110,10 @@
   "starter:五目炊き込みご飯": {
     "servings": 4,
     "perServing": {
-      "kcal": 376,
-      "proteinG": 13.5,
+      "kcal": 383,
+      "proteinG": 13.8,
       "fatG": 7.9,
-      "carbG": 63.2,
+      "carbG": 65,
       "saltG": 1.7
     },
     "excluded": []
@@ -186,20 +186,6 @@
       "saltG": 2.5
     },
     "excluded": []
-  },
-  "starter:ソース焼きそば": {
-    "servings": 2,
-    "perServing": {
-      "kcal": 363,
-      "proteinG": 18.1,
-      "fatG": 10,
-      "carbG": 57.3,
-      "saltG": 0.5
-    },
-    "excluded": [
-      "付属のソース(food)",
-      "青のり(amount)"
-    ]
   },
   "starter:ポテトサラダ": {
     "servings": 4,

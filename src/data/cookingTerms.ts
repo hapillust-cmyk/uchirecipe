@@ -80,6 +80,12 @@ export const COOKING_TERMS: CookingTerm[] = [
     description: '塩をなじませながら表面のうぶ毛を取ること',
   },
   {
+    term: '粉ふき',
+    reading: 'こなふき',
+    description: '湯を切って鍋を弱火に戻して揺すり、表面の水気を飛ばすこと',
+    aliases: ['粉ふきに'],
+  },
+  {
     term: '塩もみ',
     reading: 'しおもみ',
     description: '薄切りきゅうりに塩少々をまぶして5分ほどおき、出てきた水気をぎゅっと絞ること',

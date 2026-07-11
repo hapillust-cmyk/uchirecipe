@@ -74,7 +74,7 @@ const recipes = [
   ...starterDefs.map((d) => ({ set: 'starter', title: d.title, servings: d.servings, ingredients: d.ingredients })),
   ...kintore.recipes.map((d) => ({ set: 'kintore', title: d.title, servings: d.servings, ingredients: d.ingredients })),
 ]
-check(recipes.length === 31, `レシピ数が想定外: ${recipes.length}（同梱21+筋トレ10=31のはず）`)
+check(recipes.length === 30, `レシピ数が想定外: ${recipes.length}（同梱20+筋トレ10=30のはず。2026-07-11ソース焼きそば除外=オーナー決定）`)
 
 let totalIngredients = 0
 let matchedIngredients = 0

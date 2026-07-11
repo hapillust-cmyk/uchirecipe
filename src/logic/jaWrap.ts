@@ -30,8 +30,17 @@ export function wrapJaPhrases(text: string): string {
     const canMerge =
       prev !== undefined &&
       !PUNCT_END.test(prev) &&
-      prev.length + seg.length <= MAX_UNIT &&
-      (TIME_END.test(prev) || BOND_END.test(prev) || prev.length <= 2 || AUX_SHORT.test(seg))
+      // 「豚肉→根菜→…」の矢印列は前後を必ず結合(材料順の並びを分断しない・2026-07-11オーナー指摘)
+      ((prev.endsWith('→') || seg.startsWith('→')
+        ? prev.length + seg.length <= 20
+        : prev.length + seg.length <= MAX_UNIT &&
+          (TIME_END.test(prev) ||
+            BOND_END.test(prev) ||
+            prev.length <= 2 ||
+            AUX_SHORT.test(seg) ||
+            // 「出るくらい（約170度）」等: 括弧は直前の語に密着させる(括弧の前で折り返さない)
+            seg.startsWith('（') ||
+            seg.startsWith('('))))
     if (canMerge) {
       units[units.length - 1] = prev + seg
     } else {
@@ -51,15 +60,32 @@ export function splitAroundTimeToken(
   before: string,
   after: string,
 ): { pre: string; bondPrev: string; bondNext: string; post: string } {
-  const beforeUnits = before ? wrapJaPhrases(before).split(ZWSP) : []
   const afterUnits = after ? wrapJaPhrases(after).split(ZWSP) : []
 
+  // 前側の結合はrawの文節単位で「中火で」「レンジで」「◯◯の」型だけを拾う
+  // (「取りながら」のような動詞の連用形は前の句に付くため結合しない・2026-07-11オーナー指摘の傾向反映)
   let bondPrev = ''
-  const last = beforeUnits[beforeUnits.length - 1]
-  if (last && last.length <= 7 && !PUNCT_END.test(last)) {
-    bondPrev = last
-    beforeUnits.pop()
+  let beforeRest = before
+  if (before) {
+    const raw = parser.parse(before)
+    // 末尾がで/に/の止まりのときだけ、7文字を上限にraw文節を末尾から蓄積して結合
+    // (「ゆで|上がりの」のようにBudouXが語中で切っても「ゆで上がりの」ごと拾えるように)
+    if (raw.length > 0 && /[でにの]$/.test(raw[raw.length - 1]) && !PUNCT_END.test(raw[raw.length - 1])) {
+      let acc = ''
+      for (let i = raw.length - 1; i >= 0; i--) {
+        // 遡って取り込むのは修飾のまとまり(で/に/の止まり)だけ。「野菜を」「〜して」で止める
+        if (acc && !/[でにの]$/.test(raw[i])) break
+        const candidate = raw[i] + acc
+        if (candidate.length > 7 || PUNCT_END.test(raw[i])) break
+        acc = candidate
+      }
+      if (acc) {
+        bondPrev = acc
+        beforeRest = before.slice(0, before.length - acc.length)
+      }
+    }
   }
+  const beforeUnits = beforeRest ? wrapJaPhrases(beforeRest).split(ZWSP) : []
   let bondNext = ''
   const first = afterUnits[0]
   if (first && first.length <= 7 && bondPrev.length + first.length <= 9) {
