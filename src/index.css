@@ -159,6 +159,24 @@
   --shadow-md: var(--shadow-md);
 }
 
+/* トーストの出現アニメーション(2026-07-13 UIペルソナQA)。下からごく軽くスライドインしながら
+   フェードインする。prefers-reduced-motionはTailwindのmotion-safe:バリアントで尊重する
+   (Toast.tsx側でmotion-safe:animate-toast-inとして付与。設定を尊重しない場合は即座にopacity:1で出る) */
+@theme {
+  --animate-toast-in: toast-in 0.22s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer base {
   html {
     /* システム標準の日本語フォント（読み込みゼロ・高速） */

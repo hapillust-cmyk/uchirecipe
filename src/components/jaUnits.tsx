@@ -2,10 +2,13 @@ import { Fragment, type ReactNode } from 'react'
 import { wrapJaPhrases, ZWSP } from '../logic/jaWrap'
 import { findIngredientMatches, type IngredientMatch } from '../logic/ingredientSpans'
 
-// 材料名の下線(docs/20 §7)。控えめな実線下線だけ(色は塗らない=用語辞書の点線・タイマーの塗りと区別)。
+// 材料名の下線(docs/20 §7)。文字色は本文のまま・背景なし維持で、下線の色だけink-mutedトークンの
+// 淡色にする(2026-07-13 UIペルソナQA: タップ可能な用語=アクセント点線との視覚序列を作る狙い。
+// 用語辞書の点線・タイマーの塗りとは引き続き区別)。
 // spanはdisplay:inlineのまま = keep-all下でも前後が改行点にならず、改行制御に影響しない。
 // (atomic inline化=inline-block/inline-flex/button等にすると改行が壊れる。TermText.tsxの轍を参照)
-const UNDERLINE_CLASS = 'underline decoration-solid decoration-2 underline-offset-2'
+const UNDERLINE_CLASS =
+  'underline decoration-solid decoration-2 underline-offset-2 decoration-ink-muted/50'
 
 // 開き括弧を含む短い単位はnowrapスパンで守る(WebKitがkeep-all下でも括弧直後で折るため)。
 const needsSpan = (u: string) => /[（(]/.test(u) && u.length <= 12

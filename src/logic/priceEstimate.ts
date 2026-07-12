@@ -20,6 +20,11 @@ export interface PriceIndexEntry {
   normalizedName: string
   pricePerUnit: number
   unit: string
+  /**
+   * マスタ行が投入時の目安価格のままか(true)、ユーザーが価格・単位を上書きしたか(false)。
+   * db/prices.tsのPriceEntry.isDefaultと同じ意味（未設定は「安全側」でfalse扱い。2026-07-13追加）
+   */
+  isDefault: boolean
 }
 
 /**
@@ -27,13 +32,14 @@ export interface PriceIndexEntry {
  * 正規化名が長いものを先に並べる（前方一致で複数ヒットしたとき、より具体的な名前を優先するため）。
  */
 export function buildPriceIndex(
-  entries: { name: string; pricePerUnit: number; unit: string }[],
+  entries: { name: string; pricePerUnit: number; unit: string; isDefault?: boolean }[],
 ): PriceIndexEntry[] {
   return entries
     .map((e) => ({
       normalizedName: normalizeIngredientNameForPrice(e.name),
       pricePerUnit: e.pricePerUnit,
       unit: e.unit,
+      isDefault: e.isDefault === true,
     }))
     .filter((e) => e.normalizedName && e.pricePerUnit > 0)
     .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
@@ -80,25 +86,36 @@ function parseUnitQuantity(unit: string): { qty: number; baseUnit: string } {
   return { qty: qty > 0 ? qty : 1, baseUnit: baseUnit || trimmed }
 }
 
+/** マスタ行が投入時の目安のままか(default)、ユーザーが上書きした価格か(user)の由来種別 */
+export type PriceSource = 'default' | 'user'
+
+/** マスタ由来の1行分の見積もり（金額＋由来種別。2026-07-13 UIペルソナQA: 表示側の「目安」表記の出し分けに使う） */
+export interface IngredientPriceEstimate {
+  yen: number
+  source: PriceSource
+}
+
 /**
  * マスタ一致した材料1行分の金額を見積もる。
  * ingredientの分量・単位がマスタのunitと数量として噛み合えば按分計算し、
  * 噛み合わない（「少々」等の非数値・単位不一致・マスタ側が「1/4個」等で解釈不能）場合は
  * マスタの金額をそのまま1行分の目安として使う（按分できないだけで、値自体は常識的な範囲）。
+ * sourceは一致したマスタ行がisDefaultのままか(user='default')、ユーザーが上書き済みか('user')を表す。
  */
 export function estimateIngredientYen(
   ingredient: Pick<Ingredient, 'name' | 'amount' | 'unit'>,
   index: PriceIndexEntry[],
-): number | undefined {
+): IngredientPriceEstimate | undefined {
   const entry = matchPriceEntry(ingredient.name, index)
   if (!entry) return undefined
   const { qty: baseQty, baseUnit } = parseUnitQuantity(entry.unit)
   const ingUnit = (ingredient.unit ?? '').trim()
   const amountNum = parseNumericAmount(ingredient.amount ?? '')
+  const source: PriceSource = entry.isDefault ? 'default' : 'user'
   if (amountNum != null && amountNum > 0 && ingUnit && baseUnit && ingUnit === baseUnit) {
-    return Math.round(entry.pricePerUnit * (amountNum / baseQty))
+    return { yen: Math.round(entry.pricePerUnit * (amountNum / baseQty)), source }
   }
-  return entry.pricePerUnit
+  return { yen: entry.pricePerUnit, source }
 }
 
 /** レシピ1品分の概算食費（材料ごとの内訳を集計した結果） */
@@ -129,8 +146,8 @@ export function estimateRecipeCost(
       continue
     }
     const estimated = estimateIngredientYen(ing, index)
-    if (estimated != null && estimated > 0) {
-      total += estimated
+    if (estimated != null && estimated.yen > 0) {
+      total += estimated.yen
       fromMasterCount++
       hasAnyPriceInfo = true
     }

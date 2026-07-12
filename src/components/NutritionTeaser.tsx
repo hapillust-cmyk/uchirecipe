@@ -126,6 +126,9 @@ function ExcludedBlock({ nutrition }: { nutrition: Nutrition }) {
 function LockedBody({ nutrition, isPro }: { nutrition: Nutrition; isPro: boolean }) {
   return (
     <div className="space-y-[var(--space-sm)]">
+      {/* Pro版で増える項目の明示(2026-07-13 UIペルソナQA)。詳しい提供時期の話(freeDescription系)より
+          先に、まず「何が増えるか」を1文で伝える */}
+      <p className="text-sm text-ink-muted">{ja.nutrition.proNutrientHighlight}</p>
       <AssumedBlock nutrition={nutrition} />
       <ExcludedBlock nutrition={nutrition} />
       <p className="text-xs text-ink-muted">{ja.nutrition.estimateNote}</p>

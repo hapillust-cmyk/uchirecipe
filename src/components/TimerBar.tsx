@@ -80,6 +80,30 @@ export default function TimerBar() {
               <span className="text-lg font-bold tabular-nums">
                 {timer.done ? timer.doneLabel : formatRemaining(remaining)}
               </span>
+              {/* +1分ミニボタン(2026-07-13 UIペルソナQA)。行タップ(±調整の窓)より手前で即+60秒したい
+                  ニーズに応える近道ボタン。既存adjustTimerをそのまま流用する。doneな行は
+                  adjustTimerが効かない(TimerProvider側の既定)ので出さない */}
+              {!timer.done && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    adjustTimer(timer.id, 60)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      adjustTimer(timer.id, 60)
+                    }
+                  }}
+                  aria-label={ja.timer.plusOneMinuteAria.replace('{label}', timer.label)}
+                  className="flex h-9 shrink-0 items-center justify-center rounded-sm px-1.5 text-xs font-bold text-accent"
+                >
+                  {ja.timer.plusOneMinute}
+                </span>
+              )}
               <span
                 role="button"
                 tabIndex={0}

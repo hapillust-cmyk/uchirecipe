@@ -473,8 +473,10 @@ export default function RecipeDetailPage() {
             {recipe.ingredients.map((ing, index) => {
               const isNg = ngIndices.has(index)
               // 材料に個別価格が無く、食材価格マスタの目安価格から計算した金額がある行だけ、
-              // 控えめな注記を出す（どの材料がマスタ由来か分かるように。2026-07-12 UX改修）
-              const masterYen =
+              // 控えめな注記を出す（どの材料がマスタ由来か分かるように。2026-07-12 UX改修）。
+              // 由来のマスタ行が投入時の目安のままか、ユーザーが上書きした価格かで
+              // 「目安」表記の有無を出し分ける(2026-07-13 UIペルソナQA)
+              const masterEstimate =
                 ing.price == null || ing.price <= 0 ? estimateIngredientYen(ing, priceIndex) : undefined
               return (
                 <li
@@ -502,9 +504,12 @@ export default function RecipeDetailPage() {
                       )}
                     </span>
                   </div>
-                  {masterYen != null && masterYen > 0 && (
+                  {masterEstimate != null && masterEstimate.yen > 0 && (
                     <p className="mt-0.5 text-xs text-ink-muted">
-                      {ja.priceMaster.ingredientFromMasterNote.replace('{n}', String(masterYen))}
+                      {(masterEstimate.source === 'default'
+                        ? ja.priceMaster.ingredientFromMasterNote
+                        : ja.priceMaster.ingredientFromMasterNoteCustom
+                      ).replace('{n}', String(masterEstimate.yen))}
                     </p>
                   )}
                   {ing.memo && (

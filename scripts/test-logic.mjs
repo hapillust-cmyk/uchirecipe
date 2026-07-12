@@ -1098,25 +1098,26 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
   )
   eq('matchPriceEntry 一致なし', matchPriceEntry('謎の食材', index), undefined)
 
+  // isDefault未指定はbuildPriceIndexで安全側(false='user')に丸められる(2026-07-13追加)
   eq(
     'estimateIngredientYen 数量・単位が噛み合えば按分(300g/100gあたり130円→390円)',
     estimateIngredientYen({ name: '鶏もも肉', amount: '300', unit: 'g' }, index),
-    390,
+    { yen: 390, source: 'user' },
   )
   eq(
     'estimateIngredientYen 個数系も按分(2個/1個あたり50円→100円)',
     estimateIngredientYen({ name: '玉ねぎ', amount: '2', unit: '個' }, index),
-    100,
+    { yen: 100, source: 'user' },
   )
   eq(
     'estimateIngredientYen 非数値の分量(少々)はマスタの金額をそのまま使う',
     estimateIngredientYen({ name: '鶏もも肉', amount: '少々', unit: 'g' }, index),
-    130,
+    { yen: 130, source: 'user' },
   )
   eq(
     'estimateIngredientYen 単位が噛み合わない場合はマスタの金額をそのまま使う',
     estimateIngredientYen({ name: '玉ねぎ', amount: '200', unit: 'g' }, index),
-    50,
+    { yen: 50, source: 'user' },
   )
   eq(
     'estimateIngredientYen マスタに無い食材はundefined',
@@ -1140,6 +1141,22 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
     'estimateRecipeCost 価格情報が1件も無ければhasAnyPriceInfo=false',
     estimateRecipeCost([{ name: '謎の食材', amount: '1', unit: '個' }], index),
     { total: 0, fromMasterCount: 0, hasAnyPriceInfo: false },
+  )
+
+  // 由来種別(default/user)の出し分け(2026-07-13 UIペルソナQA: 詳細の価格注記「目安」表記の分岐に使う)
+  const sourceIndex = buildPriceIndex([
+    { name: '玉ねぎ', pricePerUnit: 50, unit: '1個', isDefault: true },
+    { name: 'にんじん', pricePerUnit: 40, unit: '1本', isDefault: false },
+  ])
+  eq(
+    '由来種別: マスタ行が投入時の目安のままならsource=default',
+    estimateIngredientYen({ name: '玉ねぎ', amount: '1', unit: '個' }, sourceIndex),
+    { yen: 50, source: 'default' },
+  )
+  eq(
+    '由来種別: ユーザーが上書きした価格ならsource=user',
+    estimateIngredientYen({ name: 'にんじん', amount: '1', unit: '本' }, sourceIndex),
+    { yen: 40, source: 'user' },
   )
 }
 

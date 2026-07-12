@@ -8,14 +8,17 @@
 //         KW-01(検索キーワード欄。保存→検索でヒットし、一覧・詳細には表示されないこと) /
 //         SMK-14簡易(未解錠ゲート) /
 //         SETTINGS-TAB-01(設定画面のタブ分割。?set=/?section=直リンクが該当タブを自動で開く・
-//         4タブの手動切替・トーストのタップ閉じ。2026-07-12オーナー実機フィードバック) /
-//         TOAST-01(設定操作結果メッセージのトースト化。数秒で自動的に消えること) /
+//         4タブの手動切替・トーストのタップ閉じ。2026-07-12オーナー実機フィードバック。
+//         タブ名「基本」→「全般」は2026-07-13 UIペルソナQA) /
+//         TOAST-01(設定操作結果メッセージのトースト化。数秒で自動的に消えること。
+//         自動非表示は2026-07-13 UIペルソナQAで4.5秒→6秒に延長) /
 //         SMK-19(静的ページがアプリ本体にすり替わらない。SWが動くpreviewでの実行時に実質検証) /
 //         SCROLL-01(一覧のスクロール位置復元。iPhone SE実機フィードバック 2026-07-11。
 //         webkit+375x667ビューポートで検証。60秒滞在バリエーション込み。他のチェックはchromiumのまま) /
 //         SCROLL-02(一覧の絞り込み・並べ替え条件が詳細→戻るを経ても保持される。
 //         2026-07-12深夜フィードバック再調査で判明した本当の原因の再発防止。PC Chrome相当) /
-//         TIMER-ADJ-01(実行中タイマーの±調整窓。タップで開き「+1分」「−30秒」で残り秒が変わる) /
+//         TIMER-ADJ-01(実行中タイマーの±調整窓。タップで開き「+1分」「−30秒」で残り秒が変わる。
+//         常駐バー行の「+1分」ミニボタン単体での即+60秒も確認。2026-07-13 UIペルソナQA) /
 //         TIMER-CUSTOM-01(じぶんタイマー。入口Aから起動し、0未満にならない floor 挙動も確認。
 //         2026-07-12秒刻み対応で±30秒・±10秒の分+秒表示・10秒未満にならない floor も確認) /
 //         LOG-PHOTO-01(「作った！」記録への写真添付。選択→プレビュー→保存→一覧サムネイル→
@@ -120,6 +123,10 @@ try {
   check(
     'NUT-01 未解錠には月間献立と同じ「Pro版について見る」リンクが出る',
     nutExpandedText.includes('Pro版について見る'),
+  )
+  check(
+    'NUT-01 未解錠案内にPro版で増える項目(たんぱく質・脂質・炭水化物)が明記される(2026-07-13 UIペルソナQA)',
+    nutExpandedText.includes('Pro版では、たんぱく質・脂質・炭水化物のめやすも表示されます'),
   )
   await page.getByRole('button', { name: '栄養価のめやすを閉じる' }).click()
   await page.waitForTimeout(200)
@@ -309,16 +316,16 @@ try {
   )
 
   // --- SETTINGS-TAB-01: 設定画面のタブ分割(2026-07-12オーナー実機フィードバック)。
-  // ?set=直リンクで開いたときに「レシピ」タブが自動で開くこと(「基本」タブの内容は隠れる)、
+  // ?set=直リンクで開いたときに「レシピ」タブが自動で開くこと(「全般」タブの内容は隠れる)、
   // 4タブを手動で切り替えられること、?section=pro/?section=themesの直リンクも
-  // 該当タブを自動で開くことを確認する ---
+  // 該当タブを自動で開くことを確認する。タブ名「基本」→「全般」は2026-07-13 UIペルソナQA ---
   currentCheck = 'SETTINGS-TAB-01'
   check(
     'SETTINGS-TAB-01 ?set=直リンクは「レシピ」タブを自動で開く(セット読み込みの見出しが見える)',
     (await page.textContent('body')).includes('レシピセットを読み込む'),
   )
   check(
-    'SETTINGS-TAB-01 このとき「基本」タブの内容は隠れている(NG食材の見出しが見えない)',
+    'SETTINGS-TAB-01 このとき「全般」タブの内容は隠れている(NG食材の見出しが見えない)',
     !(await page.textContent('body')).includes('NG食材（アレルギー・苦手）'),
   )
   // トースト化(2026-07-12: setMessage表示をページ上部固定からトーストに変更)。タップで閉じる。
@@ -332,10 +339,10 @@ try {
   )
 
   // タブを手動で一通り切り替え、それぞれの代表コンテンツが出ることを確認する
-  await page.getByRole('button', { name: '基本', exact: true }).click()
+  await page.getByRole('button', { name: '全般', exact: true }).click()
   await page.waitForTimeout(200)
   check(
-    'SETTINGS-TAB-01 「基本」タブでNG食材の見出しが見える',
+    'SETTINGS-TAB-01 「全般」タブでNG食材の見出しが見える',
     (await page.textContent('body')).includes('NG食材（アレルギー・苦手）'),
   )
   await page.getByRole('button', { name: 'バックアップ', exact: true }).click()
@@ -365,14 +372,15 @@ try {
     (await page.textContent('body')).includes('Pro版'),
   )
   check(
-    'SETTINGS-TAB-01 ?section=proでは「基本」タブの内容が隠れている',
+    'SETTINGS-TAB-01 ?section=proでは「全般」タブの内容が隠れている',
     !(await page.textContent('body')).includes('NG食材（アレルギー・苦手）'),
   )
 
   // --- TOAST-01: 設定操作の結果メッセージがトーストで表示され、数秒で自動的に消える
-  // (2026-07-12オーナー実機フィードバック。以前はページ最上部固定でスクロールしないと見えなかった) ---
+  // (2026-07-12オーナー実機フィードバック。以前はページ最上部固定でスクロールしないと見えなかった。
+  // 自動非表示は2026-07-13 UIペルソナQAで4.5秒→6秒に延長) ---
   currentCheck = 'TOAST-01'
-  await page.getByRole('button', { name: '基本', exact: true }).click()
+  await page.getByRole('button', { name: '全般', exact: true }).click()
   await page.waitForTimeout(200)
   await page.getByPlaceholder('例: えび').fill('E2Eトースト確認食材')
   await page.getByRole('button', { name: '追加', exact: true }).click()
@@ -381,7 +389,7 @@ try {
     'TOAST-01 NG食材追加でトーストが表示される',
     (await page.textContent('body')).includes('「E2Eトースト確認食材」を追加しました'),
   )
-  await page.waitForTimeout(5000) // Toastの自動非表示(AUTO_DISMISS_MS=4500ms)を超えて待つ
+  await page.waitForTimeout(6800) // Toastの自動非表示(AUTO_DISMISS_MS=6000ms)を超えて待つ
   check(
     'TOAST-01 トーストは数秒で自動的に消える',
     !(await page.textContent('body')).includes('「E2Eトースト確認食材」を追加しました'),
@@ -806,6 +814,25 @@ try {
   // タイマー起動の初回だけ出る説明バナーが、次の正規表現セレクタと混同しないことも併せて確認
   const adjustOpenBtn = page.getByRole('button', { name: /のタイマーを調整/ })
   check('TIMER-ADJ-01 常駐バーにタイマー行が現れる(タップで調整窓が開く導線)', await adjustOpenBtn.isVisible())
+
+  // 常駐バー行の「+1分」ミニボタン(2026-07-13 UIペルソナQA): 調整窓を開かずに即+60秒できる近道。
+  // 行タップ(調整窓を開く)とは別の操作なので、窓を開く前にここで確認する
+  const miniPlusOneBtn = page.getByRole('button', { name: '肉じゃがに1分追加' })
+  check('TIMER-ADJ-01 常駐バー行に「+1分」ミニボタンが出る', await miniPlusOneBtn.isVisible())
+  const miniBeforeSec = parseRemainingSeconds(await adjustOpenBtn.textContent())
+  await miniPlusOneBtn.click()
+  await page.waitForTimeout(300)
+  const miniAfterSec = parseRemainingSeconds(await adjustOpenBtn.textContent())
+  check(
+    'TIMER-ADJ-01 「+1分」ミニボタンで残り秒が約60秒増える(調整窓を開かずに)',
+    miniBeforeSec !== null && miniAfterSec !== null && miniAfterSec - miniBeforeSec >= 50,
+    `押す前=${miniBeforeSec}s 押した後=${miniAfterSec}s`,
+  )
+  check(
+    'TIMER-ADJ-01 「+1分」ミニボタンを押しても調整窓は開かない(行タップと独立)',
+    !(await page.getByRole('dialog', { name: 'タイマーを調整' }).isVisible().catch(() => false)),
+  )
+
   await adjustOpenBtn.click()
   await page.waitForTimeout(300)
   const adjustDialog = page.getByRole('dialog', { name: 'タイマーを調整' })
@@ -990,7 +1017,9 @@ try {
   await searchInput.fill('')
   await page.waitForTimeout(300)
 
-  // 詳細画面に戻り、編集後の目安価格が概算食費・材料行の注記に反映されることを確認する
+  // 詳細画面に戻り、編集後の価格が概算食費・材料行の注記に反映されることを確認する。
+  // 由来種別の出し分け(2026-07-13 UIペルソナQA): ユーザーが上書きした価格なので
+  // 「目安」の語は付かず「（999円）」になる(「（目安999円）」にはならない)
   await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
   await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
@@ -1001,8 +1030,8 @@ try {
     priceDetailAfter.includes('約999円'),
   )
   check(
-    'INLINE-01 材料行の目安注記も更新される(（目安999円）)',
-    priceDetailAfter.includes('（目安999円）'),
+    'INLINE-01 上書き価格由来の行は「目安」を外した注記になる(（999円）)',
+    priceDetailAfter.includes('（999円）') && !priceDetailAfter.includes('（目安999円）'),
   )
 
   // 「目安に戻す」で投入時の価格に復元できることを確認する
@@ -1016,6 +1045,16 @@ try {
   check(
     'INLINE-01 「目安に戻す」で価格が50円に戻る',
     (await onionRowAgain.getByLabel('玉ねぎの価格（円）').inputValue()) === '50',
+  )
+
+  // 目安に戻した後は、詳細の注記も「目安」表記に戻ることを確認する(由来種別の往復)
+  await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
+  await page.waitForTimeout(500)
+  check(
+    'INLINE-01 「目安に戻す」後は詳細の注記も「目安」表記に戻る(（目安50円）)',
+    (await page.textContent('body')).includes('（目安50円）'),
   )
 
   // 後始末: テスト用レシピを削除（削除は詳細画面からなので、いったんレシピ詳細に戻る）

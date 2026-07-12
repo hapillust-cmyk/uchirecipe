@@ -211,7 +211,8 @@ export const ja = {
   settings: {
     title: '設定',
     // タブ分割(2026-07-12オーナー実機フィードバック: 縦に長大化したため上部タブで分割)
-    tabBasic: '基本',
+    // タブ名は「基本」→「全般」(2026-07-13 UIペルソナQA。タブ構造・id('basic')はそのまま、表示名のみ変更)
+    tabBasic: '全般',
     tabRecipe: 'レシピ',
     tabBackup: 'バックアップ',
     tabProPack: 'Pro・パック',
@@ -593,6 +594,9 @@ export const ja = {
     sourcePrefix: '出典: ',
     // 無料版でも表示する基本2項目（エネルギー・食塩相当量）用(2026-07-10 バッチH-4)
     perServingLabel: '1食あたり',
+    // 未解錠案内の冒頭に置く、Pro版で増える項目の明示（2026-07-13 UIペルソナQA:
+    // 「Pro版で何が増えるか」が伝わりにくいとの指摘。断定・誇大な表現は避け、事実のみを1文で書く）
+    proNutrientHighlight: 'Pro版では、たんぱく質・脂質・炭水化物のめやすも表示されます。',
     freeDescription:
       'たんぱく質・脂質・炭水化物のめやすは、Pro版で見られるようになる予定です（現在開発中）。',
     // Pro解錠済みユーザー向け: 「解錠したのに残りが見えない」と誤解させない文言
@@ -624,6 +628,9 @@ export const ja = {
     adjustOpenAria: '{label}のタイマーを調整',
     adjustDialogTitle: 'タイマーを調整',
     plusOneMinute: '+1分',
+    // 常駐バー行の「+1分」ミニボタン(2026-07-13 UIペルソナQA)。複数タイマー同時進行でも
+    // どのタイマーへの操作か区別できるようaria-labelにlabelを差し込む(adjustOpenAriaと同じ流儀)
+    plusOneMinuteAria: '{label}に1分追加',
     minusThirtySeconds: '−30秒',
     stopTimer: '停止',
     // じぶんタイマー(自由な分数で始めるタイマー。同バッチ)。ラベルは常にこの文言(レシピ名にしない)
@@ -672,8 +679,11 @@ export const ja = {
     badgeCustom: '自分の価格',
     resetToDefault: '目安に戻す',
     resetToDefaultAria: '{name}を目安価格に戻す',
-    // レシピ詳細の材料行: 個別価格が無くマスタの目安価格から計算した行にだけ出す控えめな注記
+    // レシピ詳細の材料行: 個別価格が無くマスタの目安価格から計算した行にだけ出す控えめな注記。
+    // 一致したマスタ行が投入時の目安のままなら「目安」表記、ユーザーが上書きした価格なら
+    // 「目安」を外す(2026-07-13 UIペルソナQA: 自分で入れた価格に「目安」と付くのは違和感があるため)
     ingredientFromMasterNote: '（目安{n}円）',
+    ingredientFromMasterNoteCustom: '（{n}円）',
   },
 } as const
 
