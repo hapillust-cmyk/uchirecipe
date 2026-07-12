@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown, Info } from 'lucide-react'
+import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown, Info, Coins } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
 import { listRecipes, deleteRecipesBySourceSet } from '../db/recipes'
 import { reloadStarterRecipes, starterCount } from '../db/starters'
@@ -578,6 +578,19 @@ export default function SettingsPage() {
           placeholder={ja.settings.weeklyBudgetPlaceholder}
           className="mt-[var(--space-sm)] w-full rounded-sm border border-edge bg-app px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
         />
+      </section>
+
+      {/* 食材と価格（食材価格マスタ。詳細・献立の概算食費のフォールバックに使う） */}
+      <section className={sectionCls}>
+        <h2 className="font-bold">{ja.settings.priceMasterTitle}</h2>
+        <p className="mt-1 text-sm text-ink-muted">{ja.settings.priceMasterDescription}</p>
+        <Link
+          to="/prices"
+          className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md border border-edge bg-surface py-3 font-bold text-accent shadow-sm"
+        >
+          <Coins size={18} aria-hidden />
+          {ja.settings.priceMasterLink}
+        </Link>
       </section>
 
       {/* ホーム画面のカスタマイズ */}

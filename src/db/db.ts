@@ -1,5 +1,13 @@
 import Dexie, { type Table } from 'dexie'
-import type { MealPlanEntry, PantryItem, Recipe, Settings, ShoppingItem, TodayListItem } from './types'
+import type {
+  MealPlanEntry,
+  PantryItem,
+  PriceEntry,
+  Recipe,
+  Settings,
+  ShoppingItem,
+  TodayListItem,
+} from './types'
 
 /**
  * うちレシピのデータベース（ブラウザ内蔵の IndexedDB を Dexie 経由で使う）。
@@ -12,6 +20,7 @@ class UchiRecipeDB extends Dexie {
   shoppingItems!: Table<ShoppingItem, number>
   mealPlans!: Table<MealPlanEntry, number>
   todayList!: Table<TodayListItem, number>
+  prices!: Table<PriceEntry, number>
 
   constructor() {
     super('uchi-recipe')
@@ -74,6 +83,17 @@ class UchiRecipeDB extends Dexie {
       shoppingItems: '++id, order',
       mealPlans: '++id, date, [date+slot]',
       todayList: '++id, recipeId, addedAt',
+    })
+    // バージョン9: 食材価格マスタ（頻出食材の目安価格）テーブルを追加
+    // （既存のレシピ・設定等はそのまま引き継がれる。新規テーブルのみの追加なのでupgrade関数は不要）
+    this.version(9).stores({
+      recipes: '++id, title, *tags, *searchWords, updatedAt, sourceSetId',
+      settings: 'id',
+      pantryItems: '++id, name',
+      shoppingItems: '++id, order',
+      mealPlans: '++id, date, [date+slot]',
+      todayList: '++id, recipeId, addedAt',
+      prices: '++id, name, updatedAt',
     })
   }
 }

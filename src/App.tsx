@@ -9,12 +9,14 @@ import CookNaviPage from './pages/CookNaviPage'
 import ShoppingPage from './pages/ShoppingPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import IngredientPricesPage from './pages/IngredientPricesPage'
 import TabBar from './components/TabBar'
 import TimerBar from './components/TimerBar'
 import { TimerProvider } from './components/TimerProvider'
 import { useSettings, recordFirstLaunchIfNeeded } from './db/settings'
 import { seedStartersIfNeeded } from './db/starters'
 import { seedPantryPresetIfNeeded } from './db/pantry'
+import { seedPriceDefaultsIfNeeded } from './db/prices'
 import { rebuildSearchWordsIfNeeded } from './db/recipes'
 
 /**
@@ -50,6 +52,7 @@ function App() {
       await recordFirstLaunchIfNeeded()
       await seedStartersIfNeeded()
       await seedPantryPresetIfNeeded()
+      await seedPriceDefaultsIfNeeded()
       await rebuildSearchWordsIfNeeded()
     })()
   }, [])
@@ -73,6 +76,7 @@ function App() {
             <Route path="/shopping" element={<ShoppingPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/prices" element={<IngredientPricesPage />} />
           </Routes>
         </main>
         <TimerBar />

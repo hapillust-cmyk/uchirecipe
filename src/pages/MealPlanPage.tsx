@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
+import { usePriceEntries } from '../db/prices'
 import { useMealPlanRange, assignMeal, clearMeal } from '../db/mealPlan'
 import {
   useTodayList,
@@ -37,6 +38,7 @@ import {
 } from '../logic/mealPlan'
 import { todayString } from '../logic/date'
 import { hasNgIngredient } from '../logic/ng'
+import { buildPriceIndex, estimateRecipeCost } from '../logic/priceEstimate'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import type { MealSlot, Recipe } from '../db/types'
@@ -98,6 +100,9 @@ export default function MealPlanPage() {
   const navigate = useNavigate()
   const recipes = useLiveQuery(listRecipes, [])
   const settings = useSettings()
+  // 食材価格マスタ（未入力の材料だけ目安価格で補うフォールバック。docs/20 §3）
+  const priceEntries = usePriceEntries()
+  const priceIndex = useMemo(() => buildPriceIndex(priceEntries ?? []), [priceEntries])
   const today = useMemo(todayString, [])
   const [weekStart, setWeekStart] = useState(() => weekDates(new Date())[0])
   const dates = useMemo(() => weekDates(new Date(`${weekStart}T00:00:00`)), [weekStart])
@@ -272,24 +277,32 @@ export default function MealPlanPage() {
     setPickerTarget(null)
   }
 
-  // 週の概算食費（材料に価格を入れたレシピだけ計算対象）
-  const weekCost = useMemo(() => {
-    if (!entries) return 0
-    return entries.reduce((sum, e) => {
-      const recipe = recipeById.get(e.recipeId)
-      if (!recipe) return sum
-      return sum + recipe.ingredients.reduce((s, i) => s + (i.price ?? 0), 0)
-    }, 0)
-  }, [entries, recipeById])
+  // 週の概算食費（材料ごとの価格入力を優先し、未入力の材料は食材価格マスタで補う。docs/20 §3）
+  const weekCostEstimate = useMemo(() => {
+    if (!entries) return { total: 0, fromMasterCount: 0 }
+    return entries.reduce(
+      (acc, e) => {
+        const recipe = recipeById.get(e.recipeId)
+        if (!recipe) return acc
+        const estimate = estimateRecipeCost(recipe.ingredients, priceIndex)
+        return {
+          total: acc.total + estimate.total,
+          fromMasterCount: acc.fromMasterCount + estimate.fromMasterCount,
+        }
+      },
+      { total: 0, fromMasterCount: 0 },
+    )
+  }, [entries, recipeById, priceIndex])
+  const weekCost = weekCostEstimate.total
 
   const weeklyBudget = settings?.weeklyBudget
   const budgetDiff = weeklyBudget != null ? weeklyBudget - weekCost : undefined
 
-  // 材料に価格が1件も入力されていなければ「週の概算食費」セクションごと非表示にする
-  // (価格入力していない人には無意味な表示のため。2026-07-10 オーナー要望)
+  // 価格情報（個別入力・マスタ一致のどちらか）が1件も無ければ「週の概算食費」セクションごと非表示にする
+  // (価格情報が無い人には無意味な表示のため。2026-07-10 オーナー要望・docs/20 §3でマスタ一致も対象に追加)
   const hasPricedRecipe = useMemo(
-    () => (recipes ?? []).some((r) => r.ingredients.some((i) => (i.price ?? 0) > 0)),
-    [recipes],
+    () => (recipes ?? []).some((r) => estimateRecipeCost(r.ingredients, priceIndex).hasAnyPriceInfo),
+    [recipes, priceIndex],
   )
 
   const weekRecipeIds = useMemo(() => {
@@ -602,6 +615,10 @@ export default function MealPlanPage() {
           <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
           <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
           <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
+          {/* 概算食費の一部が食材価格マスタ由来のとき（docs/20 §3） */}
+          {weekCostEstimate.fromMasterCount > 0 && (
+            <p className="mt-1 text-xs text-ink-muted">{ja.priceMaster.mixedNote}</p>
+          )}
           <Link to="/recipes" className="mt-1 inline-block text-sm font-bold text-accent underline">
             {ja.mealPlan.weekCostNoteLink}
           </Link>

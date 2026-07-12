@@ -23,6 +23,13 @@ import { buildShoppingCandidates } from '../src/logic/shopping.ts'
 import { hasLaterHandsOnStep } from '../src/logic/cookNavi.ts'
 import { resolveDuplicateTitleAction, buildUpdatedSetRecipe } from '../src/logic/backup.ts'
 import {
+  buildPriceIndex,
+  matchPriceEntry,
+  estimateIngredientYen,
+  estimateRecipeCost,
+  normalizeIngredientNameForPrice,
+} from '../src/logic/priceEstimate.ts'
+import {
   pickMainIngredients,
   normalizeIngredientChipLabel,
   pickDisplayIngredientChips,
@@ -274,6 +281,47 @@ eq(
   eq('きのこを含まないレシピには「きのこ」が追加されない', noMushroom.some((w) => w.includes(mushroomKey)), false)
 }
 
+// ---------- buildSearchWords: keywords(検索キーワード欄・任意)がタイトル/材料/タグに
+// 無い語でも検索にヒットするよう合流する(2026-07-12バッチ「検索キーワード欄」実装) ----------
+{
+  const aliasKey = toHiragana('チンジャオロース')
+  const withKeyword = buildSearchWords(
+    '青椒肉絲',
+    [{ name: '豚肉', amount: '150', unit: 'g' }],
+    ['中華'],
+    ['チンジャオロース'],
+  )
+  eq(
+    'keywordsの語がひらがな化されて検索語に合流する',
+    withKeyword.some((w) => w.includes(aliasKey)),
+    true,
+  )
+  // keywords省略(3引数呼び出し)でも従来どおり動く(既存呼び出し元・starters.ts等との後方互換)
+  const withoutKeyword = buildSearchWords(
+    '青椒肉絲',
+    [{ name: '豚肉', amount: '150', unit: 'g' }],
+    ['中華'],
+  )
+  eq(
+    'keywords省略時はその語を含まない(既存データ=変化なしの確認)',
+    withoutKeyword.some((w) => w.includes(aliasKey)),
+    false,
+  )
+  // 空文字・空白だけのkeywordsはノイズを増やさない(trimして空になる語は無視)
+  const baseline = buildSearchWords(
+    '肉じゃが',
+    [{ name: 'じゃがいも', amount: '3', unit: '個' }],
+    [],
+  )
+  const emptyKeyword = buildSearchWords(
+    '肉じゃが',
+    [{ name: 'じゃがいも', amount: '3', unit: '個' }],
+    [],
+    ['', '  '],
+  )
+  eq('空文字・空白だけのkeywordsは検索語を増やさない', emptyKeyword.length, baseline.length)
+}
+
 // ---------- searchIndexNeedsRebuild: 検索インデックス移行の判定(既存レシピのsearchWordsに
 // きのこカテゴリ語等を反映させる一回きりの移行。2026-07-12) ----------
 {
@@ -512,6 +560,45 @@ eq(
   const renamed = buildUpdatedSetRecipe(existingSetRecipe, sameContent, '新テーマ名', 5000)
   eq('セット名だけの変更でも更新扱いになる(null以外)', renamed !== null, true)
   eq('更新後のsourceSetNameが新名称になる', renamed?.sourceSetName, '新テーマ名')
+}
+
+// ---------- buildUpdatedSetRecipe: keywordsも更新対象フィールドに含まれる(検索キーワード欄
+// 2026-07-12バッチ。公式レシピへの語彙付与ルールをセット再配信で反映できるようにする) ----------
+{
+  const base = {
+    id: 99,
+    title: 'ホイコーロー',
+    photo: undefined,
+    servings: 2,
+    cookMinutes: 20,
+    effortLevel: 'normal',
+    tags: ['中華'],
+    season: 'all',
+    suitableFor: undefined,
+    ingredients: [{ name: '豚バラ肉', amount: '200', unit: 'g' }],
+    steps: [{ text: '豚バラ肉を炒める' }],
+    quickSteps: undefined,
+    memo: '',
+    sourceUrl: undefined,
+    isFavorite: false,
+    cookedLogs: [],
+    searchWords: [],
+    isStarter: true,
+    sourceSetId: 'chuka',
+    sourceSetName: '中華セット',
+    keywords: undefined,
+    createdAt: 1000,
+    updatedAt: 1000,
+  }
+  const withKeyword = { ...base, keywords: ['回鍋肉'] }
+  const updated = buildUpdatedSetRecipe(base, withKeyword, base.sourceSetName, 6000)
+  eq('keywordsが増えただけでも更新扱いになる(null以外)', updated !== null, true)
+  eq('更新: keywordsが反映される', updated?.keywords, ['回鍋肉'])
+  eq(
+    '更新: searchWordsにkeywordsが合流する',
+    updated?.searchWords.some((w) => w.includes(toHiragana('回鍋肉'))),
+    true,
+  )
 }
 
 // ---------- freeLimit(本番はフラグOFF=絶対にブロックしない不変条件) ----------
@@ -968,6 +1055,72 @@ const iconKeyExpected = {
   }
   eq('アイコン期待表の品数は全品数と一致', Object.keys(iconKeyExpected).length, iconEntries.length)
   eq('アイコン期待表に無い余剰キーは無い', Object.keys(iconKeyExpected).every((t) => seenTitles.has(t)), true)
+}
+
+// ---------- 食材価格マスタのフォールバック計算(docs/20 §3・2026-07-12) ----------
+eq('normalizeIngredientNameForPrice 括弧除去', normalizeIngredientNameForPrice('甘塩鮭（切り身）'), '甘塩鮭')
+eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientNameForPrice(' 玉ねぎ '), '玉ねぎ')
+
+{
+  const index = buildPriceIndex([
+    { name: '玉ねぎ', pricePerUnit: 50, unit: '1個' },
+    { name: '鶏もも肉', pricePerUnit: 130, unit: '100g' },
+  ])
+  eq(
+    'matchPriceEntry 括弧付き材料名の完全一致',
+    matchPriceEntry('玉ねぎ（みじん切り）', index)?.normalizedName,
+    '玉ねぎ',
+  )
+  eq(
+    'matchPriceEntry 前方一致(材料名がマスタ名で始まる)',
+    matchPriceEntry('玉ねぎ薄切り', index)?.normalizedName,
+    '玉ねぎ',
+  )
+  eq('matchPriceEntry 一致なし', matchPriceEntry('謎の食材', index), undefined)
+
+  eq(
+    'estimateIngredientYen 数量・単位が噛み合えば按分(300g/100gあたり130円→390円)',
+    estimateIngredientYen({ name: '鶏もも肉', amount: '300', unit: 'g' }, index),
+    390,
+  )
+  eq(
+    'estimateIngredientYen 個数系も按分(2個/1個あたり50円→100円)',
+    estimateIngredientYen({ name: '玉ねぎ', amount: '2', unit: '個' }, index),
+    100,
+  )
+  eq(
+    'estimateIngredientYen 非数値の分量(少々)はマスタの金額をそのまま使う',
+    estimateIngredientYen({ name: '鶏もも肉', amount: '少々', unit: 'g' }, index),
+    130,
+  )
+  eq(
+    'estimateIngredientYen 単位が噛み合わない場合はマスタの金額をそのまま使う',
+    estimateIngredientYen({ name: '玉ねぎ', amount: '200', unit: 'g' }, index),
+    50,
+  )
+  eq(
+    'estimateIngredientYen マスタに無い食材はundefined',
+    estimateIngredientYen({ name: '謎の食材', amount: '1', unit: '個' }, index),
+    undefined,
+  )
+
+  eq(
+    'estimateRecipeCost 優先度: 個別入力>マスタ>なし',
+    estimateRecipeCost(
+      [
+        { name: '玉ねぎ', amount: '1', unit: '個', price: 80 }, // 個別入力(80円)がマスタ(50円)より優先
+        { name: '鶏もも肉', amount: '200', unit: 'g' }, // 未入力→マスタで按分(130*2=260円)
+        { name: '謎の食材', amount: '1', unit: '個' }, // マスタにも無いので計算対象外
+      ],
+      index,
+    ),
+    { total: 340, fromMasterCount: 1, hasAnyPriceInfo: true },
+  )
+  eq(
+    'estimateRecipeCost 価格情報が1件も無ければhasAnyPriceInfo=false',
+    estimateRecipeCost([{ name: '謎の食材', amount: '1', unit: '個' }], index),
+    { total: 0, fromMasterCount: 0, hasAnyPriceInfo: false },
+  )
 }
 
 // ---------- 結果 ----------
