@@ -66,21 +66,26 @@ export function toHiragana(input: string): string {
 }
 
 /**
- * 料理名・材料名・タグから検索用キーワード一覧を作る（保存時に呼ぶ）。
+ * 料理名・材料名・タグ・検索キーワードから検索用キーワード一覧を作る（保存時に呼ぶ）。
  *
  * 調味料的な材料（大さじ/小さじ/単位なし/「少々」等。isSeasoningLikeと同じ基準）は
  * 検索語に含めない。「鮭（さけ）」で検索すると調味料の「酒（さけ）」を使うレシピが
  * 大量にヒットする誤爆の対策（2026-07-09 ペルソナテスト第1波）。
  * タイトル・タグ・主材料での検索はこれまで通り。
+ *
+ * keywords（Recipe.keywords、任意）は一覧・詳細には表示しない検索専用の語（別名・
+ * 表記ゆれ・気分語など）。第4引数は省略可能なので既存の呼び出し元（keywordsを持たない
+ * データ）は変更なしで動く。
  */
 export function buildSearchWords(
   title: string,
   ingredients: ReadonlyArray<{ name: string; amount: string; unit: string }>,
   tags: readonly string[],
+  keywords?: readonly string[],
 ): string[] {
   const words = new Set<string>()
   const mainNames = ingredients.filter((ing) => !isSeasoningLike(ing)).map((ing) => ing.name)
-  for (const raw of [title, ...mainNames, ...tags]) {
+  for (const raw of [title, ...mainNames, ...tags, ...(keywords ?? [])]) {
     const trimmed = raw.trim()
     if (trimmed) words.add(toHiragana(trimmed))
   }

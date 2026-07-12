@@ -6,6 +6,7 @@ import { READINGS_VERSION } from '../logic/ingredientReadings'
 
 /** 入力の掃除: 名前が空の材料行・本文が空の手順行は保存しない */
 function cleanInput(input: RecipeInput): RecipeInput {
+  const cleanedKeywords = input.keywords?.map((k) => k.trim()).filter(Boolean)
   return {
     ...input,
     title: input.title.trim(),
@@ -16,6 +17,7 @@ function cleanInput(input: RecipeInput): RecipeInput {
     steps: input.steps
       .map((s) => ({ ...s, text: s.text.trim(), memo: s.memo?.trim() || undefined }))
       .filter((s) => s.text !== ''),
+    keywords: cleanedKeywords && cleanedKeywords.length > 0 ? cleanedKeywords : undefined,
   }
 }
 
@@ -27,7 +29,7 @@ export async function createRecipe(input: RecipeInput): Promise<number> {
     ...cleaned,
     isFavorite: false,
     cookedLogs: [],
-    searchWords: buildSearchWords(cleaned.title, cleaned.ingredients, cleaned.tags),
+    searchWords: buildSearchWords(cleaned.title, cleaned.ingredients, cleaned.tags, cleaned.keywords),
     createdAt: now,
     updatedAt: now,
   }
@@ -49,7 +51,7 @@ export async function updateRecipe(id: number, input: RecipeInput): Promise<void
   const cleaned = cleanInput(input)
   await db.recipes.update(id, {
     ...cleaned,
-    searchWords: buildSearchWords(cleaned.title, cleaned.ingredients, cleaned.tags),
+    searchWords: buildSearchWords(cleaned.title, cleaned.ingredients, cleaned.tags, cleaned.keywords),
     updatedAt: Date.now(),
   })
 }
@@ -87,7 +89,7 @@ export async function rebuildSearchWordsIfNeeded(): Promise<void> {
     if (!searchIndexNeedsRebuild(settings)) return
     const all = await db.recipes.toArray()
     for (const recipe of all) {
-      const searchWords = buildSearchWords(recipe.title, recipe.ingredients, recipe.tags)
+      const searchWords = buildSearchWords(recipe.title, recipe.ingredients, recipe.tags, recipe.keywords)
       await db.recipes.update(recipe.id!, { searchWords })
     }
     await db.settings.put({

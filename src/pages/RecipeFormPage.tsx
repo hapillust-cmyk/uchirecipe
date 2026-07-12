@@ -59,6 +59,8 @@ type FormDraft = {
   steps: StepRow[]
   tags: string[]
   tagInput: string
+  keywords: string[]
+  keywordInput: string
   memo: string
   sourceUrl: string
   iconKey?: IconKey
@@ -129,6 +131,8 @@ function RecipeFormInner() {
   const [steps, setSteps] = useState<StepRow[]>([{ ...emptyStep }])
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+  const [keywords, setKeywords] = useState<string[]>([])
+  const [keywordInput, setKeywordInput] = useState('')
   const [memo, setMemo] = useState('')
   const [sourceUrl, setSourceUrl] = useState('')
   const [iconKey, setIconKey] = useState<IconKey>()
@@ -204,6 +208,8 @@ function RecipeFormInner() {
           : [{ ...emptyStep }],
       tags: recipe.tags,
       tagInput: '',
+      keywords: recipe.keywords ?? [],
+      keywordInput: '',
       memo: recipe.memo ?? '',
       sourceUrl: recipe.sourceUrl ?? '',
       iconKey: recipe.iconKey,
@@ -238,6 +244,7 @@ function RecipeFormInner() {
         : [{ ...emptyStep }],
     )
     setTags(recipe.tags)
+    setKeywords(recipe.keywords ?? [])
     setMemo(recipe.memo ?? '')
     setSourceUrl(recipe.sourceUrl ?? '')
     setIconKey(recipe.iconKey)
@@ -258,6 +265,8 @@ function RecipeFormInner() {
         steps,
         tags,
         tagInput,
+        keywords,
+        keywordInput,
         memo,
         sourceUrl,
         iconKey,
@@ -274,6 +283,8 @@ function RecipeFormInner() {
       steps,
       tags,
       tagInput,
+      keywords,
+      keywordInput,
       memo,
       sourceUrl,
       iconKey,
@@ -333,6 +344,8 @@ function RecipeFormInner() {
     setSteps(d.steps?.length ? d.steps : [{ ...emptyStep }])
     setTags(d.tags ?? [])
     setTagInput(d.tagInput ?? '')
+    setKeywords(d.keywords ?? [])
+    setKeywordInput(d.keywordInput ?? '')
     setMemo(d.memo ?? '')
     setSourceUrl(d.sourceUrl ?? '')
     setIconKey(d.iconKey)
@@ -443,6 +456,12 @@ function RecipeFormInner() {
     setTagInput('')
   }
 
+  const addKeyword = () => {
+    const keyword = keywordInput.trim()
+    if (keyword && !keywords.includes(keyword)) setKeywords([...keywords, keyword])
+    setKeywordInput('')
+  }
+
   const save = async () => {
     if (!title.trim()) {
       setError(ja.form.nameRequired)
@@ -461,6 +480,10 @@ function RecipeFormInner() {
       const pendingTag = tagInput.trim()
       const effectiveTags =
         pendingTag && !tags.includes(pendingTag) ? [...tags, pendingTag] : tags
+      // キーワード欄も同様に、入力したまま「追加」押し忘れの分を保存時に取り込む
+      const pendingKeyword = keywordInput.trim()
+      const effectiveKeywords =
+        pendingKeyword && !keywords.includes(pendingKeyword) ? [...keywords, pendingKeyword] : keywords
 
       const input: RecipeInput = {
         title,
@@ -491,6 +514,7 @@ function RecipeFormInner() {
         })),
         sourceUrl: sourceUrl.trim() || undefined,
         memo: memo.trim() || undefined,
+        keywords: effectiveKeywords.length > 0 ? effectiveKeywords : undefined,
         iconKey,
         showIconInsteadOfPhoto,
         season,
@@ -1087,6 +1111,54 @@ function RecipeFormInner() {
             className="rounded-sm border border-edge bg-surface px-4 font-bold text-accent shadow-sm"
           >
             {ja.form.addTag}
+          </button>
+        </div>
+      </div>
+
+      {/* 検索キーワード（任意・一覧や詳細には表示せず検索のヒット対象にのみ使う） */}
+      <div className="mt-[var(--space-lg)]">
+        <span className={labelCls}>{ja.form.keywordsLabel}</span>
+        <p className="mt-1 text-sm text-ink-muted">{ja.form.keywordsDescription}</p>
+        {keywords.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {keywords.map((keyword) => (
+              <span
+                key={keyword}
+                className="inline-flex items-center gap-1 rounded-sm px-2 py-1 text-sm text-accent"
+                style={{ background: 'color-mix(in oklab, var(--accent) 12%, var(--bg))' }}
+              >
+                {keyword}
+                <button
+                  type="button"
+                  onClick={() => setKeywords(keywords.filter((k) => k !== keyword))}
+                  aria-label={ja.form.removeKeyword}
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="mt-1 flex gap-[var(--space-sm)]">
+          <input
+            type="text"
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addKeyword()
+              }
+            }}
+            placeholder={ja.form.keywordPlaceholder}
+            className="min-w-0 flex-1 rounded-sm border border-edge bg-surface px-3 py-3 text-base text-ink placeholder:text-ink-muted/60"
+          />
+          <button
+            type="button"
+            onClick={addKeyword}
+            className="rounded-sm border border-edge bg-surface px-4 font-bold text-accent shadow-sm"
+          >
+            {ja.form.addKeyword}
           </button>
         </div>
       </div>

@@ -219,13 +219,14 @@ type RecipeSetContent = Pick<
   | 'quickSteps'
   | 'memo'
   | 'sourceUrl'
+  | 'keywords'
 >
 
 /**
  * 同一セット由来の再取込（resolveDuplicateTitleActionが'updateName'を返すケース）で、
  * 既存レシピの内容を更新した結果を返す（純ロジック・DB非依存）。
  * 更新: servings/cookMinutes/effortLevel/tags/season/suitableFor/ingredients/steps/
- *       quickSteps/memo/sourceUrl/sourceSetName + searchWords・updatedAt
+ *       quickSteps/memo/sourceUrl/keywords/sourceSetName + searchWords・updatedAt
  * 保持: 上記以外すべて（id・createdAt・isFavorite・cookedLogs・photo・isStarter・iconKey等の
  *       ユーザーデータ・表示設定。existingをベースに更新フィールドだけ上書きするため自動的に保持される）
  * 内容が完全に同一（sourceSetName込み）なら null を返す（呼び出し側はスキップ扱いにする。
@@ -250,6 +251,7 @@ export function buildUpdatedSetRecipe(
       quickSteps: source.quickSteps,
       memo: source.memo,
       sourceUrl: source.sourceUrl,
+      keywords: source.keywords,
       sourceSetName,
     })
   if (content(existing, existing.sourceSetName) === content(incoming, setName)) return null
@@ -267,8 +269,9 @@ export function buildUpdatedSetRecipe(
     quickSteps: incoming.quickSteps,
     memo: incoming.memo,
     sourceUrl: incoming.sourceUrl,
+    keywords: incoming.keywords,
     sourceSetName: setName,
-    searchWords: buildSearchWords(existing.title, incoming.ingredients, incoming.tags),
+    searchWords: buildSearchWords(existing.title, incoming.ingredients, incoming.tags, incoming.keywords),
     updatedAt: now,
   }
 }
@@ -318,7 +321,7 @@ export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
         isStarter: true,
         sourceSetId: file.setId,
         sourceSetName: file.setName,
-        searchWords: buildSearchWords(rest.title, rest.ingredients, rest.tags),
+        searchWords: buildSearchWords(rest.title, rest.ingredients, rest.tags, rest.keywords),
         createdAt: now,
         updatedAt: now,
       }

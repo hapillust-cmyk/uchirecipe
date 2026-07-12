@@ -116,11 +116,13 @@ try {
   currentCheck = 'TERM-01'
   await page.getByRole('button', { name: 'くし形切りの説明を見る' }).click()
   await page.waitForTimeout(300)
-  const termOpenText = await page.textContent('body')
+  // 説明文はMemoText描画(2026-07-12)で文節境界にZWSPが入るため、比較前に除去する
+  const stripZwsp = (s) => s.replace(/\u200b/g, '')
+  const termOpenText = stripZwsp(await page.textContent('body'))
   check('TERM-01 用語タップでポップオーバーが開く', termOpenText.includes('縦半分に切った玉ねぎ'))
   await page.mouse.click(5, 5) // ポップオーバーの外をタップ
   await page.waitForTimeout(300)
-  const termClosedText = await page.textContent('body')
+  const termClosedText = stripZwsp(await page.textContent('body'))
   check('TERM-01 外タップでポップオーバーが閉じる', !termClosedText.includes('縦半分に切った玉ねぎ'))
 
   // --- SMK-08(簡易): 調理中モードを開いて手順送り・閉じる ---
