@@ -1123,6 +1123,39 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
   )
 }
 
+// ---------- toSpeechText: 調理中モード読み上げの用語辞書reading適用(docs/20 §2・2026-07-12) ----------
+{
+  const { toSpeechText } = await import('../src/logic/toSpeechText.ts')
+
+  eq(
+    '誤読しやすい語(粉ふき→こなふき)がreadingで置換される',
+    toSpeechText('粉ふきいもにする。'),
+    'こなふきいもにする。',
+  )
+  eq('小口切り→こぐちぎり', toSpeechText('小口切りにする。'), 'こぐちぎりにする。')
+  eq(
+    '最長一致: さいの目切りは全体がreadingに置換される(短いalias「さいの目」止まりで「切り」が残らない)',
+    toSpeechText('大根はさいの目切りにする。'),
+    '大根はさいのめぎりにする。',
+  )
+  eq(
+    '1文に複数の辞書語があれば両方置換される',
+    toSpeechText('小口切りにして塩もみする。'),
+    'こぐちぎりにしてしおもみする。',
+  )
+  eq(
+    'readingが未設定の語(ガク)はそのまま素通し(表示同様、読みに迷いが無い語は無変換でよい)',
+    toSpeechText('ガクを切り落とす。'),
+    'ガクを切り落とす。',
+  )
+  eq(
+    '辞書に無い語(甜麺醤等の食材名)は今回対象外のためそのまま素通し(辞書語のみ対象)',
+    toSpeechText('甜麺醤を加える。'),
+    '甜麺醤を加える。',
+  )
+  eq('辞書語を含まないテキストは無加工で返る', toSpeechText('よく混ぜ合わせる。'), 'よく混ぜ合わせる。')
+}
+
 // ---------- 結果 ----------
 console.log(`合格: ${passed}件 / 失敗: ${failures.length}件`)
 for (const f of failures) console.log(`  NG ${f}`)

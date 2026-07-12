@@ -17,6 +17,7 @@ import { useSettings, updateSettings } from '../db/settings'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
 import { collectUniqueTerms } from '../logic/termSplit'
+import { toSpeechText } from '../logic/toSpeechText'
 import { renderJaUnits } from './jaUnits'
 import StepBadge from './StepBadge'
 import TimeText from './TimeText'
@@ -109,9 +110,10 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
   }
 
   // 依存なし(setSpeakingはuseStateの安定した関数)なので、音声認識の効果からも安全に呼べる
+  // 用語辞書の読み仮名を発話直前に適用(表示のtextはそのまま。docs/20 §2)
   const speak = useCallback((text: string) => {
     if (!speechSupported) return
-    const utterance = new SpeechSynthesisUtterance(text)
+    const utterance = new SpeechSynthesisUtterance(toSpeechText(text))
     utterance.lang = 'ja-JP'
     const jaVoice = window.speechSynthesis.getVoices().find((v) => v.lang.startsWith('ja'))
     if (jaVoice) utterance.voice = jaVoice
