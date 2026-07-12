@@ -41,6 +41,7 @@ const KNOWN_WORDS = [
   '小口切り',
   'こんにゃく',
   '白いりごま',
+  '一口大',
 ]
 
 /** BudouXの素分割に、句読点・中黒・既知語の補正をかけたセグメント列を返す */
@@ -69,6 +70,12 @@ function normalizedSegments(text: string): string[] {
   for (let i = 0; i < text.length; i++) {
     if ((text[i] === '、' || text[i] === '。') && i + 1 < text.length) boundaries.add(i + 1)
     if ((text[i] === '・' || text[i] === '（' || text[i] === '(') && i > 0) boundaries.add(i)
+  }
+  // 5) 12文字以下の自己完結した括弧の内部に境界を残さない(「(または|カニカマ)」のように
+  //    括弧の中で折り返すと注記が泣き別れる。長い括弧は内部で折れてよい)
+  for (const m of text.matchAll(/[（(][^（()）]{1,10}[）)]/g)) {
+    const start = m.index ?? 0
+    for (let k = start + 1; k < start + m[0].length; k++) boundaries.delete(k)
   }
   boundaries.add(text.length)
   // 4) セグメント列へ復元

@@ -713,6 +713,14 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   eq('幅ガード: 前結合を解いて「ほどゆでる。」を密着', potatoT.bondPrev === '' && potatoT.bondNext === 'ほどゆでる。', true)
   const tunaT = splitAroundTimeToken('キャベツをせん切りにする（レンジ600Wで', 'ほど加熱すると時短になる）。', 3)
   eq('「ほど」はトークンに必ず密着', tunaT.bondNext.startsWith('ほど'), true)
+
+  // ---- 2026-07-12第3.2版: 42品チェック第3陣(オーナー実機)の規則化 ----
+  const mb = u('肉だねを一口大（直径3cmほど）に丸める。')
+  eq('「一口大」が語中で切れない(既知語)', mb[0], '肉だねを一口大')
+  const hrsm = u('ハム(またはカニカマ)を加えてあえ、器に盛る。')
+  eq('短い括弧の中で折り返さない(またはカニカマ)', hrsm.some((s) => s.includes('(またはカニカマ)')), true)
+  const sptl = u('途中で水が減ったら少量足すこと（空焚き防止）。')
+  eq('単体の開き括弧が前の行末に残らない(こと（|空焚き)', sptl.includes('（空焚き防止）。'), true)
 }
 
 // ---------- termSplit: 用語タップ辞書の最長一致分割(2026-07-11) ----------
