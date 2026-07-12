@@ -41,6 +41,13 @@ export function pickMainIngredients<T extends { name: string; amount: string; un
 const PAREN_PATTERN = /[（(][^）)]*[）)]/g
 
 /**
+ * 切り方の注記(「薄切り」「厚切り」)を除去する(2026-07-12オーナー実機フィードバック:
+ * チップ「豚バラ薄切り肉」は「豚バラ肉」で十分、切り方まではチップに要らない)。
+ * データは変更しない。一覧カードの表示専用の正規化。
+ */
+const CUT_STYLE_PATTERN = /薄切り|厚切り/g
+
+/**
  * 表示ラベルを1つに統一する食材名の別名辞書(2026-07-12オーナー実機フィードバック:
  * 「生鮭」「甘塩鮭」はどちらもチップでは「鮭」と表示してスッキリさせたい)。
  * キーは括弧書き除去後の文字列。将来、別の食材で同種の要望が出たらここに追記する。
@@ -52,7 +59,11 @@ const CHIP_LABEL_SYNONYMS: Record<string, string> = {
 
 /** 一覧カードの食材チップに出す表示専用ラベル(データは変更しない) */
 export function normalizeIngredientChipLabel(name: string): string {
-  const withoutParens = name.replace(PAREN_PATTERN, '').replace(/\s+/g, ' ').trim()
+  const withoutParens = name
+    .replace(PAREN_PATTERN, '')
+    .replace(CUT_STYLE_PATTERN, '')
+    .replace(/\s+/g, ' ')
+    .trim()
   return CHIP_LABEL_SYNONYMS[withoutParens] ?? withoutParens
 }
 

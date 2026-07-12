@@ -683,6 +683,15 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   eq('甘塩鮭は鮭に統一', normalizeIngredientChipLabel('甘塩鮭'), '鮭')
   eq('生鮭(切り身)も鮭に統一(括弧除去+別名統一の組み合わせ)', normalizeIngredientChipLabel('生鮭(切り身)'), '鮭')
 
+  // 切り方の注記除去(2026-07-12オーナー実機フィードバック: チップ「豚バラ薄切り肉」→「豚バラ肉」)
+  eq('薄切りを除去', normalizeIngredientChipLabel('豚バラ薄切り肉'), '豚バラ肉')
+  eq('厚切りを除去', normalizeIngredientChipLabel('ベーコン厚切り'), 'ベーコン')
+  eq(
+    '薄切り除去後も色分け(ingredientColorToken)は肉カテゴリのまま',
+    ingredientColorToken(normalizeIngredientChipLabel('豚バラ薄切り肉')),
+    '--chip-food-meat',
+  )
+
   // 同カード内で正規化後に重複したら1つにまとめる(生鮭と甘塩鮭が両方並んでも「鮭」チップは1つだけ)
   const twoSalmonKinds = [
     { name: '生鮭(切り身)', amount: '2', unit: '切れ' },
@@ -822,6 +831,10 @@ eq('フラグOFF: 予告バナーも出ない', isNearFreeLimit(45, false), fals
   eq('短い括弧の中で折り返さない(またはカニカマ)', hrsm.some((s) => s.includes('(またはカニカマ)')), true)
   const sptl = u('途中で水が減ったら少量足すこと（空焚き防止）。')
   eq('単体の開き括弧が前の行末に残らない(こと（|空焚き)', sptl.includes('（空焚き防止）。'), true)
+  // 「〜」の前後で折り返さない(2026-07-12第3.4版)
+  const tilde = u('清潔な保存容器に入れ、冷蔵庫で2〜3日を目安に使い切ること。')
+  eq('「〜」の直後で切れない(2〜|3日)', tilde.some((s) => s.endsWith('〜')), false)
+  eq('「〜」の直前で切れない(|〜3日)', tilde.some((s) => s.startsWith('〜')), false)
 }
 
 // ---------- termSplit: 用語タップ辞書の最長一致分割(2026-07-11) ----------
@@ -1166,15 +1179,16 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
   const { splitByTerms } = await import('../src/logic/termSplit.ts')
 
   // 括弧除去(表示チップと同じ正規化)・重複除去・長さ降順で名前一覧を作る
+  // (鶏もも肉は肉の部位パターンで別名「鶏肉」も追加登録される。v2・2026-07-12)
   eq(
-    '材料名は括弧除去・重複除去して長さ降順(生鮭/甘塩鮭はどちらも鮭で1件に)',
+    '材料名は括弧除去・重複除去して長さ降順(生鮭/甘塩鮭はどちらも鮭で1件に・鶏もも肉は鶏肉も別名登録)',
     buildIngredientNames([
       { name: '玉ねぎ（みじん切り）' },
       { name: '鶏もも肉' },
       { name: '生鮭' },
       { name: '甘塩鮭' },
     ]),
-    ['鶏もも肉', '玉ねぎ', '鮭'],
+    ['鶏もも肉', '玉ねぎ', '鶏肉', '鮭'],
   )
 
   // 最長一致: 「玉」と「玉ねぎ」の両方が材料でも、その位置で最も長い「玉ねぎ」を採る
@@ -1194,11 +1208,23 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
     ['玉ねぎ'],
   )
 
-  // v1は完全一致のみ: 材料「豚ロース薄切り肉」と手順の「豚肉」の表記差は拾わない(実害なし)
+  // v2(2026-07-12・オーナー実機iPhoneSE2フィードバック): 肉の部位パターンで別名「豚肉」を
+  // 登録するため、材料「豚ロース薄切り肉」でも手順の「豚肉」を拾えるようになった
   eq(
-    '完全一致のみ: 豚ロース薄切り肉は手順の豚肉を拾わない',
-    findIngredientMatches('豚肉を炒める', buildIngredientNames([{ name: '豚ロース薄切り肉' }])),
-    [],
+    '肉の部位別名: 豚ロース薄切り肉は手順の豚肉も拾う',
+    findIngredientMatches('豚肉を炒める', buildIngredientNames([{ name: '豚ロース薄切り肉' }])).map(
+      (m) => m.text,
+    ),
+    ['豚肉'],
+  )
+  // 最長一致は維持: 本文に材料名そのもの(豚こま切れ肉)があれば別名(豚肉)ではなくそちらを採る
+  eq(
+    '最長一致優先: 本文に材料名そのものがあれば別名より長い方を採る',
+    findIngredientMatches(
+      '豚こま切れ肉を炒める',
+      buildIngredientNames([{ name: '豚こま切れ肉' }]),
+    ).map((m) => m.text),
+    ['豚こま切れ肉'],
   )
 
   // 同じ材料が2回出たら2箇所とも(重なりを作らずに)マッチする
@@ -1224,6 +1250,85 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
     .filter((s) => s.type === 'text')
     .flatMap((s) => findIngredientMatches(s.text, straddleNames).map((m) => m.text))
   eq('用語をまたぐ材料名は地の文に無いので拾わない', straddleHits, [])
+
+  // ---- v2-1: 誤検出防止(複合語の内部では下線を付けない。オーナー実機報告) ----
+  const eggNames = buildIngredientNames([{ name: '卵' }])
+  eq(
+    '「卵液を注ぐ」は卵液の卵にマッチしない(除外規則)',
+    findIngredientMatches('卵液を注ぐ', eggNames),
+    [],
+  )
+  eq('「卵黄」も除外(次の文字ブロックリスト)', findIngredientMatches('卵黄を溶く', eggNames), [])
+  eq('「卵白」も除外(次の文字ブロックリスト)', findIngredientMatches('卵白を泡立てる', eggNames), [])
+  eq(
+    '「卵を割る」は通常どおりマッチする(除外規則は複合語限定)',
+    findIngredientMatches('卵を割る', eggNames).map((m) => m.text),
+    ['卵'],
+  )
+  eq(
+    '「卵焼き器」は卵にマッチしない(単語ブロックリスト)',
+    findIngredientMatches('卵焼き器を用意する', eggNames),
+    [],
+  )
+  eq(
+    '卵焼き器のあとに続く卵は通常どおりマッチする(ブロックリストは該当単語だけ)',
+    findIngredientMatches('卵焼き器で卵を焼く', eggNames).map((m) => m.text),
+    ['卵'],
+  )
+
+  // ---- v2-2: 検出漏れ対策(修飾接頭語を剥がした別名。オーナー実機報告) ----
+  eq(
+    '別名導出: むきえび→えびも手順で拾う',
+    findIngredientMatches('えびの背わたを取る', buildIngredientNames([{ name: 'むきえび' }])).map(
+      (m) => m.text,
+    ),
+    ['えび'],
+  )
+  eq(
+    '別名導出: 干ししいたけ→しいたけも手順で拾う',
+    findIngredientMatches(
+      'しいたけを戻して薄切りにする',
+      buildIngredientNames([{ name: '干ししいたけ' }]),
+    ).map((m) => m.text),
+    ['しいたけ'],
+  )
+  eq(
+    '別名導出: 木綿豆腐→豆腐も手順で拾う',
+    findIngredientMatches('豆腐を手でくずす', buildIngredientNames([{ name: '木綿豆腐' }])).map(
+      (m) => m.text,
+    ),
+    ['豆腐'],
+  )
+  eq(
+    '最長一致優先: 本文に「木綿豆腐」があれば別名「豆腐」ではなくそちらを1マッチで採る',
+    findIngredientMatches('木綿豆腐を手でくずす', buildIngredientNames([{ name: '木綿豆腐' }])).map(
+      (m) => m.text,
+    ),
+    ['木綿豆腐'],
+  )
+
+  // ---- v2-3: 検出漏れ対策(肉の部位パターン。オーナー実機報告) ----
+  eq(
+    '肉の部位別名: 豚バラ薄切り肉→豚肉',
+    findIngredientMatches('豚肉を炒める', buildIngredientNames([{ name: '豚バラ薄切り肉' }])).map(
+      (m) => m.text,
+    ),
+    ['豚肉'],
+  )
+  eq(
+    '肉の部位別名: 豚こま切れ肉→豚肉',
+    findIngredientMatches('豚肉に下味をつける', buildIngredientNames([{ name: '豚こま切れ肉' }])).map(
+      (m) => m.text,
+    ),
+    ['豚肉'],
+  )
+  eq(
+    '肉の部位別名: 鶏もも肉→鶏肉',
+    findIngredientMatches('鶏肉を一口大に切る', buildIngredientNames([{ name: '鶏もも肉' }])).map(
+      (m) => m.text,
+    ),
+    ['鶏肉'],
+  )
 }
 
 // ---------- 記録写真の容量ガード(docs/20 §4写真添付・自動削除はせず促すバナーのみ) ----------

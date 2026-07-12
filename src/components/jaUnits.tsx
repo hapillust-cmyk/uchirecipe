@@ -5,7 +5,7 @@ import { findIngredientMatches, type IngredientMatch } from '../logic/ingredient
 // 材料名の下線(docs/20 §7)。控えめな実線下線だけ(色は塗らない=用語辞書の点線・タイマーの塗りと区別)。
 // spanはdisplay:inlineのまま = keep-all下でも前後が改行点にならず、改行制御に影響しない。
 // (atomic inline化=inline-block/inline-flex/button等にすると改行が壊れる。TermText.tsxの轍を参照)
-const UNDERLINE_CLASS = 'underline decoration-solid decoration-1 underline-offset-2'
+const UNDERLINE_CLASS = 'underline decoration-solid decoration-2 underline-offset-2'
 
 // 開き括弧を含む短い単位はnowrapスパンで守る(WebKitがkeep-all下でも括弧直後で折るため)。
 const needsSpan = (u: string) => /[（(]/.test(u) && u.length <= 12
