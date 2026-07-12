@@ -86,6 +86,16 @@ export const COOKING_TERMS: CookingTerm[] = [
     aliases: ['粉ふきに'],
   },
   {
+    term: '甜麺醤',
+    reading: 'テンメンジャン',
+    description: '甘みそ系のコクがある中華の合わせみそ。回鍋肉や麻婆豆腐などに使う',
+  },
+  {
+    term: '豆板醤',
+    reading: 'トウバンジャン',
+    description: 'そら豆と唐辛子から作る、辛みのある中華のみそ',
+  },
+  {
     term: '水切り',
     reading: 'みずきり',
     description: '豆腐をキッチンペーパーで包んで重しをのせるなどして、余分な水分を抜くこと。あえ物や炒め物が水っぽくならない',

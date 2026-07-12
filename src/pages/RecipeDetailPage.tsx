@@ -44,6 +44,7 @@ import StepBadge from '../components/StepBadge'
 import TimeText from '../components/TimeText'
 import TermText from '../components/TermText'
 import { collectUniqueTerms } from '../logic/termSplit'
+import { buildIngredientNames } from '../logic/ingredientSpans'
 import TermPopover, { useTermPopover } from '../components/TermPopover'
 import { todayString } from '../logic/date'
 import { ja } from '../i18n/ja'
@@ -282,6 +283,8 @@ export default function RecipeDetailPage() {
   const hasQuickVariant = (recipe.quickSteps?.length ?? 0) > 0
   const useQuick = quickMode && hasQuickVariant
   const displaySteps = useQuick ? recipe.quickSteps! : recipe.steps
+  // 手順本文中の材料名に控えめな下線を付けるための名前一覧(正規化・長さ降順。docs/20 §7)
+  const ingredientNames = buildIngredientNames(recipe.ingredients)
   const displayCookMinutes = useQuick
     ? recipe.quickCookMinutes ?? recipe.cookMinutes
     : recipe.cookMinutes
@@ -571,6 +574,7 @@ export default function RecipeDetailPage() {
                         renderPlain={(t) => (
                           <TimeText
                             text={t}
+                            ingredientNames={ingredientNames}
                             onStart={(_tokenText, seconds) =>
                               startTimer({
                                 key: `${id}-${index}-${seconds}`,

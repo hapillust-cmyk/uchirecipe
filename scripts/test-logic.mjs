@@ -1155,11 +1155,79 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
     'ガクを切り落とす。',
   )
   eq(
-    '辞書に無い語(甜麺醤等の食材名)は今回対象外のためそのまま素通し(辞書語のみ対象)',
+  eq('食材名の辞書収載語も読みへ変換(甜麺醤=2026-07-12にFableが辞書へ追加)', toSpeechText('甜麺醤を加える。'), 'テンメンジャンを加える。')
     toSpeechText('甜麺醤を加える。'),
     '甜麺醤を加える。',
   )
   eq('辞書語を含まないテキストは無加工で返る', toSpeechText('よく混ぜ合わせる。'), 'よく混ぜ合わせる。')
+}
+
+// ---------- 材料名の下線マッチ(docs/20 §7・手順本文中の材料名に控えめな下線・2026-07-12) ----------
+{
+  const { buildIngredientNames, findIngredientMatches } = await import(
+    '../src/logic/ingredientSpans.ts'
+  )
+  const { splitByTerms } = await import('../src/logic/termSplit.ts')
+
+  // 括弧除去(表示チップと同じ正規化)・重複除去・長さ降順で名前一覧を作る
+  eq(
+    '材料名は括弧除去・重複除去して長さ降順(生鮭/甘塩鮭はどちらも鮭で1件に)',
+    buildIngredientNames([
+      { name: '玉ねぎ（みじん切り）' },
+      { name: '鶏もも肉' },
+      { name: '生鮭' },
+      { name: '甘塩鮭' },
+    ]),
+    ['鶏もも肉', '玉ねぎ', '鮭'],
+  )
+
+  // 最長一致: 「玉」と「玉ねぎ」の両方が材料でも、その位置で最も長い「玉ねぎ」を採る
+  const names = buildIngredientNames([{ name: '玉' }, { name: '玉ねぎ' }])
+  eq(
+    '最長一致で玉ねぎ全体を1マッチにする(玉で分断しない)',
+    findIngredientMatches('玉ねぎを切る', names),
+    [{ text: '玉ねぎ', start: 0, end: 3 }],
+  )
+
+  // 括弧書きの材料でも、正規化後の名前で手順本文にマッチする
+  eq(
+    '括弧書きの材料(玉ねぎ(1/2個))も正規化後の玉ねぎで手順にマッチ',
+    findIngredientMatches('玉ねぎを加える', buildIngredientNames([{ name: '玉ねぎ(1/2個)' }])).map(
+      (m) => m.text,
+    ),
+    ['玉ねぎ'],
+  )
+
+  // v1は完全一致のみ: 材料「豚ロース薄切り肉」と手順の「豚肉」の表記差は拾わない(実害なし)
+  eq(
+    '完全一致のみ: 豚ロース薄切り肉は手順の豚肉を拾わない',
+    findIngredientMatches('豚肉を炒める', buildIngredientNames([{ name: '豚ロース薄切り肉' }])),
+    [],
+  )
+
+  // 同じ材料が2回出たら2箇所とも(重なりを作らずに)マッチする
+  eq(
+    '同一材料の複数出現は非重複で全てマッチ',
+    findIngredientMatches('玉ねぎと玉ねぎを', buildIngredientNames([{ name: '玉ねぎ' }])).map(
+      (m) => m.start,
+    ),
+    [0, 4],
+  )
+
+  // 用語との重なり優先: 材料下線はTermTextが用語スパンを切り出した後の「地の文」だけに掛かる。
+  // 「玉ねぎを小口切りにする」→ 用語「小口切り」は別レイヤーが処理し、材料は地の文の玉ねぎだけ。
+  const overlapNames = buildIngredientNames([{ name: '玉ねぎ' }])
+  const overlapHits = splitByTerms('玉ねぎを小口切りにする', new Set())
+    .filter((s) => s.type === 'text')
+    .flatMap((s) => findIngredientMatches(s.text, overlapNames).map((m) => m.text))
+  eq('用語スパンを除いた地の文だけで材料名がマッチ(小口切りは用語優先)', overlapHits, ['玉ねぎ'])
+
+  // 材料名が用語スパンをまたぐ場合は拾わない(用語が先に切り出され、材料は残り断片しか見ないため)
+  const straddleNames = buildIngredientNames([{ name: 'ねぎ小口' }])
+  const straddleHits = splitByTerms('長ねぎ小口切りにする', new Set())
+    .filter((s) => s.type === 'text')
+    .flatMap((s) => findIngredientMatches(s.text, straddleNames).map((m) => m.text))
+  eq('用語をまたぐ材料名は地の文に無いので拾わない', straddleHits, [])
 }
 
 // ---------- 記録写真の容量ガード(docs/20 §4写真添付・自動削除はせず促すバナーのみ) ----------

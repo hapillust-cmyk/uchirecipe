@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { MemoText } from './MemoText'
 import {
   X,
@@ -17,6 +17,7 @@ import { useSettings, updateSettings } from '../db/settings'
 import { deriveDoneLabel } from '../logic/timerLabel'
 import { findTimeTokens, formatRemaining, isMinutesShownInText } from '../logic/time'
 import { collectUniqueTerms } from '../logic/termSplit'
+import { buildIngredientNames } from '../logic/ingredientSpans'
 import { toSpeechText } from '../logic/toSpeechText'
 import { renderJaUnits } from './jaUnits'
 import StepBadge from './StepBadge'
@@ -63,6 +64,8 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
   const total = recipe.steps.length
   const step = recipe.steps[index]
   const stepNumber = index + 1
+  // 手順本文中の材料名に控えめな下線を付けるための名前一覧(正規化・長さ降順。docs/20 §7)
+  const ingredientNames = useMemo(() => buildIngredientNames(recipe.ingredients), [recipe.ingredients])
   // 用語タップ辞書(2026-07-11): この手順(本文+memo)内で同じ語は最初の1回だけタップ可能にする
   // memo側の既出用語=手順本文の語(純粋導出・StrictMode対策)
   const stepTermSeen = new Set(collectUniqueTerms(step.text).map((c) => c.term))
@@ -378,7 +381,11 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
             text={step.text}
             onOpenTerm={openTerm}
             renderPlain={(t) => (
-              <TimeText text={t} onStart={(_tokenText, seconds) => startStepTimer(seconds)} />
+              <TimeText
+                text={t}
+                ingredientNames={ingredientNames}
+                onStart={(_tokenText, seconds) => startStepTimer(seconds)}
+              />
             )}
           />
         </p>
