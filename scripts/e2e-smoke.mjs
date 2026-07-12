@@ -20,6 +20,8 @@
 //         展開すると「めやす」表記・出典・Pro案内リンクが出る) /
 //         NUT-02(栄養価のめやす: Pro解錠済みで5項目の実パネルが出る・人数を変えても1人分の値は不変。
 //         M6-1 2026-07-12オーナー指示でNUTRITION_ENABLED有効化) /
+//         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
+//         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
 //         合わせ調味料ライン表示。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
 import { chromium, webkit } from 'playwright'
 
@@ -138,6 +140,53 @@ try {
   check('SMK-08 手順送り', (await page.textContent('body')).includes('手順 2/'))
   await page.getByRole('button', { name: '閉じる' }).click()
   await page.waitForTimeout(300)
+
+  // --- FOCUS-MEMO-01: 調理中モードの▽折りたたみメモをタップすると詳細画面と同じ小窓(ポップオーバー)で
+  // 開く(2026-07-12 Fable裁定: 1手順を大きく見せる調理中モードでメモ全文の常時展開は本文を圧迫するため、
+  // 詳細画面と挙動を統一)。「蒸しなすの香味だれ」手順2の「▽たくさん作るとき」には「・」箇条書きと
+  // 「｜」改行の両方が入っているため、これらが小窓の中でも効くことまで併せて確認する ---
+  currentCheck = 'FOCUS-MEMO-01'
+  await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByPlaceholder('料理名・材料・タグで検索').fill('蒸しなすの香味だれ')
+  await page.waitForTimeout(300)
+  await page.getByText('蒸しなすの香味だれ', { exact: true }).first().click()
+  await page.waitForTimeout(500)
+  await page.getByText('調理中モードで見る').click()
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: '次へ' }).click() // 手順2(▽を含む手順)へ
+  await page.waitForTimeout(300)
+  const focusMemoFoldedText = await page.textContent('body')
+  check(
+    'FOCUS-MEMO-01 ▽はラベルのみ折りたたみ表示され詳細は隠れている',
+    focusMemoFoldedText.includes('たくさん作るとき') &&
+      !focusMemoFoldedText.includes('4本以上はレンジ内'),
+  )
+  // 詳細画面の手順リスト(FocusModeの背後にDOM上は残ったまま)にも同じ▽ボタンがあるため、
+  // FocusModeの全画面オーバーレイ(.fixed.inset-0.z-50)側だけに絞って押す
+  await page.locator('.fixed.inset-0.z-50').getByRole('button', { name: 'たくさん作るとき' }).click()
+  await page.waitForTimeout(300)
+  const focusMemoOpenText = stripZwsp(await page.textContent('body'))
+  check(
+    'FOCUS-MEMO-01 タップで小窓が開き詳細(1文目)が見える',
+    focusMemoOpenText.includes('加熱時間はなす3本あたりの目安'),
+  )
+  check(
+    'FOCUS-MEMO-01 「｜」改行後の2文目も「・」箇条書きとして見える',
+    focusMemoOpenText.includes('4本以上はレンジ内の位置で火の通りにムラが出やすい'),
+  )
+  await page.mouse.click(5, 5) // 小窓の外をタップ
+  await page.waitForTimeout(300)
+  const focusMemoClosedText = stripZwsp(await page.textContent('body'))
+  check(
+    'FOCUS-MEMO-01 外タップで小窓が閉じる',
+    !focusMemoClosedText.includes('加熱時間はなす3本あたりの目安'),
+  )
+  await page.getByRole('button', { name: '閉じる' }).click()
+  await page.waitForTimeout(300)
+  // この検索語が一覧の状態(sessionStorage)に残ったままだと、以降のテスト(戻る動線・スクロール系)が
+  // 「蒸しなすの香味だれ」だけの絞り込み一覧を前提に動いてしまい無関係な失敗を招くため、必ず消しておく
+  await page.evaluate(() => sessionStorage.removeItem('uchirecipe:recipesListState'))
 
   // --- TAB-01: 詳細を開いたままリロード→下タブ「レシピ」で一覧へ戻れる ---
   // (覚えた「最後のレシピパス」＝現在地となりタップが無反応になる回帰の防止。2026-07-09第2波)
