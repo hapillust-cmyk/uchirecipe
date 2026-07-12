@@ -22,6 +22,11 @@
 //         M6-1 2026-07-12オーナー指示でNUTRITION_ENABLED有効化) /
 //         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
 //         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
+//         PRICE-01(食材価格マスタ。材料に価格未入力のレシピでもマスタ目安価格が詳細の
+//         概算食費・材料行の注記に反映され、マスタ編集に追従すること) /
+//         INLINE-01(「食材と価格」一覧の行内編集。2026-07-12 UX改修で編集モーダルを廃止し、
+//         価格欄への直接入力+Enter/blurで即保存。目安/自分の価格バッジの切替・目安に戻す・
+//         検索絞り込みを確認) /
 //         合わせ調味料ライン表示。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
 import { chromium, webkit } from 'playwright'
 
@@ -798,7 +803,8 @@ try {
 
   // --- PRICE-01: 食材価格マスタ(「食材と価格」画面。docs/20 §3)。
   // 材料に価格を入力していないレシピでも、マスタの目安価格が詳細の概算食費に反映され、
-  // マスタの価格を編集すると反映結果も追従することを確認する ---
+  // マスタの価格を編集すると反映結果も追従することを確認する。
+  // 2026-07-12 UX改修で編集モーダルを廃止し一覧の行内編集に変わったため、操作手順もそれに合わせた ---
   currentCheck = 'PRICE-01'
   // テスト用レシピ: 材料に価格を入力せず、マスタ初期値がある「玉ねぎ」だけを使う
   await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
@@ -819,10 +825,18 @@ try {
     'PRICE-01 マスタ由来の注記が表示される',
     priceDetailBefore.includes('一部は目安価格から計算しています'),
   )
+  check(
+    'PRICE-01 材料行にも目安価格由来の注記が出る(2026-07-12 UX改修)',
+    priceDetailBefore.includes('（目安50円）'),
+  )
 
-  // 設定から「食材と価格」を開き、初期値30件の投入と目安の注意書きを確認する
+  // 設定から「食材と価格」を開き、初期値30件の投入と目安の注意書きを確認する。
+  // 設定画面のタブ分割(2026-07-12・別バッチ)で「食材と価格を編集する」リンクは
+  // 「レシピ」タブの中に移動したため、先にタブを開いてからリンクを探す
   await page.goto(`${BASE}/#/settings`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
+  await page.getByRole('button', { name: 'レシピ', exact: true }).click()
+  await page.waitForTimeout(300)
   await page.getByRole('link', { name: '食材と価格を編集する' }).click()
   await page.waitForTimeout(500)
   check('PRICE-01 設定からの遷移でタイトルが表示される', page.url().includes('#/prices'))
@@ -833,26 +847,71 @@ try {
   )
   check('PRICE-01 目安価格の注意書きが表示される', priceListBefore.includes('価格は目安です'))
 
-  // マスタの「玉ねぎ」(一覧の先頭=PRICE_DEFAULTSの1件目)を999円に編集する
-  const firstPriceRow = page.locator('ul li').first()
-  await firstPriceRow.getByLabel('この食材を編集').click()
-  await page.waitForTimeout(300)
-  await firstPriceRow.getByLabel('価格（円）').fill('999')
-  await firstPriceRow.getByRole('button', { name: '保存する' }).click()
+  // --- INLINE-01: 一覧の行内編集(2026-07-12 UX改修)。玉ねぎの行を名前で特定し、
+  // 編集ボタン・別窓を経由せず、価格欄に直接入力してEnter(=blur)で即保存できることを確認する ---
+  currentCheck = 'INLINE-01'
+  const onionRow = page.locator('li', { hasText: '玉ねぎ' })
+  check('INLINE-01 初期状態は「目安」バッジ', (await onionRow.textContent()).includes('目安'))
+  check(
+    'INLINE-01 「目安」のうちは「目安に戻す」ボタンが出ない',
+    !(await onionRow.textContent()).includes('目安に戻す'),
+  )
+  const onionPriceInput = onionRow.getByLabel('玉ねぎの価格（円）')
+  await onionPriceInput.fill('999')
+  await onionPriceInput.press('Enter') // Enterでblur→保存(モーダル・保存ボタンを経由しない)
   await page.waitForTimeout(400)
-  check('PRICE-01 マスタの価格編集が一覧に反映される', (await page.textContent('body')).includes('999円'))
+  const onionRowTextAfterEdit = await onionRow.textContent()
+  check('INLINE-01 編集後は「自分の価格」バッジに変わる', onionRowTextAfterEdit.includes('自分の価格'))
+  check('INLINE-01 編集後は「目安に戻す」ボタンが出る', onionRowTextAfterEdit.includes('目安に戻す'))
+  check(
+    'INLINE-01 価格入力欄の値が999のまま保持される(再マウントで飛ばない)',
+    (await onionPriceInput.inputValue()) === '999',
+  )
 
-  // 詳細画面に戻り、編集後の目安価格が概算食費に反映されることを確認する
+  // 検索/絞り込み: 存在しない食材名で0件表示になることを確認してから解除する
+  const searchInput = page.getByPlaceholder('食材名で絞り込む')
+  await searchInput.fill('ぜったいにないよみとうしょくざい')
+  await page.waitForTimeout(300)
+  check(
+    'INLINE-01 検索で該当なしのメッセージが出る',
+    (await page.textContent('body')).includes('該当する食材が見つかりません'),
+  )
+  await searchInput.fill('')
+  await page.waitForTimeout(300)
+
+  // 詳細画面に戻り、編集後の目安価格が概算食費・材料行の注記に反映されることを確認する
   await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
   await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
   await page.waitForTimeout(500)
+  const priceDetailAfter = await page.textContent('body')
   check(
     'PRICE-01 マスタ編集後、詳細の概算食費が更新される(約999円)',
-    (await page.textContent('body')).includes('約999円'),
+    priceDetailAfter.includes('約999円'),
+  )
+  check(
+    'INLINE-01 材料行の目安注記も更新される(（目安999円）)',
+    priceDetailAfter.includes('（目安999円）'),
   )
 
-  // 後始末: テスト用レシピを削除
+  // 「目安に戻す」で投入時の価格に復元できることを確認する
+  await page.goto(`${BASE}/#/prices`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  const onionRowAgain = page.locator('li', { hasText: '玉ねぎ' })
+  await onionRowAgain.getByRole('button', { name: '玉ねぎを目安価格に戻す' }).click()
+  await page.waitForTimeout(400)
+  const onionRowTextAfterReset = await onionRowAgain.textContent()
+  check('INLINE-01 「目安に戻す」で「目安」バッジに戻る', onionRowTextAfterReset.includes('目安'))
+  check(
+    'INLINE-01 「目安に戻す」で価格が50円に戻る',
+    (await onionRowAgain.getByLabel('玉ねぎの価格（円）').inputValue()) === '50',
+  )
+
+  // 後始末: テスト用レシピを削除（削除は詳細画面からなので、いったんレシピ詳細に戻る）
+  await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
+  await page.waitForTimeout(500)
   await page.locator('a[href*="/edit"]').first().click()
   await page.waitForTimeout(500)
   await page.getByRole('button', { name: 'このレシピを削除' }).click()
