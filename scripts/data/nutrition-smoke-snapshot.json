@@ -235,6 +235,421 @@
       "シチュールー(food)"
     ]
   },
+  "starter:牛丼": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 108,
+      "proteinG": 2.4,
+      "fatG": 0.1,
+      "carbG": 22.1,
+      "saltG": 2.6
+    },
+    "excluded": [
+      "ご飯(unit)",
+      "牛薄切り肉(food)",
+      "紅しょうが(amount)"
+    ]
+  },
+  "starter:ほうれん草のおひたし": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 23,
+      "proteinG": 2.7,
+      "fatG": 0.4,
+      "carbG": 3.5,
+      "saltG": 1.3
+    },
+    "excluded": [
+      "かつお節(unit)",
+      "白いりごま(amount)"
+    ]
+  },
+  "starter:麻婆豆腐": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 414,
+      "proteinG": 27.9,
+      "fatG": 30.1,
+      "carbG": 13.8,
+      "saltG": 2.5
+    },
+    "excluded": [
+      "ラー油(food)",
+      "粉山椒（こなざんしょう）(food)",
+      "豆板醤(トウバンジャン)(food)"
+    ]
+  },
+  "starter:鮭の塩焼き": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 99,
+      "proteinG": 17.8,
+      "fatG": 3.3,
+      "carbG": 0.1,
+      "saltG": 0.7
+    },
+    "excluded": [
+      "サラダ油(amount)"
+    ]
+  },
+  "starter:肉うどん": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 466,
+      "proteinG": 21.4,
+      "fatG": 15.7,
+      "carbG": 62.8,
+      "saltG": 4.9
+    },
+    "excluded": [
+      "七味唐辛子(amount)",
+      "長ねぎ(amount)"
+    ]
+  },
+  "starter:ひじきの煮物": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 109,
+      "proteinG": 3.3,
+      "fatG": 4,
+      "carbG": 16.1,
+      "saltG": 2.4
+    },
+    "excluded": []
+  },
+  "starter:もやしのナムル": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 72,
+      "proteinG": 2,
+      "fatG": 6.1,
+      "carbG": 2.9,
+      "saltG": 0.7
+    },
+    "excluded": [
+      "おろしにんにく(amount)",
+      "白いりごま(amount)"
+    ]
+  },
+  "starter:白和え": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 133,
+      "proteinG": 9.1,
+      "fatG": 9.3,
+      "carbG": 6,
+      "saltG": 0.5
+    },
+    "excluded": []
+  },
+  "starter:コールスロー": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 161,
+      "proteinG": 1.9,
+      "fatG": 13.8,
+      "carbG": 10.3,
+      "saltG": 0.6
+    },
+    "excluded": [
+      "塩(prep)"
+    ]
+  },
+  "starter:ニラ玉": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 206,
+      "proteinG": 13.1,
+      "fatG": 16.4,
+      "carbG": 2.8,
+      "saltG": 1
+    },
+    "excluded": []
+  },
+  "starter:中華風卵スープ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 93,
+      "proteinG": 6.5,
+      "fatG": 5.2,
+      "carbG": 5,
+      "saltG": 1.9
+    },
+    "excluded": [
+      "ごま油(amount)",
+      "小ねぎ(amount)"
+    ]
+  },
+  "starter:大学芋": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 167,
+      "proteinG": 1.2,
+      "fatG": 0.2,
+      "carbG": 42.2,
+      "saltG": 0.2
+    },
+    "excluded": [
+      "揚げ油(food)",
+      "黒いりごま(amount)"
+    ]
+  },
+  "starter:さんまの塩焼き": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 287,
+      "proteinG": 18.1,
+      "fatG": 25.6,
+      "carbG": 0.1,
+      "saltG": 0.9
+    },
+    "excluded": [
+      "すだち(またはレモン)(food)",
+      "サラダ油(amount)",
+      "大根おろし(amount)"
+    ]
+  },
+  "starter:肉豆腐": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 230,
+      "proteinG": 14.7,
+      "fatG": 8.6,
+      "carbG": 21.1,
+      "saltG": 2.7
+    },
+    "excluded": [
+      "牛薄切り肉(food)"
+    ]
+  },
+  "starter:鶏そぼろ丼": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 321,
+      "proteinG": 24.8,
+      "fatG": 17.1,
+      "carbG": 14.5,
+      "saltG": 2.5
+    },
+    "excluded": [
+      "ご飯(unit)",
+      "サラダ油(amount)",
+      "刻みのり(food)"
+    ]
+  },
+  "starter:鮭のホイル焼き": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 212,
+      "proteinG": 20.3,
+      "fatG": 11.7,
+      "carbG": 7.5,
+      "saltG": 2.2
+    },
+    "excluded": []
+  },
+  "starter:なめこと豆腐の味噌汁": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 86,
+      "proteinG": 7.5,
+      "fatG": 4.1,
+      "carbG": 6.3,
+      "saltG": 2.4
+    },
+    "excluded": [
+      "なめこ(food)",
+      "小ねぎ(amount)"
+    ]
+  },
+  "starter:さつまいもの甘辛煮": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 177,
+      "proteinG": 1.8,
+      "fatG": 0.2,
+      "carbG": 42.2,
+      "saltG": 1.3
+    },
+    "excluded": [
+      "黒いりごま(amount)"
+    ]
+  },
+  "starter:きゅうりとわかめの酢の物": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 40,
+      "proteinG": 1.6,
+      "fatG": 0.2,
+      "carbG": 9,
+      "saltG": 0.8
+    },
+    "excluded": [
+      "塩(prep)",
+      "白いりごま(amount)"
+    ]
+  },
+  "starter:オムライス": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 395,
+      "proteinG": 21.9,
+      "fatG": 30.1,
+      "carbG": 11.6,
+      "saltG": 1.4
+    },
+    "excluded": [
+      "ご飯(unit)",
+      "塩こしょう(amount)"
+    ]
+  },
+  "starter:コンソメ野菜スープ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 65,
+      "proteinG": 2.8,
+      "fatG": 2,
+      "carbG": 10.9,
+      "saltG": 0.9
+    },
+    "excluded": [
+      "塩こしょう(amount)"
+    ]
+  },
+  "starter:春雨サラダ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 165,
+      "proteinG": 3.5,
+      "fatG": 3.6,
+      "carbG": 29.5,
+      "saltG": 2.5
+    },
+    "excluded": [
+      "錦糸卵(amount)"
+    ]
+  },
+  "starter:大根とツナのサラダ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 121,
+      "proteinG": 7.4,
+      "fatG": 7.7,
+      "carbG": 6.9,
+      "saltG": 1.6
+    },
+    "excluded": [
+      "塩(prep)",
+      "白いりごま(amount)"
+    ]
+  },
+  "starter:キャベツの塩昆布あえ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 55,
+      "proteinG": 1.8,
+      "fatG": 2.2,
+      "carbG": 9.7,
+      "saltG": 0.3
+    },
+    "excluded": [
+      "塩(prep)"
+    ]
+  },
+  "starter:蒸しなすの香味だれ": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 55,
+      "proteinG": 2.4,
+      "fatG": 2.1,
+      "carbG": 8.3,
+      "saltG": 2
+    },
+    "excluded": [
+      "ラー油(food)",
+      "長ねぎ(白い部分)(unit)"
+    ]
+  },
+  "starter:バンバンジー": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 283,
+      "proteinG": 26.3,
+      "fatG": 16.9,
+      "carbG": 7.7,
+      "saltG": 2.1
+    },
+    "excluded": [
+      "ラー油(food)",
+      "長ねぎ(青い部分)(unit)"
+    ]
+  },
+  "starter:牛乳もち": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 159,
+      "proteinG": 3.4,
+      "fatG": 3.9,
+      "carbG": 28.6,
+      "saltG": 0.1
+    },
+    "excluded": [
+      "きな粉(food)",
+      "黒みつ(food)"
+    ]
+  },
+  "starter:フレンチトースト": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 328,
+      "proteinG": 14,
+      "fatG": 14.5,
+      "carbG": 38.5,
+      "saltG": 1.1
+    },
+    "excluded": [
+      "メープルシロップ(food)"
+    ]
+  },
+  "starter:家庭で作る杏仁豆腐": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 176,
+      "proteinG": 5.1,
+      "fatG": 5.9,
+      "carbG": 28.9,
+      "saltG": 0.2
+    },
+    "excluded": [
+      "みかん缶(またはお好みのフルーツ)(food)",
+      "アーモンドエッセンス(food)"
+    ]
+  },
+  "starter:鶏の照り焼き": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 584,
+      "proteinG": 43,
+      "fatG": 38.5,
+      "carbG": 14,
+      "saltG": 3.1
+    },
+    "excluded": []
+  },
+  "starter:回鍋肉(ホイコーロー)": {
+    "servings": 2,
+    "perServing": {
+      "kcal": 356,
+      "proteinG": 13,
+      "fatG": 29.8,
+      "carbG": 11,
+      "saltG": 0.5
+    },
+    "excluded": [
+      "甜麺醤(テンメンジャン)(food)",
+      "豆板醤(トウバンジャン)(food)"
+    ]
+  },
   "kintore:レンジ蒸し鶏（自家製サラダチキン）": {
     "servings": 2,
     "perServing": {
@@ -336,17 +751,17 @@
     },
     "excluded": []
   },
-  "kintore:オートミールバナナパンケーキ": {
-    "servings": 1,
+  "kintore:ツナと蒸し大豆の香味サラダ": {
+    "servings": 2,
     "perServing": {
-      "kcal": 218,
-      "proteinG": 10.7,
-      "fatG": 6.9,
-      "carbG": 31.1,
-      "saltG": 0.2
+      "kcal": 122,
+      "proteinG": 7,
+      "fatG": 9.6,
+      "carbG": 2.2,
+      "saltG": 1.6
     },
     "excluded": [
-      "サラダ油(amount)"
+      "蒸し大豆(food)"
     ]
   }
 }

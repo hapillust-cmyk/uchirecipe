@@ -108,6 +108,7 @@ export const FOODS = [
   { id: '10154', expect: 'まさば 生', label: 'さば', aliases: ['さば', '鯖'], unitGrams: { 切れ: 80 } },
   { id: '10205', expect: 'まだら 生', label: 'たら', aliases: ['たら', '鱈'], unitGrams: { 切れ: 80 } },
   { id: '10241', expect: 'ぶり 成魚 生', label: 'ぶり', aliases: ['ぶり', '鰤'], unitGrams: { 切れ: 80 } },
+  { id: '10173', expect: 'さんま 皮つき 生', label: 'さんま', aliases: ['さんま', '秋刀魚'], unitGrams: { 尾: 100 }, note: '下処理済み(頭・内臓を除いた)可食部の代表値。1尾約100g' },
   { id: '10415', expect: 'バナメイえび 養殖 生', label: 'えび', aliases: ['えび', 'むきえび', 'バナメイえび'], unitGrams: { 尾: 10 } },
   { id: '10345', expect: 'するめいか 生', label: 'いか', aliases: ['いか', 'するめいか'], unitGrams: { 杯: 210 } },
   { id: '10281', expect: 'あさり 生', label: 'あさり', aliases: ['あさり'], note: 'むき身(殻なし)のグラム数で計算すること' },

@@ -8,9 +8,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// 対象原稿: docs/12(41品→review.json)に加え、docs/18(第8弾+だし→review8.json)も同じ記法なのでまとめて生成する(2026-07-11)
+// 対象原稿: docs/18(第8弾+だし→review8.json)・docs/19(第2弾)・docs/21(第16弾)。同じ記法なのでまとめて生成する
+// (docs/12は2026-07-12に本体へ実装済みのためTARGETSから除外・review.jsonも削除)
 const TARGETS = [
-  { doc: '12_基本レシピ増枠_原稿.md', out: 'review.json' },
   { doc: '18_第8弾_夏のさっぱり和食_原稿.md', out: 'review8.json' },
   { doc: '19_第2弾_がまんしないダイエットごはん_原稿.md', out: 'review2.json' },
   { doc: '21_第16弾_下味冷凍_原稿.md', out: 'review16.json' },

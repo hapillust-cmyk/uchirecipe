@@ -47,7 +47,7 @@ export const NUTRITION_DATA: NutritionData = {
   "source": "日本食品標準成分表（八訂）増補2023年（文部科学省）",
   "sourcePage": "https://www.mext.go.jp/a_menu/syokuhinseibun/mext_00001.html",
   "sourceFile": "https://www.mext.go.jp/content/20260327-mxt_kagsei-mext-000029402_02.xlsx",
-  "generatedAt": "2026-07-11",
+  "generatedAt": "2026-07-12",
   "dbVersion": 1,
   "foods": [
     {
@@ -1447,6 +1447,26 @@ export const NUTRITION_DATA: NutritionData = {
       "unitGrams": {
         "切れ": 80
       }
+    },
+    {
+      "id": "10173",
+      "label": "さんま",
+      "mextName": "＜魚類＞ さんま 皮つき 生",
+      "aliases": [
+        "さんま",
+        "秋刀魚"
+      ],
+      "per100g": {
+        "kcal": 287,
+        "proteinG": 18.1,
+        "fatG": 25.6,
+        "carbG": 0.1,
+        "saltG": 0.4
+      },
+      "unitGrams": {
+        "尾": 100
+      },
+      "note": "下処理済み(頭・内臓を除いた)可食部の代表値。1尾約100g"
     },
     {
       "id": "10415",

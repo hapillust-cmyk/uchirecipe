@@ -74,7 +74,7 @@ const recipes = [
   ...starterDefs.map((d) => ({ set: 'starter', title: d.title, servings: d.servings, ingredients: d.ingredients })),
   ...kintore.recipes.map((d) => ({ set: 'kintore', title: d.title, servings: d.servings, ingredients: d.ingredients })),
 ]
-check(recipes.length === 30, `レシピ数が想定外: ${recipes.length}（同梱20+筋トレ10=30のはず。2026-07-11ソース焼きそば除外=オーナー決定）`)
+check(recipes.length === 61, `レシピ数が想定外: ${recipes.length}（同梱51+高たんぱく10=61のはず。2026-07-12にレビュー束42品を実装＝同梱に無料増枠31品追加・kintoreはパンケーキ→ツナ差替で10品のまま）`)
 
 let totalIngredients = 0
 let matchedIngredients = 0
@@ -86,7 +86,7 @@ for (const r of recipes) {
   check(Number.isFinite(kcal), `${r.title}: kcalが数値でない`)
   check(kcal >= 20 && kcal <= 1500, `${r.title}: 1人分${kcal}kcalは常識的範囲(20〜1500)の外`)
   for (const ex of result.excluded) {
-    check(['food', 'unit', 'amount'].includes(ex.reason), `${r.title}: 不明な対象外理由 ${ex.reason}`)
+    check(['food', 'unit', 'amount', 'prep'].includes(ex.reason), `${r.title}: 不明な対象外理由 ${ex.reason}`)
   }
   const zeroCount = r.ingredients.filter((i) => ['水', 'お湯', '湯', '熱湯'].includes(i.name.trim())).length
   const counted = r.ingredients.length - zeroCount

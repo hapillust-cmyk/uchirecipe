@@ -866,7 +866,6 @@ const iconKeyExpected = {
   'オートミール卵雑炊': 'rice',
   'エビとブロッコリーの卵炒め': 'fish',
   '鶏団子スープ': 'soup',
-  'オートミールバナナパンケーキ': 'dessert',
   '牛丼': 'rice',
   'ほうれん草のおひたし': 'salad',
   '麻婆豆腐': 'meat',
