@@ -25,7 +25,8 @@ import { ja } from '../i18n/ja'
  * 1. 未解錠（isNutritionUnlocked=false。フル版公開までは全員がここ） …
  *    エネルギー・食塩相当量の2項目は無料版でも実際に計算して表示し（2026-07-10 オーナー確定・
  *    バッチH-4）、残り3項目（たんぱく質・脂質・炭水化物）はPro案内にとどめる。
- * 2. 解錠済み（NUTRITION_ENABLED && isPro） … 5項目の実パネル。material内訳は出さないが、
+ * 2. 解錠済み（NUTRITION_ENABLED && isPro） … 8項目の実パネル（2026-07-13 第2弾で
+ *    食物繊維・鉄・カルシウムを追加）。material内訳は出さないが、
  *    「概算・めやす」表記と計算対象外n件の明示が必須。デザイン変更はしない（現行のまま）
  */
 export default function NutritionTeaser({
@@ -150,7 +151,8 @@ function LockedBody({ nutrition, isPro }: { nutrition: Nutrition; isPro: boolean
   )
 }
 
-/** 状態2: Pro解錠済み。5項目の実内訳（1人分・全量）＋計算対象外・注記・出典 */
+/** 状態2: Pro解錠済み。8項目の実内訳（1人分・全量）＋計算対象外・注記・出典
+ *  (2026-07-13 第2弾: 食物繊維・鉄・カルシウムを追加。オーナー承認・Fable設計) */
 function UnlockedBody({ nutrition, servings }: { nutrition: Nutrition; servings?: number }) {
   const displayServings = servings != null && servings > 0 ? servings : nutrition.servings
   const per = nutrition.perServing
@@ -160,19 +162,29 @@ function UnlockedBody({ nutrition, servings }: { nutrition: Nutrition; servings?
     fatG: per.fatG * displayServings,
     carbG: per.carbG * displayServings,
     saltG: per.saltG * displayServings,
+    fiberG: per.fiberG * displayServings,
+    ironMg: per.ironMg * displayServings,
+    calciumMg: per.calciumMg * displayServings,
   }
 
+  // 食物繊維・鉄・カルシウムは既存のたんぱく質・脂質・炭水化物の並びに続けて置き、
+  // 塩分相当量は従来どおり最後に置く(注意して見る項目なので末尾で目に留まりやすく)
   const rows: { key: keyof NutrientTotals; label: string }[] = [
     { key: 'kcal', label: ja.nutrition.kcalLabel },
     { key: 'proteinG', label: ja.nutrition.proteinLabel },
     { key: 'fatG', label: ja.nutrition.fatLabel },
     { key: 'carbG', label: ja.nutrition.carbLabel },
+    { key: 'fiberG', label: ja.nutrition.fiberLabel },
+    { key: 'ironMg', label: ja.nutrition.ironLabel },
+    { key: 'calciumMg', label: ja.nutrition.calciumLabel },
     { key: 'saltG', label: ja.nutrition.saltLabel },
   ]
 
   const fmt = (key: keyof NutrientTotals, value: number): string => {
     const n = roundNutrient(key, value).toLocaleString()
-    return key === 'kcal' ? `${n} ${ja.nutrition.kcalUnit}` : `${n} ${ja.nutrition.gramUnit}`
+    if (key === 'kcal') return `${n} ${ja.nutrition.kcalUnit}`
+    if (key === 'ironMg' || key === 'calciumMg') return `${n} ${ja.nutrition.mgUnit}`
+    return `${n} ${ja.nutrition.gramUnit}`
   }
 
   return (
@@ -215,6 +227,9 @@ function UnlockedBody({ nutrition, servings }: { nutrition: Nutrition; servings?
       <ExcludedBlock nutrition={nutrition} />
 
       <p className="text-xs text-ink-muted">{ja.nutrition.estimateNote}</p>
+      {/* ビタミン非表示の理由(2026-07-13オーナー指示)。Pro解錠時のみ表示(無料側は栄養3項目が
+          見えていないので注記も不要) */}
+      <p className="text-xs text-ink-muted">{ja.nutrition.vitaminNote}</p>
       <p className="text-xs text-ink-muted">
         {ja.nutrition.sourcePrefix}
         {nutritionSourceName()}

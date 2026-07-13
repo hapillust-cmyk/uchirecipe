@@ -6,7 +6,10 @@
       "proteinG": 24.1,
       "fatG": 20.2,
       "carbG": 65.1,
-      "saltG": 4.1
+      "saltG": 4.1,
+      "fiberG": 20.5,
+      "ironMg": 3.7,
+      "calciumMg": 47
     },
     "excluded": []
   },
@@ -17,7 +20,10 @@
       "proteinG": 19.4,
       "fatG": 18.3,
       "carbG": 90.2,
-      "saltG": 2.7
+      "saltG": 2.7,
+      "fiberG": 12.3,
+      "ironMg": 2,
+      "calciumMg": 59
     },
     "excluded": []
   },
@@ -28,7 +34,10 @@
       "proteinG": 8.9,
       "fatG": 5.4,
       "carbG": 6.1,
-      "saltG": 3.1
+      "saltG": 3.1,
+      "fiberG": 2.2,
+      "ironMg": 2.1,
+      "calciumMg": 109
     },
     "excluded": []
   },
@@ -39,7 +48,10 @@
       "proteinG": 26.7,
       "fatG": 24.1,
       "carbG": 16.9,
-      "saltG": 2.7
+      "saltG": 2.7,
+      "fiberG": 1.8,
+      "ironMg": 1,
+      "calciumMg": 41
     },
     "excluded": [
       "小麦粉(amount)"
@@ -52,7 +64,10 @@
       "proteinG": 17.2,
       "fatG": 17.7,
       "carbG": 58.8,
-      "saltG": 1.5
+      "saltG": 1.5,
+      "fiberG": 3.2,
+      "ironMg": 0.8,
+      "calciumMg": 30
     },
     "excluded": [
       "白ごま(amount)"
@@ -65,7 +80,10 @@
       "proteinG": 16.3,
       "fatG": 17.2,
       "carbG": 9.1,
-      "saltG": 1
+      "saltG": 1,
+      "fiberG": 3.3,
+      "ironMg": 0.9,
+      "calciumMg": 50
     },
     "excluded": []
   },
@@ -76,7 +94,10 @@
       "proteinG": 31.2,
       "fatG": 22.3,
       "carbG": 65.7,
-      "saltG": 3.2
+      "saltG": 3.2,
+      "fiberG": 3,
+      "ironMg": 2.2,
+      "calciumMg": 57
     },
     "excluded": [
       "三つ葉(または刻みのり)(amount)"
@@ -89,7 +110,10 @@
       "proteinG": 32.4,
       "fatG": 32.8,
       "carbG": 24.2,
-      "saltG": 2.6
+      "saltG": 2.6,
+      "fiberG": 2,
+      "ironMg": 3.6,
+      "calciumMg": 72
     },
     "excluded": []
   },
@@ -100,7 +124,10 @@
       "proteinG": 34.9,
       "fatG": 28.4,
       "carbG": 2.9,
-      "saltG": 3
+      "saltG": 3,
+      "fiberG": 0.3,
+      "ironMg": 1.6,
+      "calciumMg": 16
     },
     "excluded": [
       "揚げ油(amount)",
@@ -114,7 +141,10 @@
       "proteinG": 13.8,
       "fatG": 7.9,
       "carbG": 65,
-      "saltG": 1.7
+      "saltG": 1.7,
+      "fiberG": 2.1,
+      "ironMg": 1.4,
+      "calciumMg": 33
     },
     "excluded": []
   },
@@ -125,7 +155,10 @@
       "proteinG": 18.8,
       "fatG": 18.3,
       "carbG": 88.4,
-      "saltG": 2.3
+      "saltG": 2.3,
+      "fiberG": 7.4,
+      "ironMg": 2,
+      "calciumMg": 38
     },
     "excluded": []
   },
@@ -136,7 +169,10 @@
       "proteinG": 13.3,
       "fatG": 19.9,
       "carbG": 74.9,
-      "saltG": 0
+      "saltG": 0,
+      "fiberG": 5.9,
+      "ironMg": 1.5,
+      "calciumMg": 19
     },
     "excluded": [
       "パセリ(amount)"
@@ -149,7 +185,10 @@
       "proteinG": 9.3,
       "fatG": 10.6,
       "carbG": 2,
-      "saltG": 0.5
+      "saltG": 0.5,
+      "fiberG": 0,
+      "ironMg": 1.2,
+      "calciumMg": 36
     },
     "excluded": []
   },
@@ -160,7 +199,10 @@
       "proteinG": 8.6,
       "fatG": 15.2,
       "carbG": 11.5,
-      "saltG": 1.9
+      "saltG": 1.9,
+      "fiberG": 3.8,
+      "ironMg": 1.2,
+      "calciumMg": 63
     },
     "excluded": []
   },
@@ -171,7 +213,10 @@
       "proteinG": 22.1,
       "fatG": 15.2,
       "carbG": 15.1,
-      "saltG": 2.9
+      "saltG": 2.9,
+      "fiberG": 4.5,
+      "ironMg": 2.7,
+      "calciumMg": 150
     },
     "excluded": []
   },
@@ -182,7 +227,10 @@
       "proteinG": 14.6,
       "fatG": 14.5,
       "carbG": 59,
-      "saltG": 2.5
+      "saltG": 2.5,
+      "fiberG": 2.9,
+      "ironMg": 1.2,
+      "calciumMg": 40
     },
     "excluded": []
   },
@@ -193,7 +241,10 @@
       "proteinG": 4.8,
       "fatG": 10.8,
       "carbG": 25.8,
-      "saltG": 0.7
+      "saltG": 0.7,
+      "fiberG": 12.6,
+      "ironMg": 0.7,
+      "calciumMg": 16
     },
     "excluded": []
   },
@@ -204,7 +255,10 @@
       "proteinG": 1.5,
       "fatG": 3.1,
       "carbG": 12.3,
-      "saltG": 1.3
+      "saltG": 1.3,
+      "fiberG": 2.5,
+      "ironMg": 0.4,
+      "calciumMg": 24
     },
     "excluded": [
       "白ごま(amount)",
@@ -218,7 +272,10 @@
       "proteinG": 18.9,
       "fatG": 14.5,
       "carbG": 22.4,
-      "saltG": 2.5
+      "saltG": 2.5,
+      "fiberG": 1,
+      "ironMg": 1.7,
+      "calciumMg": 25
     },
     "excluded": []
   },
@@ -229,7 +286,10 @@
       "proteinG": 16.9,
       "fatG": 19.6,
       "carbG": 34.7,
-      "saltG": 2.9
+      "saltG": 2.9,
+      "fiberG": 10.1,
+      "ironMg": 1.8,
+      "calciumMg": 108
     },
     "excluded": []
   },
@@ -240,7 +300,10 @@
       "proteinG": 19.5,
       "fatG": 19.9,
       "carbG": 22.4,
-      "saltG": 2.8
+      "saltG": 2.8,
+      "fiberG": 1.5,
+      "ironMg": 2.7,
+      "calciumMg": 27
     },
     "excluded": [
       "ご飯(unit)",
@@ -254,7 +317,10 @@
       "proteinG": 2.7,
       "fatG": 0.4,
       "carbG": 3.5,
-      "saltG": 1.3
+      "saltG": 1.3,
+      "fiberG": 2.5,
+      "ironMg": 2,
+      "calciumMg": 47
     },
     "excluded": [
       "かつお節(unit)",
@@ -268,7 +334,10 @@
       "proteinG": 27.9,
       "fatG": 30.1,
       "carbG": 13.8,
-      "saltG": 2.5
+      "saltG": 2.5,
+      "fiberG": 3.3,
+      "ironMg": 4,
+      "calciumMg": 189
     },
     "excluded": [
       "ラー油(amount)",
@@ -283,7 +352,10 @@
       "proteinG": 17.8,
       "fatG": 3.3,
       "carbG": 0.1,
-      "saltG": 0.7
+      "saltG": 0.7,
+      "fiberG": 0,
+      "ironMg": 0.4,
+      "calciumMg": 11
     },
     "excluded": [
       "サラダ油(amount)"
@@ -296,7 +368,10 @@
       "proteinG": 21.4,
       "fatG": 15.7,
       "carbG": 62.8,
-      "saltG": 4.9
+      "saltG": 4.9,
+      "fiberG": 3.4,
+      "ironMg": 2.6,
+      "calciumMg": 39
     },
     "excluded": [
       "七味唐辛子(amount)",
@@ -310,7 +385,10 @@
       "proteinG": 3.3,
       "fatG": 4,
       "carbG": 16.1,
-      "saltG": 2.4
+      "saltG": 2.4,
+      "fiberG": 4.6,
+      "ironMg": 0.9,
+      "calciumMg": 103
     },
     "excluded": []
   },
@@ -321,7 +399,10 @@
       "proteinG": 2,
       "fatG": 6.1,
       "carbG": 2.9,
-      "saltG": 0.7
+      "saltG": 0.7,
+      "fiberG": 1.3,
+      "ironMg": 0.2,
+      "calciumMg": 10
     },
     "excluded": [
       "おろしにんにく(amount)",
@@ -335,7 +416,10 @@
       "proteinG": 9.1,
       "fatG": 9.3,
       "carbG": 6,
-      "saltG": 0.5
+      "saltG": 0.5,
+      "fiberG": 3.4,
+      "ironMg": 3.1,
+      "calciumMg": 212
     },
     "excluded": []
   },
@@ -346,7 +430,10 @@
       "proteinG": 1.9,
       "fatG": 13.8,
       "carbG": 10.3,
-      "saltG": 0.6
+      "saltG": 0.6,
+      "fiberG": 2.7,
+      "ironMg": 0.5,
+      "calciumMg": 59
     },
     "excluded": [
       "塩(prep)"
@@ -359,7 +446,10 @@
       "proteinG": 13.1,
       "fatG": 16.4,
       "carbG": 2.8,
-      "saltG": 1
+      "saltG": 1,
+      "fiberG": 1.3,
+      "ironMg": 1.9,
+      "calciumMg": 70
     },
     "excluded": []
   },
@@ -370,7 +460,10 @@
       "proteinG": 6.5,
       "fatG": 5.2,
       "carbG": 5,
-      "saltG": 1.9
+      "saltG": 1.9,
+      "fiberG": 0,
+      "ironMg": 0.8,
+      "calciumMg": 26
     },
     "excluded": [
       "ごま油(amount)",
@@ -384,7 +477,10 @@
       "proteinG": 1.2,
       "fatG": 0.2,
       "carbG": 42.2,
-      "saltG": 0.2
+      "saltG": 0.2,
+      "fiberG": 2,
+      "ironMg": 0.6,
+      "calciumMg": 33
     },
     "excluded": [
       "揚げ油(amount)",
@@ -398,7 +494,10 @@
       "proteinG": 18.1,
       "fatG": 25.6,
       "carbG": 0.1,
-      "saltG": 0.9
+      "saltG": 0.9,
+      "fiberG": 0,
+      "ironMg": 1.4,
+      "calciumMg": 28
     },
     "excluded": [
       "すだち(またはレモン)(amount)",
@@ -413,7 +512,10 @@
       "proteinG": 27.5,
       "fatG": 23.5,
       "carbG": 21.3,
-      "saltG": 2.9
+      "saltG": 2.9,
+      "fiberG": 3.2,
+      "ironMg": 4.7,
+      "calciumMg": 193
     },
     "excluded": []
   },
@@ -424,7 +526,10 @@
       "proteinG": 24.8,
       "fatG": 17.1,
       "carbG": 14.5,
-      "saltG": 2.5
+      "saltG": 2.5,
+      "fiberG": 0.1,
+      "ironMg": 1.8,
+      "calciumMg": 36
     },
     "excluded": [
       "ご飯(unit)",
@@ -439,7 +544,10 @@
       "proteinG": 20.3,
       "fatG": 11.7,
       "carbG": 7.5,
-      "saltG": 2.2
+      "saltG": 2.2,
+      "fiberG": 2.1,
+      "ironMg": 0.9,
+      "calciumMg": 25
     },
     "excluded": []
   },
@@ -450,7 +558,10 @@
       "proteinG": 7.5,
       "fatG": 4.1,
       "carbG": 6.3,
-      "saltG": 2.4
+      "saltG": 2.4,
+      "fiberG": 1.7,
+      "ironMg": 1.8,
+      "calciumMg": 90
     },
     "excluded": [
       "なめこ(unit)",
@@ -464,7 +575,10 @@
       "proteinG": 1.8,
       "fatG": 0.2,
       "carbG": 42.2,
-      "saltG": 1.3
+      "saltG": 1.3,
+      "fiberG": 2,
+      "ironMg": 0.7,
+      "calciumMg": 35
     },
     "excluded": [
       "黒いりごま(amount)"
@@ -477,7 +591,10 @@
       "proteinG": 1.6,
       "fatG": 0.2,
       "carbG": 9,
-      "saltG": 0.8
+      "saltG": 0.8,
+      "fiberG": 2.1,
+      "ironMg": 0.5,
+      "calciumMg": 49
     },
     "excluded": [
       "塩(prep)",
@@ -491,7 +608,10 @@
       "proteinG": 21.9,
       "fatG": 30.1,
       "carbG": 11.6,
-      "saltG": 1.4
+      "saltG": 1.4,
+      "fiberG": 1.1,
+      "ironMg": 2.1,
+      "calciumMg": 79
     },
     "excluded": [
       "ご飯(unit)",
@@ -505,7 +625,10 @@
       "proteinG": 2.8,
       "fatG": 2,
       "carbG": 10.9,
-      "saltG": 0.9
+      "saltG": 0.9,
+      "fiberG": 2.6,
+      "ironMg": 0.4,
+      "calciumMg": 40
     },
     "excluded": [
       "塩こしょう(amount)"
@@ -518,7 +641,10 @@
       "proteinG": 3.5,
       "fatG": 3.6,
       "carbG": 29.5,
-      "saltG": 2.5
+      "saltG": 2.5,
+      "fiberG": 0.9,
+      "ironMg": 0.5,
+      "calciumMg": 29
     },
     "excluded": [
       "錦糸卵(amount)"
@@ -531,7 +657,10 @@
       "proteinG": 7.4,
       "fatG": 7.7,
       "carbG": 6.9,
-      "saltG": 1.6
+      "saltG": 1.6,
+      "fiberG": 1.8,
+      "ironMg": 0.5,
+      "calciumMg": 34
     },
     "excluded": [
       "塩(prep)",
@@ -545,7 +674,10 @@
       "proteinG": 1.8,
       "fatG": 2.2,
       "carbG": 9.7,
-      "saltG": 0.3
+      "saltG": 0.3,
+      "fiberG": 3.9,
+      "ironMg": 0.5,
+      "calciumMg": 92
     },
     "excluded": [
       "塩(prep)"
@@ -558,7 +690,10 @@
       "proteinG": 2.4,
       "fatG": 2.1,
       "carbG": 8.3,
-      "saltG": 2
+      "saltG": 2,
+      "fiberG": 2.7,
+      "ironMg": 0.6,
+      "calciumMg": 26
     },
     "excluded": [
       "ラー油(amount)",
@@ -572,7 +707,10 @@
       "proteinG": 26.3,
       "fatG": 16.9,
       "carbG": 7.7,
-      "saltG": 2.1
+      "saltG": 2.1,
+      "fiberG": 2.6,
+      "ironMg": 1.7,
+      "calciumMg": 128
     },
     "excluded": [
       "ラー油(amount)",
@@ -586,7 +724,10 @@
       "proteinG": 3.4,
       "fatG": 3.9,
       "carbG": 28.6,
-      "saltG": 0.1
+      "saltG": 0.1,
+      "fiberG": 0,
+      "ironMg": 0.1,
+      "calciumMg": 115
     },
     "excluded": [
       "きな粉(amount)",
@@ -600,7 +741,10 @@
       "proteinG": 14,
       "fatG": 14.5,
       "carbG": 38.5,
-      "saltG": 1.1
+      "saltG": 1.1,
+      "fiberG": 2.5,
+      "ironMg": 1.1,
+      "calciumMg": 122
     },
     "excluded": [
       "メープルシロップ(amount)"
@@ -613,7 +757,10 @@
       "proteinG": 5.1,
       "fatG": 5.9,
       "carbG": 28.9,
-      "saltG": 0.2
+      "saltG": 0.2,
+      "fiberG": 1.6,
+      "ironMg": 0.1,
+      "calciumMg": 173
     },
     "excluded": [
       "みかん缶(またはお好みのフルーツ)(amount)",
@@ -627,7 +774,10 @@
       "proteinG": 43,
       "fatG": 38.5,
       "carbG": 14,
-      "saltG": 3.1
+      "saltG": 3.1,
+      "fiberG": 0,
+      "ironMg": 1.8,
+      "calciumMg": 18
     },
     "excluded": []
   },
@@ -638,7 +788,10 @@
       "proteinG": 13,
       "fatG": 29.8,
       "carbG": 11,
-      "saltG": 0.5
+      "saltG": 0.5,
+      "fiberG": 3.1,
+      "ironMg": 1,
+      "calciumMg": 60
     },
     "excluded": [
       "甜麺醤(テンメンジャン)(unit)",
@@ -652,7 +805,10 @@
       "proteinG": 26.7,
       "fatG": 7.4,
       "carbG": 1.2,
-      "saltG": 1.6
+      "saltG": 1.6,
+      "fiberG": 0,
+      "ironMg": 0.4,
+      "calciumMg": 6
     },
     "excluded": []
   },
@@ -663,7 +819,10 @@
       "proteinG": 27.9,
       "fatG": 9.4,
       "carbG": 11.9,
-      "saltG": 2.1
+      "saltG": 2.1,
+      "fiberG": 0.2,
+      "ironMg": 0.7,
+      "calciumMg": 10
     },
     "excluded": []
   },
@@ -674,7 +833,10 @@
       "proteinG": 19.6,
       "fatG": 4.1,
       "carbG": 8.3,
-      "saltG": 0.9
+      "saltG": 0.9,
+      "fiberG": 4.2,
+      "ironMg": 1.7,
+      "calciumMg": 110
     },
     "excluded": []
   },
@@ -685,7 +847,10 @@
       "proteinG": 22.5,
       "fatG": 16.7,
       "carbG": 14.6,
-      "saltG": 1.8
+      "saltG": 1.8,
+      "fiberG": 3.5,
+      "ironMg": 2.5,
+      "calciumMg": 274
     },
     "excluded": []
   },
@@ -696,7 +861,10 @@
       "proteinG": 23.9,
       "fatG": 18.3,
       "carbG": 7.1,
-      "saltG": 0.3
+      "saltG": 0.3,
+      "fiberG": 1.3,
+      "ironMg": 2.2,
+      "calciumMg": 94
     },
     "excluded": []
   },
@@ -707,7 +875,10 @@
       "proteinG": 7,
       "fatG": 5.1,
       "carbG": 4.2,
-      "saltG": 2
+      "saltG": 2,
+      "fiberG": 0,
+      "ironMg": 0.9,
+      "calciumMg": 26
     },
     "excluded": []
   },
@@ -718,7 +889,10 @@
       "proteinG": 11.2,
       "fatG": 6.8,
       "carbG": 23.8,
-      "saltG": 1.4
+      "saltG": 1.4,
+      "fiberG": 2.8,
+      "ironMg": 2,
+      "calciumMg": 44
     },
     "excluded": [
       "刻みねぎ(amount)"
@@ -731,7 +905,10 @@
       "proteinG": 18.6,
       "fatG": 11.7,
       "carbG": 4,
-      "saltG": 0.6
+      "saltG": 0.6,
+      "fiberG": 2.6,
+      "ironMg": 2.1,
+      "calciumMg": 82
     },
     "excluded": []
   },
@@ -742,7 +919,10 @@
       "proteinG": 12.7,
       "fatG": 8.2,
       "carbG": 7.3,
-      "saltG": 1.8
+      "saltG": 1.8,
+      "fiberG": 1.4,
+      "ironMg": 0.8,
+      "calciumMg": 41
     },
     "excluded": []
   },
@@ -753,7 +933,10 @@
       "proteinG": 7,
       "fatG": 9.6,
       "carbG": 2.2,
-      "saltG": 1.6
+      "saltG": 1.6,
+      "fiberG": 0.4,
+      "ironMg": 0.4,
+      "calciumMg": 12
     },
     "excluded": [
       "蒸し大豆(unit)"
@@ -766,7 +949,10 @@
       "proteinG": 23.2,
       "fatG": 24.5,
       "carbG": 20.4,
-      "saltG": 1.9
+      "saltG": 1.9,
+      "fiberG": 0.5,
+      "ironMg": 1.6,
+      "calciumMg": 17
     },
     "excluded": [
       "いりごま(amount)",
@@ -780,7 +966,10 @@
       "proteinG": 8.2,
       "fatG": 9.2,
       "carbG": 19.4,
-      "saltG": 1.4
+      "saltG": 1.4,
+      "fiberG": 9.4,
+      "ironMg": 1.5,
+      "calciumMg": 107
     },
     "excluded": []
   },
@@ -791,7 +980,10 @@
       "proteinG": 3.1,
       "fatG": 0.2,
       "carbG": 19.9,
-      "saltG": 3.2
+      "saltG": 3.2,
+      "fiberG": 3.5,
+      "ironMg": 0.9,
+      "calciumMg": 87
     },
     "excluded": []
   },
@@ -802,7 +994,10 @@
       "proteinG": 15.8,
       "fatG": 38.4,
       "carbG": 17.4,
-      "saltG": 2.7
+      "saltG": 2.7,
+      "fiberG": 0,
+      "ironMg": 0.9,
+      "calciumMg": 9
     },
     "excluded": [
       "ご飯(unit)"
@@ -815,7 +1010,10 @@
       "proteinG": 3,
       "fatG": 6.1,
       "carbG": 26.9,
-      "saltG": 2.1
+      "saltG": 2.1,
+      "fiberG": 2.1,
+      "ironMg": 0.7,
+      "calciumMg": 24
     },
     "excluded": [
       "いりごま(amount)"
@@ -828,7 +1026,10 @@
       "proteinG": 14.4,
       "fatG": 8.7,
       "carbG": 14.8,
-      "saltG": 2.4
+      "saltG": 2.4,
+      "fiberG": 1.3,
+      "ironMg": 2.2,
+      "calciumMg": 174
     },
     "excluded": []
   },
@@ -839,7 +1040,10 @@
       "proteinG": 4.7,
       "fatG": 0.2,
       "carbG": 7.4,
-      "saltG": 1.7
+      "saltG": 1.7,
+      "fiberG": 0.6,
+      "ironMg": 0.3,
+      "calciumMg": 29
     },
     "excluded": [
       "青じそ(amount)"
@@ -852,7 +1056,10 @@
       "proteinG": 19.7,
       "fatG": 20,
       "carbG": 14,
-      "saltG": 2.8
+      "saltG": 2.8,
+      "fiberG": 0,
+      "ironMg": 0.9,
+      "calciumMg": 27
     },
     "excluded": []
   },
@@ -863,7 +1070,10 @@
       "proteinG": 1.2,
       "fatG": 6,
       "carbG": 14.3,
-      "saltG": 2
+      "saltG": 2,
+      "fiberG": 2.8,
+      "ironMg": 0.7,
+      "calciumMg": 58
     },
     "excluded": [
       "かつお節(unit)"
@@ -876,7 +1086,10 @@
       "proteinG": 17.9,
       "fatG": 3.3,
       "carbG": 0.4,
-      "saltG": 0.2
+      "saltG": 0.2,
+      "fiberG": 0,
+      "ironMg": 0.4,
+      "calciumMg": 11
     },
     "excluded": [
       "塩(amount)"

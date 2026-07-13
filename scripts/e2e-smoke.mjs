@@ -35,7 +35,8 @@
 //         原寸表示窓、圧縮後Blobと自動記録された表示人数をIndexedDBから直接検証。2026-07-12) /
 //         NUT-01(栄養価のめやす: 未解錠でもエネルギー・塩分の概算が閉じた1行から見え、
 //         展開すると「めやす」表記・出典・Pro案内リンクが出る) /
-//         NUT-02(栄養価のめやす: Pro解錠済みで5項目の実パネルが出る・人数を変えても1人分の値は不変。
+//         NUT-02(栄養価のめやす: Pro解錠済みで8項目の実パネルが出る(2026-07-13 第2弾で
+//         食物繊維・鉄・カルシウム+ビタミン注記を追加)・人数を変えても1人分の値は不変。
 //         M6-1 2026-07-12オーナー指示でNUTRITION_ENABLED有効化) /
 //         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
 //         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
@@ -856,6 +857,14 @@ try {
       check('NUT-02 Pro解錠済みで脂質が表示される', unlockedText.includes('脂質'))
       check('NUT-02 Pro解錠済みで炭水化物が表示される', unlockedText.includes('炭水化物'))
       check('NUT-02 Pro解錠済みで塩分相当量が表示される', unlockedText.includes('塩分相当量'))
+      // 2026-07-13 第2弾(オーナー承認): 食物繊維(g)・鉄(mg)・カルシウム(mg)の3項目とビタミン注記
+      check('NUT-02 Pro解錠済みで食物繊維が表示される', unlockedText.includes('食物繊維'))
+      check('NUT-02 Pro解錠済みで鉄がmg単位で表示される', /鉄\s*[\d,.]+\s*mg/.test(unlockedText))
+      check('NUT-02 Pro解錠済みでカルシウムがmg単位で表示される', /カルシウム\s*[\d,.]+\s*mg/.test(unlockedText))
+      check(
+        'NUT-02 ビタミン非表示の注記が出る(文面はオーナー確定・一字一句)',
+        unlockedText.includes('ビタミンは調理による損失が大きく、材料からの計算では実際と大きくズレやすいため表示していません'),
+      )
       check('NUT-02 断定しない「概算」バッジが出る', unlockedText.includes('概算'))
       check('NUT-02 「1人分」の内訳がある', unlockedText.includes('1人分'))
       check('NUT-02 「全量」の内訳もある(人数連動)', unlockedText.includes('全量'))

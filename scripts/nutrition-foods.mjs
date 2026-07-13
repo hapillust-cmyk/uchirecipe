@@ -251,7 +251,7 @@ export const FOODS = [
   {
     custom: {
       mextName: '(八訂に収載なし。香料/エッセンス類は成分表の対象外)',
-      per100g: { kcal: 200, proteinG: 0, fatG: 0, carbG: 0.1, saltG: 0 },
+      per100g: { kcal: 200, proteinG: 0, fatG: 0, carbG: 0.1, saltG: 0, fiberG: 0, ironMg: 0, calciumMg: 0 },
     },
     label: 'アーモンドエッセンス', aliases: ['アーモンドエッセンス', 'アーモンドエキス'],
     note: '八訂に香料/エッセンス類の収載が無いための例外(custom)。一般的な洋菓子用エッセンス(アルコールベースの香料。中身の大半は水・アルコールで、風味成分はごく微量)の一般的な栄養表示を参考にした保守的な概算値であり、MEXT成分表に基づく値ではない。'

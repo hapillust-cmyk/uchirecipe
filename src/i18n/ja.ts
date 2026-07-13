@@ -611,8 +611,15 @@ export const ja = {
     fatLabel: '脂質',
     carbLabel: '炭水化物',
     saltLabel: '塩分相当量',
+    // 2026-07-13 第2弾(オーナー承認・Fable設計): Pro側パネルに食物繊維・鉄・カルシウムを追加
+    fiberLabel: '食物繊維',
+    ironLabel: '鉄',
+    calciumLabel: 'カルシウム',
     gramUnit: 'g',
+    mgUnit: 'mg',
     estimateNote: '※ 材料と分量から自動計算しためやすです。調理による変化などは反映しておらず、実際の栄養価とは異なります。',
+    // ビタミンを表示しない理由の注記(2026-07-13オーナー指示・文面確定。一字一句変更しないこと)
+    vitaminNote: '※ ビタミンは調理による損失が大きく、材料からの計算では実際と大きくズレやすいため表示していません',
     assumedLabel: '仮の目安で計算 {n}件',
     assumedHint: '分量が「少々」「適量」の材料は、次の仮の量で計算に含めています。',
     excludedLabel: '計算対象外 {n}件',

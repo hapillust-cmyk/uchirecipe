@@ -117,9 +117,11 @@ function parseSheetRows(xml, shared) {
 }
 
 // 成分値の表記ゆれを数値化する: "Tr"(微量)→0, "-"(未測定)→0, "(1.2)"(推計値)→1.2
+// "14.0†"の「†」は食物繊維のAOAC2011.25法(網羅的な分析法)による測定であることを示す注記で、
+// 数値自体は有効なのでマーカーだけ落とす(2026-07-13 第2弾で食物繊維列を読むようになり遭遇)
 function parseNutrientValue(raw) {
   if (raw === undefined || raw === null) return 0
-  const s = String(raw).trim().replace(/[()]/g, '')
+  const s = String(raw).trim().replace(/[()†]/g, '')
   if (s === '' || s === 'Tr' || s === '-' || s === '*') return 0
   const n = Number(s)
   if (!Number.isFinite(n)) throw new Error(`成分値を数値化できません: "${raw}"`)
@@ -146,7 +148,11 @@ async function main() {
   if (!idRow) throw new Error('成分識別子の行が見つかりません')
   const colOf = {}
   for (const [col, val] of Object.entries(idRow)) colOf[String(val).trim()] = col
-  const NEED = { kcal: 'ENERC_KCAL', protein: 'PROT-', fat: 'FAT-', carb: 'CHOCDF-', salt: 'NACL_EQ' }
+  // 2026-07-13 第2弾: 食物繊維(FIB-=総量,g)・鉄(FE,mg)・カルシウム(CA,mg)を追加
+  const NEED = {
+    kcal: 'ENERC_KCAL', protein: 'PROT-', fat: 'FAT-', carb: 'CHOCDF-', salt: 'NACL_EQ',
+    fiber: 'FIB-', iron: 'FE', calcium: 'CA',
+  }
   for (const ident of Object.values(NEED)) {
     if (!colOf[ident]) throw new Error(`成分識別子 ${ident} の列が見つかりません`)
   }
@@ -165,6 +171,9 @@ async function main() {
         fatG: parseNutrientValue(r[colOf[NEED.fat]]),
         carbG: parseNutrientValue(r[colOf[NEED.carb]]),
         saltG: parseNutrientValue(r[colOf[NEED.salt]]),
+        fiberG: parseNutrientValue(r[colOf[NEED.fiber]]),
+        ironMg: parseNutrientValue(r[colOf[NEED.iron]]),
+        calciumMg: parseNutrientValue(r[colOf[NEED.calcium]]),
       },
     })
   }
@@ -201,7 +210,7 @@ async function main() {
       const total = def.blend.reduce((s, b) => s + b.ratio, 0)
       if (Math.abs(total - 1) > 1e-9) throw new Error(`${def.label}: blendの比率合計が1ではありません`)
       const parts = def.blend.map((b) => ({ ...b, hit: resolve(b.id, b.expect) }))
-      per100g = { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0 }
+      per100g = { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0, fiberG: 0, ironMg: 0, calciumMg: 0 }
       for (const p of parts) {
         for (const k of Object.keys(per100g)) per100g[k] += p.hit.per100g[k] * p.ratio
       }
@@ -253,6 +262,12 @@ export interface NutritionPer100g {
   fatG: number
   carbG: number
   saltG: number
+  /** 食物繊維総量(g)。2026-07-13 第2弾で追加 */
+  fiberG: number
+  /** 鉄(mg) */
+  ironMg: number
+  /** カルシウム(mg) */
+  calciumMg: number
 }
 
 export interface NutritionFood {

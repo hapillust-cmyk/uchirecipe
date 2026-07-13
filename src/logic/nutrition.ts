@@ -53,6 +53,12 @@ export interface NutrientTotals {
   fatG: number
   carbG: number
   saltG: number
+  /** 食物繊維(g)。2026-07-13 第2弾で追加(オーナー承認・Fable設計) */
+  fiberG: number
+  /** 鉄(mg) */
+  ironMg: number
+  /** カルシウム(mg) */
+  calciumMg: number
 }
 
 /** 計算対象外になった理由 */
@@ -231,7 +237,7 @@ export function convertToGrams(value: number, unit: string, food: NutritionFood)
 // ---------- 集計 ----------
 
 function emptyTotals(): NutrientTotals {
-  return { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0 }
+  return { kcal: 0, proteinG: 0, fatG: 0, carbG: 0, saltG: 0, fiberG: 0, ironMg: 0, calciumMg: 0 }
 }
 
 function addScaled(target: NutrientTotals, per100g: NutritionPer100g, grams: number): NutrientTotals {
@@ -241,6 +247,9 @@ function addScaled(target: NutrientTotals, per100g: NutritionPer100g, grams: num
   target.fatG += per100g.fatG * f
   target.carbG += per100g.carbG * f
   target.saltG += per100g.saltG * f
+  target.fiberG += per100g.fiberG * f
+  target.ironMg += per100g.ironMg * f
+  target.calciumMg += per100g.calciumMg * f
   return target
 }
 
@@ -325,6 +334,9 @@ export function computeRecipeNutrition(
     total.fatG += result.item.nutrients.fatG
     total.carbG += result.item.nutrients.carbG
     total.saltG += result.item.nutrients.saltG
+    total.fiberG += result.item.nutrients.fiberG
+    total.ironMg += result.item.nutrients.ironMg
+    total.calciumMg += result.item.nutrients.calciumMg
   }
 
   const perServing: NutrientTotals = {
@@ -333,13 +345,17 @@ export function computeRecipeNutrition(
     fatG: total.fatG / servings,
     carbG: total.carbG / servings,
     saltG: total.saltG / servings,
+    fiberG: total.fiberG / servings,
+    ironMg: total.ironMg / servings,
+    calciumMg: total.calciumMg / servings,
   }
   return { total, perServing, servings, items, excluded, assumed }
 }
 
-/** 表示用の丸め: kcalは整数、それ以外は小数1桁（概算なのでこれ以上細かくしない） */
+/** 表示用の丸め: kcalとカルシウム(mg・値が大きい)は整数、それ以外は小数1桁
+ * （概算なのでこれ以上細かくしない。鉄は1食1〜数mgの世界なので小数1桁を保つ） */
 export function roundNutrient(key: keyof NutrientTotals, value: number): number {
-  if (key === 'kcal') return Math.round(value)
+  if (key === 'kcal' || key === 'calciumMg') return Math.round(value)
   return Math.round(value * 10) / 10
 }
 

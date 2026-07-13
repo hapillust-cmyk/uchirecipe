@@ -35,17 +35,27 @@ function check(ok, message) {
 
 // ---------- 1. データ健全性 ----------
 for (const food of NUTRITION_DATA.foods) {
-  const { kcal, proteinG, fatG, carbG, saltG } = food.per100g
+  const { kcal, proteinG, fatG, carbG, saltG, fiberG, ironMg, calciumMg } = food.per100g
   check(kcal >= 0 && kcal <= 900, `${food.label}: kcalが範囲外 (${kcal})`)
   check(proteinG >= 0 && proteinG <= 100, `${food.label}: たんぱく質が範囲外 (${proteinG})`)
   check(fatG >= 0 && fatG <= 100, `${food.label}: 脂質が範囲外 (${fatG})`)
   check(carbG >= 0 && carbG <= 100, `${food.label}: 炭水化物が範囲外 (${carbG})`)
   check(saltG >= 0 && saltG <= 100, `${food.label}: 食塩相当量が範囲外 (${saltG})`)
+  // 2026-07-13 第2弾: 食物繊維・鉄・カルシウム。「全食品に3項目が存在する」ことを必須とする
+  // (undefinedだと範囲チェックがすり抜けるため、まず数値であることをNumber.isFiniteで確認)。
+  // 範囲の上限は収載最大値(食物繊維=粉寒天79g・鉄=青のり77mg・カルシウム=いりごま1200mg)を
+  // 少し超える程度の緩い健全性チェック
+  check(Number.isFinite(fiberG), `${food.label}: 食物繊維(fiberG)が数値でない (${fiberG})`)
+  check(Number.isFinite(ironMg), `${food.label}: 鉄(ironMg)が数値でない (${ironMg})`)
+  check(Number.isFinite(calciumMg), `${food.label}: カルシウム(calciumMg)が数値でない (${calciumMg})`)
+  check(fiberG >= 0 && fiberG <= 100, `${food.label}: 食物繊維が範囲外 (${fiberG})`)
+  check(ironMg >= 0 && ironMg <= 100, `${food.label}: 鉄が範囲外 (${ironMg})`)
+  check(calciumMg >= 0 && calciumMg <= 2000, `${food.label}: カルシウムが範囲外 (${calciumMg})`)
   for (const [unit, grams] of Object.entries(food.unitGrams ?? {})) {
     check(grams > 0 && grams <= 2000, `${food.label}: 単位${unit}の重量が不自然 (${grams}g)`)
   }
 }
-console.log(`データ健全性: ${NUTRITION_DATA.foods.length}食品を確認`)
+console.log(`データ健全性: ${NUTRITION_DATA.foods.length}食品を確認（食物繊維・鉄・カルシウム含む8成分）`)
 
 // 個別の名寄せ確認（衝突しやすい代表例）
 const expectMatches = [
@@ -113,6 +123,10 @@ for (const r of recipes) {
       fatG: roundNutrient('fatG', p.fatG),
       carbG: roundNutrient('carbG', p.carbG),
       saltG: roundNutrient('saltG', p.saltG),
+      // 2026-07-13 第2弾で追加した3項目もスナップショット照合の対象にする
+      fiberG: roundNutrient('fiberG', p.fiberG),
+      ironMg: roundNutrient('ironMg', p.ironMg),
+      calciumMg: roundNutrient('calciumMg', p.calciumMg),
     },
     excluded: result.excluded.map((e) => `${e.name}(${e.reason})`).sort(),
   }

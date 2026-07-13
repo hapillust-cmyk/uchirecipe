@@ -12,6 +12,12 @@ export interface NutritionPer100g {
   fatG: number
   carbG: number
   saltG: number
+  /** 食物繊維総量(g)。2026-07-13 第2弾で追加 */
+  fiberG: number
+  /** 鉄(mg) */
+  ironMg: number
+  /** カルシウム(mg) */
+  calciumMg: number
 }
 
 export interface NutritionFood {
@@ -63,7 +69,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1,
         "fatG": 0.1,
         "carbG": 8.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.5,
+        "ironMg": 0.3,
+        "calciumMg": 17
       },
       "unitGrams": {
         "個": 200,
@@ -85,7 +94,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.8,
         "fatG": 0.1,
         "carbG": 17.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 8.9,
+        "ironMg": 0.4,
+        "calciumMg": 4
       },
       "unitGrams": {
         "個": 135
@@ -103,7 +115,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.7,
         "fatG": 0.2,
         "carbG": 9.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 2.8,
+        "ironMg": 0.2,
+        "calciumMg": 28
       },
       "unitGrams": {
         "本": 135
@@ -122,7 +137,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.2,
         "fatG": 0.1,
         "carbG": 5.2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.8,
+        "ironMg": 0.3,
+        "calciumMg": 42
       },
       "unitGrams": {
         "枚": 50,
@@ -142,7 +160,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.5,
         "fatG": 0.1,
         "carbG": 4.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.4,
+        "ironMg": 0.2,
+        "calciumMg": 24
       },
       "unitGrams": {
         "本": 750
@@ -160,7 +181,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.8,
         "fatG": 0.1,
         "carbG": 3.2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.3,
+        "ironMg": 0.3,
+        "calciumMg": 43
       },
       "unitGrams": {
         "枚": 100,
@@ -183,7 +207,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.4,
         "fatG": 0.1,
         "carbG": 8.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.5,
+        "ironMg": 0.3,
+        "calciumMg": 36
       },
       "unitGrams": {
         "本": 100
@@ -203,7 +230,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.9,
         "fatG": 0.3,
         "carbG": 6.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.2,
+        "ironMg": 1,
+        "calciumMg": 80
       },
       "unitGrams": {
         "本": 10
@@ -224,7 +254,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2,
         "fatG": 0.3,
         "carbG": 5.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.5,
+        "ironMg": 1,
+        "calciumMg": 100
       },
       "unitGrams": {
         "本": 5
@@ -242,7 +275,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.3,
         "carbG": 6.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.1,
+        "ironMg": 0.5,
+        "calciumMg": 12
       },
       "unitGrams": {
         "かけ": 10,
@@ -261,7 +297,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.4,
         "fatG": 0.9,
         "carbG": 27.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 6.2,
+        "ironMg": 0.8,
+        "calciumMg": 14
       },
       "unitGrams": {
         "かけ": 6,
@@ -281,7 +320,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.2,
         "carbG": 5.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.3,
+        "ironMg": 0.4,
+        "calciumMg": 11
       },
       "unitGrams": {
         "個": 30
@@ -299,7 +341,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.7,
         "fatG": 0.1,
         "carbG": 4.7,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1,
+        "ironMg": 0.2,
+        "calciumMg": 7
       },
       "unitGrams": {
         "個": 150
@@ -318,7 +363,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.1,
         "fatG": 0.1,
         "carbG": 7.2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.4,
+        "ironMg": 0.4,
+        "calciumMg": 12
       },
       "unitGrams": {
         "個": 15
@@ -336,7 +384,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1,
         "fatG": 0.1,
         "carbG": 3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.1,
+        "ironMg": 0.3,
+        "calciumMg": 26
       },
       "unitGrams": {
         "本": 100
@@ -354,7 +405,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.1,
         "fatG": 0.1,
         "carbG": 5.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.2,
+        "ironMg": 0.3,
+        "calciumMg": 18
       },
       "unitGrams": {
         "本": 80
@@ -372,7 +426,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.9,
         "fatG": 0.3,
         "carbG": 20.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.5,
+        "ironMg": 0.4,
+        "calciumMg": 22
       },
       "unitGrams": {
         "個": 1000
@@ -390,7 +447,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.8,
         "fatG": 0.1,
         "carbG": 15.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 5.7,
+        "ironMg": 0.7,
+        "calciumMg": 46
       },
       "unitGrams": {
         "本": 140
@@ -408,7 +468,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.9,
         "fatG": 0.1,
         "carbG": 15.5,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 2,
+        "ironMg": 0.5,
+        "calciumMg": 20
       },
       "unitGrams": {
         "節": 150
@@ -426,7 +489,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.8,
         "fatG": 0.1,
         "carbG": 2.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.3,
+        "ironMg": 0.2,
+        "calciumMg": 9
       },
       "unitGrams": {
         "袋": 200
@@ -444,7 +510,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.6,
         "fatG": 1.4,
         "carbG": 2.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.3,
+        "ironMg": 0.5,
+        "calciumMg": 25
       },
       "unitGrams": {
         "袋": 200
@@ -462,7 +531,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.4,
         "fatG": 0.6,
         "carbG": 6.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 5.1,
+        "ironMg": 1.3,
+        "calciumMg": 50
       },
       "unitGrams": {
         "株": 200,
@@ -481,7 +553,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.2,
         "fatG": 0.4,
         "carbG": 3.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.8,
+        "ironMg": 2,
+        "calciumMg": 49
       },
       "unitGrams": {
         "束": 180,
@@ -500,7 +575,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.5,
         "fatG": 0.2,
         "carbG": 2.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.9,
+        "ironMg": 2.8,
+        "calciumMg": 170
       },
       "unitGrams": {
         "束": 250,
@@ -520,7 +598,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.2,
         "fatG": 0.1,
         "carbG": 4.8,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 3,
+        "ironMg": 2.1,
+        "calciumMg": 210
       },
       "unitGrams": {
         "束": 200,
@@ -541,7 +622,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.6,
         "fatG": 0.1,
         "carbG": 2,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 1.2,
+        "ironMg": 1.1,
+        "calciumMg": 100
       },
       "unitGrams": {
         "株": 85
@@ -560,7 +644,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.7,
         "fatG": 0.3,
         "carbG": 4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.7,
+        "ironMg": 0.7,
+        "calciumMg": 48
       },
       "unitGrams": {
         "束": 95
@@ -578,7 +665,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.6,
         "fatG": 0.1,
         "carbG": 2.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.1,
+        "ironMg": 0.3,
+        "calciumMg": 19
       },
       "unitGrams": {
         "枚": 30,
@@ -598,7 +688,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.2,
         "fatG": 0.2,
         "carbG": 3.2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2,
+        "ironMg": 1.8,
+        "calciumMg": 66
       },
       "unitGrams": {
         "枚": 15
@@ -616,7 +709,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.4,
         "fatG": 0.1,
         "carbG": 3.6,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 1.5,
+        "ironMg": 0.2,
+        "calciumMg": 39
       },
       "unitGrams": {
         "本": 65
@@ -635,7 +731,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.6,
         "fatG": 0.2,
         "carbG": 3.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.8,
+        "ironMg": 0.7,
+        "calciumMg": 19
       },
       "unitGrams": {
         "本": 20
@@ -654,7 +753,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.8,
         "fatG": 0.1,
         "carbG": 5.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.4,
+        "ironMg": 0.7,
+        "calciumMg": 50
       },
       "unitGrams": {
         "本": 7
@@ -673,7 +775,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.1,
         "fatG": 0.2,
         "carbG": 7.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3,
+        "ironMg": 0.9,
+        "calciumMg": 35
       },
       "unitGrams": {
         "枚": 2
@@ -692,7 +797,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.9,
         "fatG": 0.4,
         "carbG": 15.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 7.7,
+        "ironMg": 1.7,
+        "calciumMg": 23
       }
     },
     {
@@ -707,7 +815,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.1,
         "fatG": 0.2,
         "carbG": 6.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 5,
+        "ironMg": 0.5,
+        "calciumMg": 92
       },
       "unitGrams": {
         "本": 7
@@ -728,7 +839,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1,
         "fatG": 0.1,
         "carbG": 3.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.6,
+        "ironMg": 0.4,
+        "calciumMg": 14
       },
       "unitGrams": {
         "本": 250
@@ -748,7 +862,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.7,
         "fatG": 0.1,
         "carbG": 4.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.5,
+        "ironMg": 0.3,
+        "calciumMg": 24
       },
       "unitGrams": {
         "個": 75
@@ -766,7 +883,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.3,
         "fatG": 0.1,
         "carbG": 2.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.3,
+        "ironMg": 0.5,
+        "calciumMg": 24
       },
       "unitGrams": {
         "本": 200
@@ -786,7 +906,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.9,
         "fatG": 0.1,
         "carbG": 7.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 7.3,
+        "ironMg": 1.7,
+        "calciumMg": 230
       },
       "unitGrams": {
         "枚": 1
@@ -804,7 +927,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.1,
         "carbG": 2.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.1,
+        "ironMg": 0.5,
+        "calciumMg": 25
       },
       "unitGrams": {
         "個": 15
@@ -822,7 +948,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 4,
         "fatG": 0.7,
         "carbG": 7.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 6.8,
+        "ironMg": 7.5,
+        "calciumMg": 290
       },
       "unitGrams": {
         "枝": 5
@@ -842,7 +971,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 14.7,
         "fatG": 12,
         "carbG": 58.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 46.4,
+        "ironMg": 6.8,
+        "calciumMg": 74
       },
       "unitGrams": {
         "本": 0.5
@@ -862,7 +994,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.3,
         "fatG": 0.5,
         "carbG": 17.8,
-        "saltG": 0.5
+        "saltG": 0.5,
+        "fiberG": 3.3,
+        "ironMg": 0.4,
+        "calciumMg": 2
       },
       "unitGrams": {
         "缶": 120
@@ -880,7 +1015,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 11.7,
         "fatG": 6.2,
         "carbG": 8.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 5,
+        "ironMg": 2.7,
+        "calciumMg": 58
       },
       "note": "さや付きで量る場合は約半分が可食部"
     },
@@ -896,7 +1034,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.2,
         "fatG": 0.2,
         "carbG": 31.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.2,
+        "ironMg": 0.6,
+        "calciumMg": 36
       },
       "unitGrams": {
         "本": 180
@@ -914,7 +1055,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.5,
         "fatG": 0.1,
         "carbG": 13.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.3,
+        "ironMg": 0.5,
+        "calciumMg": 10
       },
       "unitGrams": {
         "個": 40
@@ -934,7 +1078,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.2,
         "fatG": 0.3,
         "carbG": 13.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1,
+        "ironMg": 0.4,
+        "calciumMg": 17
       }
     },
     {
@@ -950,7 +1097,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.1,
         "fatG": 0.3,
         "carbG": 6.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 4.9,
+        "ironMg": 0.4,
+        "calciumMg": 1
       },
       "unitGrams": {
         "枚": 12,
@@ -971,7 +1121,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 21.2,
         "fatG": 2.8,
         "carbG": 62.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 46.7,
+        "ironMg": 3.2,
+        "calciumMg": 12
       },
       "unitGrams": {
         "枚": 3,
@@ -991,7 +1144,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.7,
         "fatG": 0.5,
         "carbG": 4.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3,
+        "ironMg": 0.5,
+        "calciumMg": 1
       },
       "unitGrams": {
         "袋": 90,
@@ -1011,7 +1167,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.7,
         "fatG": 0.2,
         "carbG": 7.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.9,
+        "ironMg": 1.1,
+        "calciumMg": 0
       },
       "unitGrams": {
         "袋": 85,
@@ -1030,7 +1189,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2,
         "fatG": 0.5,
         "carbG": 4.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.5,
+        "ironMg": 0.2,
+        "calciumMg": 0
       },
       "unitGrams": {
         "袋": 90,
@@ -1050,7 +1212,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.8,
         "fatG": 0.4,
         "carbG": 6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.4,
+        "ironMg": 0.3,
+        "calciumMg": 0
       },
       "unitGrams": {
         "本": 30,
@@ -1070,7 +1235,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 16.6,
         "fatG": 14.2,
         "carbG": 0,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 5
       },
       "unitGrams": {
         "枚": 250
@@ -1088,7 +1256,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 21.3,
         "fatG": 5.9,
         "carbG": 0.1,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 4
       },
       "unitGrams": {
         "枚": 250
@@ -1108,7 +1279,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 23.9,
         "fatG": 0.8,
         "carbG": 0.1,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 4
       },
       "unitGrams": {
         "本": 45
@@ -1127,7 +1301,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.5,
         "fatG": 12,
         "carbG": 0,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.8,
+        "calciumMg": 8
       }
     },
     {
@@ -1142,7 +1319,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.4,
         "fatG": 16.2,
         "carbG": 0,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 20
       },
       "unitGrams": {
         "本": 35
@@ -1160,7 +1340,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 18.2,
         "fatG": 12.8,
         "carbG": 0,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 10
       },
       "unitGrams": {
         "本": 40
@@ -1179,7 +1362,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.7,
         "fatG": 17.2,
         "carbG": 0.1,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 1,
+        "calciumMg": 6
       }
     },
     {
@@ -1194,7 +1380,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.1,
         "fatG": 21.1,
         "carbG": 0.3,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 2.4,
+        "calciumMg": 6
       }
     },
     {
@@ -1212,7 +1401,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.4,
         "fatG": 19.2,
         "carbG": 0.2,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 1.7,
+        "calciumMg": 6
       },
       "note": "八訂に合いびき肉の収載が無いため、牛ひき肉と豚ひき肉を半々と仮定した加重平均"
     },
@@ -1231,7 +1423,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 18.5,
         "fatG": 14.6,
         "carbG": 0.2,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 4
       },
       "note": "こま切れは部位混合のため、かた(脂身つき)で代表"
     },
@@ -1249,7 +1444,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 14.4,
         "fatG": 35.4,
         "carbG": 0.1,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 3
       },
       "unitGrams": {
         "枚": 20
@@ -1269,7 +1467,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 19.3,
         "fatG": 19.2,
         "carbG": 0.2,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 4
       },
       "unitGrams": {
         "枚": 30
@@ -1290,7 +1491,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.1,
         "fatG": 19.8,
         "carbG": 0.3,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 2.1,
+        "calciumMg": 4
       },
       "note": "こま切れ・部位無指定の「牛薄切り肉」は部位混合のため、かた(脂身つき)で代表"
     },
@@ -1307,7 +1511,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12.8,
         "fatG": 39.4,
         "carbG": 0.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 1.4,
+        "calciumMg": 3
       }
     },
     {
@@ -1323,7 +1530,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 18.6,
         "fatG": 14.5,
         "carbG": 2,
-        "saltG": 2.3
+        "saltG": 2.3,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 4
       },
       "unitGrams": {
         "枚": 10
@@ -1341,7 +1551,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 15.4,
         "fatG": 19.4,
         "carbG": 3.2,
-        "saltG": 2.6
+        "saltG": 2.6,
+        "fiberG": 0,
+        "ironMg": 0.4,
+        "calciumMg": 4
       },
       "unitGrams": {
         "枚": 18
@@ -1361,7 +1574,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 11.5,
         "fatG": 30.6,
         "carbG": 3.3,
-        "saltG": 1.9
+        "saltG": 1.9,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 6
       },
       "unitGrams": {
         "本": 20
@@ -1385,7 +1601,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 22.3,
         "fatG": 4.1,
         "carbG": 0.1,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 14
       },
       "unitGrams": {
         "切れ": 80
@@ -1405,7 +1624,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 20.6,
         "fatG": 16.8,
         "carbG": 0.3,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 0,
+        "ironMg": 1.2,
+        "calciumMg": 6
       },
       "unitGrams": {
         "切れ": 80
@@ -1424,7 +1646,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.6,
         "fatG": 0.2,
         "carbG": 0.1,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 0,
+        "ironMg": 0.2,
+        "calciumMg": 32
       },
       "unitGrams": {
         "切れ": 80
@@ -1443,7 +1668,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 21.4,
         "fatG": 17.6,
         "carbG": 0.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 1.3,
+        "calciumMg": 5
       },
       "unitGrams": {
         "切れ": 80
@@ -1462,7 +1690,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 18.1,
         "fatG": 25.6,
         "carbG": 0.1,
-        "saltG": 0.4
+        "saltG": 0.4,
+        "fiberG": 0,
+        "ironMg": 1.4,
+        "calciumMg": 28
       },
       "unitGrams": {
         "尾": 100
@@ -1483,7 +1714,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 19.6,
         "fatG": 0.6,
         "carbG": 0.7,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 0,
+        "ironMg": 1.4,
+        "calciumMg": 68
       },
       "unitGrams": {
         "尾": 10
@@ -1502,7 +1736,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.9,
         "fatG": 0.8,
         "carbG": 0.1,
-        "saltG": 0.5
+        "saltG": 0.5,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 11
       },
       "unitGrams": {
         "杯": 210
@@ -1520,7 +1757,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.7,
         "fatG": 0.7,
         "carbG": 0.4,
-        "saltG": 2
+        "saltG": 2,
+        "fiberG": 0,
+        "ironMg": 2.2,
+        "calciumMg": 66
       },
       "note": "むき身(殻なし)のグラム数で計算すること"
     },
@@ -1537,7 +1777,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 16.9,
         "fatG": 0.3,
         "carbG": 3.5,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 0,
+        "ironMg": 0.2,
+        "calciumMg": 7
       },
       "unitGrams": {
         "個": 30
@@ -1557,7 +1800,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 20.9,
         "fatG": 10.7,
         "carbG": 0.2,
-        "saltG": 0.9
+        "saltG": 0.9,
+        "fiberG": 0,
+        "ironMg": 1.6,
+        "calciumMg": 260
       },
       "unitGrams": {
         "缶": 190
@@ -1576,7 +1822,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.7,
         "fatG": 21.7,
         "carbG": 0.1,
-        "saltG": 0.9
+        "saltG": 0.9,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 4
       },
       "unitGrams": {
         "缶": 70
@@ -1595,7 +1844,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 16,
         "fatG": 0.7,
         "carbG": 0.2,
-        "saltG": 0.5
+        "saltG": 0.5,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 5
       },
       "unitGrams": {
         "缶": 70
@@ -1614,7 +1866,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 24.5,
         "fatG": 2.1,
         "carbG": 0.1,
-        "saltG": 4.2
+        "saltG": 4.2,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 280
       },
       "unitGrams": {
         "大さじ": 5
@@ -1633,7 +1888,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 77.1,
         "fatG": 2.9,
         "carbG": 0.8,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 0,
+        "ironMg": 5.5,
+        "calciumMg": 28
       },
       "unitGrams": {
         "パック": 3,
@@ -1652,7 +1910,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12,
         "fatG": 0.9,
         "carbG": 9.7,
-        "saltG": 2.5
+        "saltG": 2.5,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 25
       },
       "unitGrams": {
         "本": 100
@@ -1670,7 +1931,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 13.2,
         "fatG": 0.4,
         "carbG": 13.3,
-        "saltG": 2.5
+        "saltG": 2.5,
+        "fiberG": 0,
+        "ironMg": 0.2,
+        "calciumMg": 48
       },
       "unitGrams": {
         "本": 30
@@ -1688,7 +1952,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 9.9,
         "fatG": 1,
         "carbG": 11.4,
-        "saltG": 1.5
+        "saltG": 1.5,
+        "fiberG": 0,
+        "ironMg": 0.5,
+        "calciumMg": 15
       },
       "unitGrams": {
         "枚": 100
@@ -1706,7 +1973,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 11.3,
         "fatG": 2.4,
         "carbG": 12.6,
-        "saltG": 2
+        "saltG": 2,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 20
       },
       "unitGrams": {
         "枚": 60
@@ -1725,7 +1995,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12.2,
         "fatG": 10.2,
         "carbG": 0.4,
-        "saltG": 0.4
+        "saltG": 0.4,
+        "fiberG": 0,
+        "ironMg": 1.5,
+        "calciumMg": 46
       },
       "unitGrams": {
         "個": 50
@@ -1743,7 +2016,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.3,
         "fatG": 3.8,
         "carbG": 4.8,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 110
       },
       "gramsPerMl": 1.03
     },
@@ -1759,7 +2035,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.9,
         "fatG": 43,
         "carbG": 6.5,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 49
       },
       "gramsPerMl": 1
     },
@@ -1776,7 +2055,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.6,
         "fatG": 3,
         "carbG": 4.9,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 120
       },
       "unitGrams": {
         "パック": 400
@@ -1797,7 +2079,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 22.7,
         "fatG": 26,
         "carbG": 1.3,
-        "saltG": 2.8
+        "saltG": 2.8,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 630
       },
       "unitGrams": {
         "枚": 18,
@@ -1816,7 +2101,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.6,
         "fatG": 81,
         "carbG": 0.2,
-        "saltG": 1.9
+        "saltG": 1.9,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 15
       },
       "unitGrams": {
         "大さじ": 12,
@@ -1837,7 +2125,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 7,
         "fatG": 4.9,
         "carbG": 1.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.1,
+        "ironMg": 1.5,
+        "calciumMg": 93
       },
       "unitGrams": {
         "丁": 350
@@ -1857,7 +2148,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.3,
         "fatG": 3.5,
         "carbG": 2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0.9,
+        "ironMg": 1.2,
+        "calciumMg": 75
       },
       "unitGrams": {
         "丁": 350
@@ -1876,7 +2170,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 23.4,
         "fatG": 34.4,
         "carbG": 0.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.3,
+        "ironMg": 3.2,
+        "calciumMg": 310
       },
       "unitGrams": {
         "枚": 20
@@ -1895,7 +2192,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.1,
         "fatG": 3.6,
         "carbG": 13.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 11.5,
+        "ironMg": 1.3,
+        "calciumMg": 81
       },
       "note": "B4卯の花で初登場(2026-07-10)。「おからパウダー(乾燥)」は別食品なので流用しない"
     },
@@ -1912,7 +2212,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 10.7,
         "fatG": 11.3,
         "carbG": 0.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0.8,
+        "ironMg": 2.6,
+        "calciumMg": 240
       },
       "unitGrams": {
         "枚": 150
@@ -1930,7 +2233,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 16.5,
         "fatG": 10,
         "carbG": 12.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 9.5,
+        "ironMg": 3.3,
+        "calciumMg": 90
       },
       "unitGrams": {
         "パック": 45,
@@ -1949,7 +2255,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0,
         "carbG": 2.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.2,
+        "ironMg": 0.4,
+        "calciumMg": 43
       },
       "unitGrams": {
         "枚": 250
@@ -1968,7 +2277,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.2,
         "fatG": 0,
         "carbG": 3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.9,
+        "ironMg": 0.5,
+        "calciumMg": 75
       },
       "unitGrams": {
         "袋": 200
@@ -1989,7 +2301,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.5,
         "fatG": 0.3,
         "carbG": 37.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.5,
+        "ironMg": 0.1,
+        "calciumMg": 3
       },
       "unitGrams": {
         "杯": 150,
@@ -2010,7 +2325,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.1,
         "fatG": 0.9,
         "carbG": 77.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0.5,
+        "ironMg": 0.8,
+        "calciumMg": 5
       },
       "unitGrams": {
         "合": 150
@@ -2029,7 +2347,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 8.9,
         "fatG": 4.1,
         "carbG": 46.4,
-        "saltG": 1.2
+        "saltG": 1.2,
+        "fiberG": 4.2,
+        "ironMg": 0.5,
+        "calciumMg": 22
       },
       "unitGrams": {
         "枚": 60,
@@ -2049,7 +2370,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 10.1,
         "fatG": 9,
         "carbG": 48.6,
-        "saltG": 1.2
+        "saltG": 1.2,
+        "fiberG": 2,
+        "ironMg": 0.7,
+        "calciumMg": 44
       },
       "unitGrams": {
         "個": 30
@@ -2068,7 +2392,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 8.3,
         "fatG": 1.5,
         "carbG": 75.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.5,
+        "ironMg": 0.5,
+        "calciumMg": 20
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2088,7 +2415,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 11.8,
         "fatG": 1.5,
         "carbG": 71.7,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.7,
+        "ironMg": 0.9,
+        "calciumMg": 17
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2108,7 +2438,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0.1,
         "carbG": 81.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 10
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2127,7 +2460,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 14.9,
         "fatG": 4.1,
         "carbG": 67.4,
-        "saltG": 1.4
+        "saltG": 1.4,
+        "fiberG": 6.5,
+        "ironMg": 1.1,
+        "calciumMg": 25
       },
       "unitGrams": {
         "大さじ": 3,
@@ -2147,7 +2483,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.6,
         "fatG": 0.4,
         "carbG": 21.6,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 1.3,
+        "ironMg": 0.2,
+        "calciumMg": 6
       },
       "unitGrams": {
         "玉": 200
@@ -2166,7 +2505,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.5,
         "fatG": 0.4,
         "carbG": 25.8,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0.9,
+        "ironMg": 0.2,
+        "calciumMg": 6
       },
       "unitGrams": {
         "束": 135
@@ -2186,7 +2528,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 8.6,
         "fatG": 1.2,
         "carbG": 55.7,
-        "saltG": 1
+        "saltG": 1,
+        "fiberG": 5.4,
+        "ironMg": 0.5,
+        "calciumMg": 21
       },
       "unitGrams": {
         "玉": 120
@@ -2206,7 +2551,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 4.9,
         "fatG": 1.7,
         "carbG": 35.6,
-        "saltG": 0.3
+        "saltG": 0.3,
+        "fiberG": 3.1,
+        "ironMg": 0.4,
+        "calciumMg": 10
       },
       "unitGrams": {
         "玉": 150
@@ -2227,7 +2575,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12.9,
         "fatG": 1.8,
         "carbG": 73.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 5.4,
+        "ironMg": 1.4,
+        "calciumMg": 18
       }
     },
     {
@@ -2242,7 +2593,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 9.3,
         "fatG": 1.4,
         "carbG": 57,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.2,
+        "ironMg": 0.8,
+        "calciumMg": 16
       },
       "unitGrams": {
         "枚": 6
@@ -2260,7 +2614,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 0.2,
         "carbG": 86.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.2,
+        "ironMg": 0.4,
+        "calciumMg": 41
       }
     },
     {
@@ -2275,7 +2632,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 13.7,
         "fatG": 5.7,
         "carbG": 69.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 9.4,
+        "ironMg": 3.9,
+        "calciumMg": 47
       },
       "unitGrams": {
         "大さじ": 6,
@@ -2295,7 +2655,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 17.9,
         "fatG": 4,
         "carbG": 42.1,
-        "saltG": 23.5
+        "saltG": 23.5,
+        "fiberG": 39.2,
+        "ironMg": 6.5,
+        "calciumMg": 870
       },
       "unitGrams": {
         "大さじ": 3,
@@ -2315,7 +2678,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 29.4,
         "fatG": 5.2,
         "carbG": 41,
-        "saltG": 8.1
+        "saltG": 8.1,
+        "fiberG": 35.2,
+        "ironMg": 77,
+        "calciumMg": 750
       },
       "unitGrams": {
         "大さじ": 2,
@@ -2336,7 +2702,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 41.4,
         "fatG": 3.7,
         "carbG": 44.3,
-        "saltG": 1.3
+        "saltG": 1.3,
+        "fiberG": 36,
+        "ironMg": 11,
+        "calciumMg": 280
       },
       "unitGrams": {
         "枚": 3
@@ -2355,7 +2724,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.8,
         "fatG": 1.3,
         "carbG": 64.3,
-        "saltG": 6.6
+        "saltG": 6.6,
+        "fiberG": 32.1,
+        "ironMg": 3.2,
+        "calciumMg": 780
       },
       "unitGrams": {
         "枚": 10
@@ -2374,7 +2746,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 9.2,
         "fatG": 3.2,
         "carbG": 58.4,
-        "saltG": 4.7
+        "saltG": 4.7,
+        "fiberG": 51.8,
+        "ironMg": 6.2,
+        "calciumMg": 1000
       },
       "unitGrams": {
         "大さじ": 3
@@ -2393,7 +2768,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 7.7,
         "fatG": 0,
         "carbG": 7.9,
-        "saltG": 14.5
+        "saltG": 14.5,
+        "fiberG": 0,
+        "ironMg": 1.7,
+        "calciumMg": 29
       },
       "gramsPerMl": 1.2
     },
@@ -2410,7 +2788,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.7,
         "fatG": 0,
         "carbG": 5.8,
-        "saltG": 16
+        "saltG": 16,
+        "fiberG": 0,
+        "ironMg": 1.1,
+        "calciumMg": 24
       },
       "gramsPerMl": 1.2
     },
@@ -2428,7 +2809,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12.5,
         "fatG": 6,
         "carbG": 21.9,
-        "saltG": 12.4
+        "saltG": 12.4,
+        "fiberG": 4.9,
+        "ironMg": 4,
+        "calciumMg": 100
       },
       "unitGrams": {
         "大さじ": 18,
@@ -2449,7 +2833,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 9.7,
         "fatG": 3,
         "carbG": 37.9,
-        "saltG": 6.1
+        "saltG": 6.1,
+        "fiberG": 5.6,
+        "ironMg": 3.4,
+        "calciumMg": 80
       },
       "unitGrams": {
         "大さじ": 18,
@@ -2468,7 +2855,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 13.1,
         "fatG": 5.5,
         "carbG": 21.1,
-        "saltG": 13
+        "saltG": 13,
+        "fiberG": 4.1,
+        "ironMg": 4.3,
+        "calciumMg": 130
       },
       "unitGrams": {
         "大さじ": 18,
@@ -2488,7 +2878,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 0,
         "carbG": 99.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 1
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2510,7 +2903,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 0,
         "carbG": 0,
-        "saltG": 99.5
+        "saltG": 99.5,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 22
       },
       "unitGrams": {
         "大さじ": 18,
@@ -2532,7 +2928,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.4,
         "fatG": 0,
         "carbG": 4.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 3
       },
       "gramsPerMl": 1
     },
@@ -2549,7 +2948,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.3,
         "fatG": 0,
         "carbG": 43.2,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 2
       },
       "gramsPerMl": 1.2
     },
@@ -2565,7 +2967,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0,
         "carbG": 55.7,
-        "saltG": 0.2
+        "saltG": 0.2,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 0
       },
       "gramsPerMl": 1.2
     },
@@ -2582,7 +2987,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0,
         "carbG": 2.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 2
       },
       "gramsPerMl": 1
     },
@@ -2598,7 +3006,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.2,
         "fatG": 0,
         "carbG": 7.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 2
       },
       "gramsPerMl": 1
     },
@@ -2619,7 +3030,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 100,
         "carbG": 0,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 0
       },
       "gramsPerMl": 0.8,
       "note": "大さじ1=12gの慣用値に合わせて0.8g/ml。「揚げ油」も同じ植物油で代表(2026-07-13追加。実際の吸油量は少ないが、量が「適量」表記のため計算には現状反映されない＝名寄せの網羅目的)"
@@ -2636,7 +3050,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 100,
         "carbG": 0,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 1
       },
       "gramsPerMl": 0.8
     },
@@ -2653,7 +3070,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 100,
         "carbG": 0,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 0
       },
       "gramsPerMl": 0.8
     },
@@ -2670,7 +3090,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.6,
         "fatG": 0.2,
         "carbG": 27.6,
-        "saltG": 3.1
+        "saltG": 3.1,
+        "fiberG": 1.7,
+        "ironMg": 0.5,
+        "calciumMg": 16
       },
       "unitGrams": {
         "大さじ": 15,
@@ -2689,7 +3112,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.4,
         "fatG": 76,
         "carbG": 3.6,
-        "saltG": 1.9
+        "saltG": 1.9,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 8
       },
       "unitGrams": {
         "大さじ": 12,
@@ -2708,7 +3134,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1,
         "fatG": 0.1,
         "carbG": 27.1,
-        "saltG": 8.5
+        "saltG": 8.5,
+        "fiberG": 0.5,
+        "ironMg": 1.6,
+        "calciumMg": 59
       },
       "gramsPerMl": 1.2
     },
@@ -2727,7 +3156,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.8,
         "fatG": 0.1,
         "carbG": 30.9,
-        "saltG": 5.8
+        "saltG": 5.8,
+        "fiberG": 1,
+        "ironMg": 1.7,
+        "calciumMg": 61
       },
       "gramsPerMl": 1.2,
       "note": "「ソース」とだけ書かれた場合は中濃ソースで代表"
@@ -2744,7 +3176,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 7.7,
         "fatG": 0.3,
         "carbG": 18.3,
-        "saltG": 11.4
+        "saltG": 11.4,
+        "fiberG": 0.2,
+        "ironMg": 1.2,
+        "calciumMg": 25
       },
       "unitGrams": {
         "大さじ": 18,
@@ -2764,7 +3199,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.7,
         "fatG": 0,
         "carbG": 10.8,
-        "saltG": 7.8
+        "saltG": 7.8,
+        "fiberG": 0.3,
+        "ironMg": 0.7,
+        "calciumMg": 16
       },
       "gramsPerMl": 1.1
     },
@@ -2781,7 +3219,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2.2,
         "fatG": 0,
         "carbG": 8.7,
-        "saltG": 3.3
+        "saltG": 3.3,
+        "fiberG": 0,
+        "ironMg": 0.4,
+        "calciumMg": 8
       },
       "gramsPerMl": 1.1
     },
@@ -2800,7 +3241,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 3.4,
         "fatG": 0,
         "carbG": 14.4,
-        "saltG": 6.6
+        "saltG": 6.6,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 12
       },
       "gramsPerMl": 1.1,
       "note": "濃縮倍率の記載が無い「めんつゆ」は2倍濃縮で代表"
@@ -2819,7 +3263,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 4.5,
         "fatG": 0,
         "carbG": 20,
-        "saltG": 9.9
+        "saltG": 9.9,
+        "fiberG": 0,
+        "ironMg": 0.8,
+        "calciumMg": 16
       },
       "gramsPerMl": 1.1
     },
@@ -2838,7 +3285,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 24.2,
         "fatG": 0.3,
         "carbG": 31.1,
-        "saltG": 40.6
+        "saltG": 40.6,
+        "fiberG": 0,
+        "ironMg": 1,
+        "calciumMg": 42
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2860,7 +3310,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 12.6,
         "fatG": 1.6,
         "carbG": 36.6,
-        "saltG": 47.5
+        "saltG": 47.5,
+        "fiberG": 0,
+        "ironMg": 0.6,
+        "calciumMg": 84
       },
       "unitGrams": {
         "大さじ": 9,
@@ -2881,7 +3334,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 7,
         "fatG": 4.3,
         "carbG": 42.1,
-        "saltG": 43.2
+        "saltG": 43.2,
+        "fiberG": 0.3,
+        "ironMg": 0.4,
+        "calciumMg": 26
       },
       "unitGrams": {
         "個": 5,
@@ -2904,7 +3360,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.3,
         "fatG": 0,
         "carbG": 0.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 3
       },
       "gramsPerMl": 1
     },
@@ -2921,7 +3380,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.5,
         "fatG": 34.1,
         "carbG": 44.7,
-        "saltG": 10.6
+        "saltG": 10.6,
+        "fiberG": 6.4,
+        "ironMg": 3.5,
+        "calciumMg": 90
       },
       "unitGrams": {
         "箱": 200,
@@ -2942,7 +3404,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.8,
         "fatG": 33.2,
         "carbG": 47.5,
-        "saltG": 10.7
+        "saltG": 10.7,
+        "fiberG": 2.5,
+        "ironMg": 1,
+        "calciumMg": 30
       },
       "unitGrams": {
         "箱": 200,
@@ -2961,7 +3426,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 13,
         "fatG": 12.2,
         "carbG": 63.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 36.9,
+        "ironMg": 29,
+        "calciumMg": 540
       },
       "unitGrams": {
         "大さじ": 6,
@@ -2982,7 +3450,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 10.6,
         "fatG": 6.2,
         "carbG": 68.3,
-        "saltG": 0.1
+        "saltG": 0.1,
+        "fiberG": 0,
+        "ironMg": 14,
+        "calciumMg": 330
       },
       "unitGrams": {
         "小さじ": 2
@@ -3002,7 +3473,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.7,
         "fatG": 0.6,
         "carbG": 8.6,
-        "saltG": 1.5
+        "saltG": 1.5,
+        "fiberG": 0,
+        "ironMg": 0.3,
+        "calciumMg": 16
       },
       "unitGrams": {
         "大さじ": 15,
@@ -3023,7 +3497,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 4.7,
         "fatG": 0.5,
         "carbG": 37,
-        "saltG": 4.6
+        "saltG": 4.6,
+        "fiberG": 0,
+        "ironMg": 0.7,
+        "calciumMg": 22
       },
       "unitGrams": {
         "大さじ": 15,
@@ -3042,7 +3519,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.3,
         "fatG": 0,
         "carbG": 81.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.2,
+        "calciumMg": 4
       },
       "unitGrams": {
         "大さじ": 21,
@@ -3063,7 +3543,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 5.6,
         "fatG": 0.3,
         "carbG": 58.8,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.9,
+        "ironMg": 1.6,
+        "calciumMg": 42
       },
       "note": "市販の加糖こしあん想定(水ようかん・2026-07-11追加)"
     },
@@ -3080,7 +3563,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.2,
         "fatG": 0.3,
         "carbG": 81.7,
-        "saltG": 0.4
+        "saltG": 0.4,
+        "fiberG": 79,
+        "ironMg": 7.3,
+        "calciumMg": 120
       },
       "note": "水ようかん・2026-07-11追加"
     },
@@ -3100,7 +3586,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 20.3,
         "fatG": 54.2,
         "carbG": 18.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 12.6,
+        "ironMg": 9.9,
+        "calciumMg": 1200
       },
       "unitGrams": {
         "大さじ": 9,
@@ -3119,7 +3608,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 19,
         "fatG": 61,
         "carbG": 15.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 11.2,
+        "ironMg": 5.8,
+        "calciumMg": 590
       },
       "unitGrams": {
         "大さじ": 18,
@@ -3139,7 +3631,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.7,
         "carbG": 8.6,
-        "saltG": 18.2
+        "saltG": 18.2,
+        "fiberG": 3.3,
+        "ironMg": 1.1,
+        "calciumMg": 33
       },
       "unitGrams": {
         "個": 10
@@ -3158,7 +3653,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.4,
         "fatG": 0.2,
         "carbG": 8.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 7
       },
       "gramsPerMl": 1
     },
@@ -3174,7 +3672,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.1,
         "fatG": 0.2,
         "carbG": 22.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.1,
+        "ironMg": 0.3,
+        "calciumMg": 6
       },
       "unitGrams": {
         "本": 90
@@ -3192,7 +3693,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0.2,
         "carbG": 15.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.4,
+        "ironMg": 0.1,
+        "calciumMg": 3
       },
       "unitGrams": {
         "個": 220
@@ -3213,7 +3717,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.2,
         "carbG": 4.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 1.3,
+        "ironMg": 0.4,
+        "calciumMg": 9
       },
       "unitGrams": {
         "缶": 400
@@ -3231,7 +3738,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 36.7,
         "fatG": 25.7,
         "carbG": 28.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 18.1,
+        "ironMg": 8,
+        "calciumMg": 190
       }
     },
     {
@@ -3246,7 +3756,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.5,
         "fatG": 0.1,
         "carbG": 6.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0.1,
+        "ironMg": 0.2,
+        "calciumMg": 16
       },
       "note": "「すだち(またはレモン)」の主表記側。果汁(生)の値"
     },
@@ -3262,7 +3775,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1.8,
         "fatG": 0.2,
         "carbG": 5.4,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 3.4,
+        "ironMg": 0.7,
+        "calciumMg": 4
       }
     },
     {
@@ -3277,7 +3793,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.5,
         "fatG": 0.1,
         "carbG": 15.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0.5,
+        "ironMg": 0.4,
+        "calciumMg": 8
       }
     },
     {
@@ -3292,7 +3811,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 0,
         "carbG": 66.3,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.4,
+        "calciumMg": 75
       }
     },
     {
@@ -3307,7 +3829,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.1,
         "fatG": 99.8,
         "carbG": 0,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0.1,
+        "calciumMg": 0
       }
     },
     {
@@ -3323,7 +3848,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0.9,
         "fatG": 0.1,
         "carbG": 2.9,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 2.3,
+        "ironMg": 0.9,
+        "calciumMg": 47
       },
       "note": "「三つ葉(または刻みのり)」の主表記側。糸みつば(スーパーでの一般的な流通形態)の値"
     },
@@ -3340,7 +3868,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 8.5,
         "fatG": 7.7,
         "carbG": 38.1,
-        "saltG": 7.3
+        "saltG": 7.3,
+        "fiberG": 3.1,
+        "ironMg": 1.6,
+        "calciumMg": 45
       }
     },
     {
@@ -3357,7 +3888,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 10.3,
         "fatG": 6.2,
         "carbG": 69.6,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 10,
+        "calciumMg": 750
       }
     },
     {
@@ -3372,7 +3906,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 16.6,
         "fatG": 9.8,
         "carbG": 13.8,
-        "saltG": 0.6
+        "saltG": 0.6,
+        "fiberG": 10.6,
+        "ironMg": 2.8,
+        "calciumMg": 75
       }
     },
     {
@@ -3388,7 +3925,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 2,
         "fatG": 2.3,
         "carbG": 7.9,
-        "saltG": 17.8
+        "saltG": 17.8,
+        "fiberG": 4.3,
+        "ironMg": 2.3,
+        "calciumMg": 32
       }
     },
     {
@@ -3404,7 +3944,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 1,
         "fatG": 0,
         "carbG": 50.5,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 2.6,
+        "calciumMg": 140
       }
     },
     {
@@ -3420,7 +3963,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 50.5,
         "fatG": 34.1,
         "carbG": 4.2,
-        "saltG": 1.1
+        "saltG": 1.1,
+        "fiberG": 2.5,
+        "ironMg": 7.5,
+        "calciumMg": 630
       },
       "unitGrams": {
         "枚": 17
@@ -3440,7 +3986,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 9.7,
         "fatG": 0.8,
         "carbG": 69.7,
-        "saltG": 0.5
+        "saltG": 0.5,
+        "fiberG": 21.3,
+        "ironMg": 3.1,
+        "calciumMg": 500
       },
       "note": "bento(パック7)「切り干し大根のハリハリ漬け」で使用。乾燥状態の値(レシピの分量30gは乾燥時の重量)。専用食品を追加する前は「大根」への部分一致で誤って生大根の値(15kcal/100g)が使われていた(切り干し大根は乾燥280kcal/100gで大幅に違う)。2026-07-13データ監査で発見・修正"
     },
@@ -3457,7 +4006,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 6.2,
         "fatG": 33.7,
         "carbG": 46.1,
-        "saltG": 10.6
+        "saltG": 10.6,
+        "fiberG": 4.5,
+        "ironMg": 2.3,
+        "calciumMg": 60
       },
       "unitGrams": {
         "箱": 200,
@@ -3478,7 +4030,10 @@ export const NUTRITION_DATA: NutritionData = {
         "proteinG": 0,
         "fatG": 0,
         "carbG": 0.1,
-        "saltG": 0
+        "saltG": 0,
+        "fiberG": 0,
+        "ironMg": 0,
+        "calciumMg": 0
       },
       "note": "八訂に香料/エッセンス類の収載が無いための例外(custom)。一般的な洋菓子用エッセンス(アルコールベースの香料。中身の大半は水・アルコールで、風味成分はごく微量)の一般的な栄養表示を参考にした保守的な概算値であり、MEXT成分表に基づく値ではない。レシピ側の分量は常に「少々(お好みで)」表記のため、実際の計算では対象外(reason:amount)になり、この値が計算に使われることはない(名寄せの網羅目的で追加)"
     }
