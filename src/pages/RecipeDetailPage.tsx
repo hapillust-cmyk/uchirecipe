@@ -531,21 +531,25 @@ export default function RecipeDetailPage() {
         <section className="mt-[var(--space-lg)]">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-xl font-bold">{ja.detail.steps}</h2>
-            <div className="shrink-0 text-right">
-              <button
-                type="button"
-                onClick={() => {
-                  setFocusStep(0)
-                  setFocusOpen(true)
-                }}
-                className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-edge px-3 py-2 text-sm font-bold text-accent"
-              >
-                <Maximize2 size={16} aria-hidden />
-                {ja.focus.open}
-              </button>
-              {/* 初見でも何が起きるボタンか分かるように一言添える(名称自体は変えない) */}
-              <p className="mt-0.5 text-xs text-ink-muted">{ja.focus.openHint}</p>
-            </div>
+            {/* 手順が1つも無いレシピでは調理中モードを開くと表示する手順が無くクラッシュするため、
+                そもそもボタンを出さない(2026-07バグ修正) */}
+            {recipe.steps.length > 0 && (
+              <div className="shrink-0 text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFocusStep(0)
+                    setFocusOpen(true)
+                  }}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-edge px-3 py-2 text-sm font-bold text-accent"
+                >
+                  <Maximize2 size={16} aria-hidden />
+                  {ja.focus.open}
+                </button>
+                {/* 初見でも何が起きるボタンか分かるように一言添える(名称自体は変えない) */}
+                <p className="mt-0.5 text-xs text-ink-muted">{ja.focus.openHint}</p>
+              </div>
+            )}
           </div>
           {hasQuickVariant && (
             <div className="mt-[var(--space-sm)] inline-flex rounded-sm border border-edge p-0.5">

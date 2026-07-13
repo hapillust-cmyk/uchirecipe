@@ -392,8 +392,10 @@ export function resolveDuplicateTitleAction(
 /** importRecipeSetの更新（再取込）で書き換える「セットの中身」フィールド */
 type RecipeSetContent = Pick<
   Recipe,
+  | 'intro'
   | 'servings'
   | 'cookMinutes'
+  | 'quickCookMinutes'
   | 'effortLevel'
   | 'tags'
   | 'dishType'
@@ -410,8 +412,10 @@ type RecipeSetContent = Pick<
 /**
  * 同一セット由来の再取込（resolveDuplicateTitleActionが'updateName'を返すケース）で、
  * 既存レシピの内容を更新した結果を返す（純ロジック・DB非依存）。
- * 更新: servings/cookMinutes/effortLevel/tags/dishType/season/suitableFor/ingredients/steps/
- *       quickSteps/memo/sourceUrl/keywords/sourceSetName + searchWords・updatedAt
+ * 更新: intro/servings/cookMinutes/quickCookMinutes/effortLevel/tags/dishType/season/
+ *       suitableFor/ingredients/steps/quickSteps/memo/sourceUrl/keywords/sourceSetName +
+ *       searchWords・updatedAt（2026-07バグ修正: intro/quickCookMinutesが更新対象に
+ *       漏れていたため、配布側の修正がこれらのフィールドだけの場合は再取込しても届かなかった）
  * 保持: 上記以外すべて（id・createdAt・isFavorite・cookedLogs・photo・isStarter・iconKey等の
  *       ユーザーデータ・表示設定。existingをベースに更新フィールドだけ上書きするため自動的に保持される）
  * 内容が完全に同一（sourceSetName込み）なら null を返す（呼び出し側はスキップ扱いにする。
@@ -425,8 +429,10 @@ export function buildUpdatedSetRecipe(
 ): Recipe | null {
   const content = (source: RecipeSetContent, sourceSetName: string | undefined) =>
     JSON.stringify({
+      intro: source.intro,
       servings: source.servings,
       cookMinutes: source.cookMinutes,
+      quickCookMinutes: source.quickCookMinutes,
       effortLevel: source.effortLevel,
       tags: source.tags,
       dishType: source.dishType,
@@ -444,8 +450,10 @@ export function buildUpdatedSetRecipe(
 
   return {
     ...existing,
+    intro: incoming.intro,
     servings: incoming.servings,
     cookMinutes: incoming.cookMinutes,
+    quickCookMinutes: incoming.quickCookMinutes,
     effortLevel: incoming.effortLevel,
     tags: incoming.tags,
     dishType: incoming.dishType,

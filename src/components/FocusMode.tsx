@@ -63,14 +63,22 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
   const [customSeconds, setCustomSeconds] = useState(DEFAULT_CUSTOM_TIMER_SECONDS)
 
   const total = recipe.steps.length
+  const hasSteps = total > 0
+  // 手順0件のレシピでこのモードが開かれた場合の防御(2026-07バグ修正)。
+  // 呼び出し元(詳細画面)はボタン自体を隠すが、それ以外の経路から開かれても
+  // recipe.steps[index]がundefinedになりstep.textでクラッシュしないよう安全側に倒す。
+  // フックは常に同じ順で呼ぶ必要があるため、ここでは早期returnせず末尾でreturn nullする
+  useEffect(() => {
+    if (!hasSteps) onClose()
+  }, [hasSteps, onClose])
   const step = recipe.steps[index]
   const stepNumber = index + 1
   // 手順本文中の材料名に控えめな下線を付けるための名前一覧(正規化・長さ降順。docs/20 §7)
   const ingredientNames = useMemo(() => buildIngredientNames(recipe.ingredients), [recipe.ingredients])
   // 用語タップ辞書(2026-07-11): この手順(本文+memo)内で同じ語は最初の1回だけタップ可能にする
-  // memo側の既出用語=手順本文の語(純粋導出・StrictMode対策)
-  const stepTermSeen = new Set(collectUniqueTerms(step.text).map((c) => c.term))
-  const stepTerms = collectUniqueTerms(step.text, step.memo)
+  // memo側の既出用語=手順本文の語(純粋導出・StrictMode対策)。stepが無い(手順0件)場合は空扱い
+  const stepTermSeen = step ? new Set(collectUniqueTerms(step.text).map((c) => c.term)) : new Set<string>()
+  const stepTerms = step ? collectUniqueTerms(step.text, step.memo) : []
   const { state: termPopoverState, open: openTerm, close: closeTermPopover } = useTermPopover()
   // 調理中モードは全画面表示で常駐タイマー(TimerBar)を覆い隠してしまうため、
   // 動作中のタイマーをここにも表示する(押しても反応が無いように見える不具合の対策)
@@ -259,6 +267,12 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening, recipe, recipeId, total, speak])
+
+  // 手順0件の防御: ここまでで全フックを呼び終えているので、以降は何も描画しない
+  // (上のuseEffectがonCloseを呼ぶので、呼び出し元は自然に閉じる)
+  if (!step) {
+    return null
+  }
 
   const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX

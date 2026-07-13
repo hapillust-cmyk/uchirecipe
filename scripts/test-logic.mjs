@@ -730,6 +730,57 @@ eq(
   eq('更新後のsourceSetNameが新名称になる', renamed?.sourceSetName, '新テーマ名')
 }
 
+// ---------- buildUpdatedSetRecipe: intro・quickCookMinutesも更新対象フィールドに含まれる
+// (2026-07バグ修正: 前回dishTypeを追加したのと同型。これが無いと配布側でintro/
+// quickCookMinutesだけを直しても再取込で既存ユーザーへ届かなかった) ----------
+{
+  const base = {
+    id: 101,
+    title: 'よだれ鶏',
+    photo: undefined,
+    intro: '旧イントロ',
+    servings: 2,
+    cookMinutes: 20,
+    quickCookMinutes: 10,
+    effortLevel: 'normal',
+    tags: ['中華'],
+    season: 'all',
+    suitableFor: undefined,
+    ingredients: [{ name: '鶏むね肉', amount: '300', unit: 'g' }],
+    steps: [{ text: '鶏むね肉を茹でる' }],
+    quickSteps: [{ text: 'レンジで加熱する' }],
+    memo: '',
+    sourceUrl: undefined,
+    isFavorite: true,
+    cookedLogs: [{ date: '2026-07-01' }],
+    searchWords: [],
+    isStarter: true,
+    sourceSetId: 'chuka',
+    sourceSetName: '中華セット',
+    keywords: undefined,
+    createdAt: 1000,
+    updatedAt: 1000,
+  }
+
+  // introだけが違う場合も「内容の更新」として扱われる(dishType導入時と同じ確認パターン)
+  const introOnly = { ...base, intro: '新イントロ' }
+  const updatedIntro = buildUpdatedSetRecipe(base, introOnly, base.sourceSetName, 6000)
+  eq('introだけの差分でも更新される(nullでない)', updatedIntro !== null, true)
+  eq('更新結果にintroが反映される', updatedIntro?.intro, '新イントロ')
+  eq('intro更新でもお気に入りは保持される', updatedIntro?.isFavorite, true)
+
+  // quickCookMinutesだけが違う場合も「内容の更新」として扱われる
+  const quickCookOnly = { ...base, quickCookMinutes: 8 }
+  const updatedQuickCook = buildUpdatedSetRecipe(base, quickCookOnly, base.sourceSetName, 6000)
+  eq('quickCookMinutesだけの差分でも更新される(nullでない)', updatedQuickCook !== null, true)
+  eq('更新結果にquickCookMinutesが反映される', updatedQuickCook?.quickCookMinutes, 8)
+  eq(
+    'quickCookMinutes更新でもユーザーデータ(作った記録)は保持される',
+    updatedQuickCook?.cookedLogs,
+    base.cookedLogs,
+  )
+}
+
 // ---------- buildUpdatedSetRecipe: keywordsも更新対象フィールドに含まれる(検索キーワード欄
 // 2026-07-12バッチ。公式レシピへの語彙付与ルールをセット再配信で反映できるようにする) ----------
 {
@@ -854,6 +905,27 @@ eq(
     eq('dishTypeだけの差分でも更新される(nullでない)', updatedByDishType !== null, true)
     eq('更新結果にdishTypeが入る', updatedByDishType?.dishType, 'side')
     eq('dishType更新でもお気に入りは保持される', updatedByDishType?.isFavorite, true)
+  }
+
+  // (3c) intro・quickCookMinutesだけが違う場合も「内容の更新」として扱う(2026-07バグ修正:
+  // 前回dishTypeを足したのと同型。これが無いと「基本レシピを入れ直す」でintro/
+  // quickCookMinutesだけの配布側修正が既存ユーザーへ届かなかった)
+  {
+    const withIntro = { ...sameDef, intro: '新イントロ' }
+    const updatedByIntro = buildUpdatedStarterRecipe(existingStarter, withIntro, 6000)
+    eq('introだけの差分でも更新される(nullでない)', updatedByIntro !== null, true)
+    eq('更新結果にintroが入る', updatedByIntro?.intro, '新イントロ')
+    eq('intro更新でもお気に入りは保持される', updatedByIntro?.isFavorite, true)
+
+    const withQuickCook = { ...sameDef, quickCookMinutes: 15 }
+    const updatedByQuickCook = buildUpdatedStarterRecipe(existingStarter, withQuickCook, 6000)
+    eq('quickCookMinutesだけの差分でも更新される(nullでない)', updatedByQuickCook !== null, true)
+    eq('更新結果にquickCookMinutesが入る', updatedByQuickCook?.quickCookMinutes, 15)
+    eq(
+      'quickCookMinutes更新でも作った記録は保持される',
+      updatedByQuickCook?.cookedLogs,
+      existingStarter.cookedLogs,
+    )
   }
 
   // (4) planStarterReload: 新規追加・更新・削除の仕分け。旧title品(starterDefsに無いtitle。
