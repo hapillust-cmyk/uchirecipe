@@ -191,7 +191,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: '野菜炒め',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
-    tags: [],
+    tags: ['定番'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -273,7 +273,7 @@ export const starterDefs: StarterDef[] = [
   {
     title: '鶏の唐揚げ',
     servings: 2, cookMinutes: 30, effortLevel: 'normal',
-    tags: ['定番', 'お弁当'],
+    tags: ['和食', '定番', 'お弁当'],
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
