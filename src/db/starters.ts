@@ -30,6 +30,7 @@ export const starterDefs: StarterDef[] = [
     title: '肉じゃが',
     servings: 2, cookMinutes: 35, effortLevel: 'normal',
     tags: ['和食', '定番', '煮物'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -73,6 +74,7 @@ export const starterDefs: StarterDef[] = [
     title: 'カレーライス',
     servings: 4, cookMinutes: 40, effortLevel: 'easy',
     tags: ['洋食', '定番', 'ご飯もの'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -117,6 +119,7 @@ export const starterDefs: StarterDef[] = [
     title: '豆腐とわかめの味噌汁',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', '汁物', '定番'],
+    dishType: 'soup',
     season: 'all',
     ingredients: [
       i('豆腐', '1/2', '丁', '絹・木綿どちらでも可'), i('乾燥わかめ', '2', 'g', '2gはふたつまみが目安'), i('だしの素', '1', '小さじ'),
@@ -133,6 +136,7 @@ export const starterDefs: StarterDef[] = [
     title: '豚の生姜焼き',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -171,6 +175,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ツナキャベツ丼',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', 'ご飯もの'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -192,6 +197,7 @@ export const starterDefs: StarterDef[] = [
     title: '野菜炒め',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -219,6 +225,7 @@ export const starterDefs: StarterDef[] = [
     title: '親子丼',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', 'ご飯もの', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -242,6 +249,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ハンバーグ',
     servings: 2, cookMinutes: 30, effortLevel: 'normal',
     tags: ['洋食', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -274,6 +282,7 @@ export const starterDefs: StarterDef[] = [
     title: '鶏の唐揚げ',
     servings: 2, cookMinutes: 30, effortLevel: 'normal',
     tags: ['和食', '定番', 'お弁当'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -304,6 +313,7 @@ export const starterDefs: StarterDef[] = [
     title: '五目炊き込みご飯',
     servings: 4, cookMinutes: 60, effortLevel: 'normal',
     tags: ['和食', 'ご飯もの'],
+    dishType: 'main',
     season: 'autumn',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -323,6 +333,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ナポリタン',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['洋食', '麺'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -346,6 +357,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ペペロンチーノ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['洋食', '麺'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -372,6 +384,7 @@ export const starterDefs: StarterDef[] = [
     title: 'だし巻き卵',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', 'お弁当', '定番'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch'],
     ingredients: [
@@ -394,6 +407,7 @@ export const starterDefs: StarterDef[] = [
     title: '豚汁',
     servings: 4, cookMinutes: 30, effortLevel: 'normal',
     tags: ['和食', '汁物'],
+    dishType: 'soup',
     season: 'winter',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -417,6 +431,7 @@ export const starterDefs: StarterDef[] = [
     title: '寄せ鍋',
     servings: 4, cookMinutes: 30, effortLevel: 'easy',
     tags: ['和食', '鍋'],
+    dishType: 'main',
     season: 'winter',
     suitableFor: ['dinner'],
     ingredients: [
@@ -440,6 +455,7 @@ export const starterDefs: StarterDef[] = [
     title: 'チャーハン',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['中華', 'ご飯もの'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -463,6 +479,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ポテトサラダ',
     servings: 4, cookMinutes: 25, effortLevel: 'normal',
     tags: ['洋食', '作り置き', 'サラダ'],
+    dishType: 'side',
     season: 'all',
     ingredients: [
       i('じゃがいも', '4', '個'), i('きゅうり', '1', '本'), i('にんじん', '1/3', '本'),
@@ -510,6 +527,7 @@ export const starterDefs: StarterDef[] = [
     title: 'きんぴらごぼう',
     servings: 4, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     ingredients: [
       i('ごぼう', '1', '本'), i('にんじん', '1/2', '本'),
@@ -532,6 +550,7 @@ export const starterDefs: StarterDef[] = [
     title: 'さばの味噌煮',
     servings: 2, cookMinutes: 25, effortLevel: 'normal',
     tags: ['和食', '魚'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -566,6 +585,7 @@ export const starterDefs: StarterDef[] = [
     title: 'クリームシチュー',
     servings: 4, cookMinutes: 40, effortLevel: 'normal',
     tags: ['洋食'],
+    dishType: 'main',
     season: 'winter',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -597,6 +617,7 @@ export const starterDefs: StarterDef[] = [
     title: '牛丼',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '定番', 'ご飯もの'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -632,6 +653,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ほうれん草のおひたし',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -657,6 +679,7 @@ export const starterDefs: StarterDef[] = [
     title: '麻婆豆腐',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['中華', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -700,6 +723,7 @@ export const starterDefs: StarterDef[] = [
     title: '鮭の塩焼き',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '魚', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['breakfast', 'dinner'],
     ingredients: [
@@ -730,6 +754,7 @@ export const starterDefs: StarterDef[] = [
     title: '肉うどん',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '麺', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -773,6 +798,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ひじきの煮物',
     servings: 2, cookMinutes: 35, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -812,6 +838,7 @@ export const starterDefs: StarterDef[] = [
     title: 'もやしのナムル',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -841,6 +868,7 @@ export const starterDefs: StarterDef[] = [
     title: '白和え',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -876,6 +904,7 @@ export const starterDefs: StarterDef[] = [
     title: 'コールスロー',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['洋食', 'サラダ', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -902,6 +931,7 @@ export const starterDefs: StarterDef[] = [
     title: 'ニラ玉',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['中華', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -936,6 +966,7 @@ export const starterDefs: StarterDef[] = [
     title: '中華風卵スープ',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['中華', '汁物'],
+    dishType: 'soup',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -969,6 +1000,7 @@ export const starterDefs: StarterDef[] = [
     title: '大学芋',
     servings: 2, cookMinutes: 30, effortLevel: 'normal',
     tags: ['和食', 'おやつ', '定番'],
+    dishType: 'dessert',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1002,6 +1034,7 @@ export const starterDefs: StarterDef[] = [
     title: 'さんまの塩焼き',
     servings: 2, cookMinutes: 30, effortLevel: 'easy',
     tags: ['和食', '魚', '定番'],
+    dishType: 'main',
     season: 'autumn',
     suitableFor: ['breakfast', 'dinner'],
     ingredients: [
@@ -1040,6 +1073,7 @@ export const starterDefs: StarterDef[] = [
     title: '肉豆腐',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -1079,6 +1113,7 @@ export const starterDefs: StarterDef[] = [
     title: '鶏そぼろ丼',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', 'ご飯もの', '定番', '作り置き'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1116,6 +1151,7 @@ export const starterDefs: StarterDef[] = [
     title: '鮭のホイル焼き',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '魚', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['dinner'],
     ingredients: [
@@ -1152,6 +1188,7 @@ export const starterDefs: StarterDef[] = [
     title: 'なめこと豆腐の味噌汁',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', '汁物', '定番'],
+    dishType: 'soup',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -1184,6 +1221,7 @@ export const starterDefs: StarterDef[] = [
     title: 'さつまいもの甘辛煮',
     servings: 2, cookMinutes: 25, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -1212,6 +1250,7 @@ export const starterDefs: StarterDef[] = [
     title: 'きゅうりとわかめの酢の物',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1242,6 +1281,7 @@ export const starterDefs: StarterDef[] = [
     title: 'オムライス',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['洋食', 'ご飯もの', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1287,6 +1327,7 @@ export const starterDefs: StarterDef[] = [
     title: 'コンソメ野菜スープ',
     servings: 2, cookMinutes: 25, effortLevel: 'easy',
     tags: ['洋食', '汁物', '定番'],
+    dishType: 'soup',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -1313,6 +1354,7 @@ export const starterDefs: StarterDef[] = [
     title: '春雨サラダ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['中華', 'サラダ', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1341,6 +1383,7 @@ export const starterDefs: StarterDef[] = [
     title: '大根とツナのサラダ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', 'サラダ', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1367,6 +1410,7 @@ export const starterDefs: StarterDef[] = [
     title: 'キャベツの塩昆布あえ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch', 'dinner'],
     ingredients: [
@@ -1390,6 +1434,7 @@ export const starterDefs: StarterDef[] = [
     title: '蒸しなすの香味だれ',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['中華', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1420,6 +1465,7 @@ export const starterDefs: StarterDef[] = [
     title: 'バンバンジー',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['中華', '作り置き'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1455,6 +1501,7 @@ export const starterDefs: StarterDef[] = [
     title: '牛乳もち',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['和食', 'おやつ', '定番'],
+    dishType: 'dessert',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1486,6 +1533,7 @@ export const starterDefs: StarterDef[] = [
     title: 'フレンチトースト',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['洋食', 'おやつ', '定番'],
+    dishType: 'dessert',
     season: 'all',
     suitableFor: ['breakfast', 'lunch'],
     ingredients: [
@@ -1526,6 +1574,7 @@ export const starterDefs: StarterDef[] = [
     title: '家庭で作る杏仁豆腐',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['中華', 'おやつ', '定番'],
+    dishType: 'dessert',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1558,6 +1607,7 @@ export const starterDefs: StarterDef[] = [
     title: '鶏の照り焼き',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -1594,6 +1644,7 @@ export const starterDefs: StarterDef[] = [
     title: '回鍋肉(ホイコーロー)',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['中華', '定番'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [

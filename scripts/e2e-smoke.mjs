@@ -431,6 +431,39 @@ try {
   await page.getByRole('button', { name: 'このレシピを削除' }).click()
   await page.waitForTimeout(800)
 
+  // --- DISHTYPE-01: レシピ種別チップ(主菜/副菜/汁物/デザート・任意選択。2026-07-13
+  // 献立の主菜+副菜提案精度向上対応)。選択→保存→編集画面を開き直しても選択状態が
+  // 保持される(DB保存の確認)こと、もう一度押すと解除できることを確認する ---
+  currentCheck = 'DISHTYPE-01'
+  const isChipActive = (locator) => locator.evaluate((el) => el.className.includes('border-accent'))
+  await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByPlaceholder('例: 肉じゃが').fill('E2E種別チップ確認レシピ')
+  await page.getByPlaceholder('例: じゃがいも').first().fill('テスト材料')
+  await page.getByPlaceholder('例: じゃがいもを一口大に切る').first().fill('テスト手順')
+  const sideChip = page.getByRole('button', { name: '副菜', exact: true })
+  check('DISHTYPE-01 保存前は「副菜」チップが未選択', !(await isChipActive(sideChip)))
+  await sideChip.click()
+  await page.waitForTimeout(200)
+  check('DISHTYPE-01 「副菜」チップをタップすると選択状態になる', await isChipActive(sideChip))
+  await page.getByRole('button', { name: '保存する' }).click()
+  await page.waitForTimeout(800)
+  check(
+    'DISHTYPE-01 保存自体は成功する(詳細にタイトルが出る)',
+    (await page.textContent('body')).includes('E2E種別チップ確認レシピ'),
+  )
+  await page.locator('a[href*="/edit"]').first().click()
+  await page.waitForTimeout(500)
+  const sideChipEdit = page.getByRole('button', { name: '副菜', exact: true })
+  check('DISHTYPE-01 編集画面を開き直しても選択状態が保持される(DB保存の確認)', await isChipActive(sideChipEdit))
+  await sideChipEdit.click()
+  await page.waitForTimeout(200)
+  check('DISHTYPE-01 もう一度押すと選択が解除される', !(await isChipActive(sideChipEdit)))
+
+  // 後始末: 検証用に作成したレシピを削除
+  await page.getByRole('button', { name: 'このレシピを削除' }).click()
+  await page.waitForTimeout(800)
+
   // --- SMK-14(簡易): 未解錠でのセット取り込みは丁寧にブロックされる ---
   currentCheck = 'SMK-14'
   await page.goto(`${BASE}/#/settings?set=kintore`, { waitUntil: 'networkidle' })

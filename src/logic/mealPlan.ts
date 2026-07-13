@@ -1,7 +1,7 @@
 import { hasNgIngredient } from './ng'
 import { cookedWithinDays } from './cooked'
 import { currentSeason } from './season'
-import type { MealRole, MealSlot, Recipe, Season } from '../db/types'
+import type { DishType, MealRole, MealSlot, Recipe, Season } from '../db/types'
 
 export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner'] as const
 
@@ -97,9 +97,11 @@ export interface SuggestOptions {
  * （8月の夕食にサラダ単品、のようなミスマッチを避ける。2026-07-09ペルソナ第2波）。
  * 「副菜」を表す専用タグはデータ上存在しない（starters.ts/sets配下を実際にgrepして確認済み）
  * ため、副菜の提案プールは汁物・サラダで代用する。**おやつは主菜からも副菜からも外す**
- * （夕食の副菜に杏仁豆腐が提案されるのを防ぐ。2026-07-13 Fable裁定。
- * きんぴら等の「作り置き副菜」がタグでは判別できず主菜側に混ざる限界は既知＝
- * dishType付与が将来課題・docs/11 §4棚卸し参照）
+ * （夕食の副菜に杏仁豆腐が提案されるのを防ぐ。2026-07-13 Fable裁定）。
+ * dishType未設定のレシピ（主にユーザー自作）のフォールバックとしてのみ使う
+ * （dishType設定済みのレシピはisMainCandidate/isSideCandidateがこちらを見ない。
+ * 2026-07-13 dishType導入：きんぴら等の「作り置き副菜」がタグでは判別できず
+ * 主菜側に混ざっていた問題は、公式レシピへのdishType付与で解消した）
  */
 const NON_MAIN_TAGS = ['汁物', 'サラダ', 'おやつ']
 const SIDE_SUGGEST_TAGS = ['汁物', 'サラダ']
@@ -111,6 +113,28 @@ function isSideDishRecipe(r: Recipe): boolean {
 /** 副菜枠の提案対象にしてよいレシピ（おやつは含めない） */
 function isSideSuggestable(r: Recipe): boolean {
   return r.tags.some((tag) => SIDE_SUGGEST_TAGS.includes(tag))
+}
+
+/** 副菜枠の提案対象になりうるdishType（デザートは含めない） */
+const SIDE_DISH_TYPES: DishType[] = ['side', 'soup']
+
+/**
+ * レシピが主菜候補か。dishTypeがあれば最優先（'main'のみ主菜）で使い、
+ * 無ければ現行のタグヒューリスティックにフォールバックする（既存挙動を維持）
+ */
+function isMainCandidate(r: Recipe): boolean {
+  if (r.dishType) return r.dishType === 'main'
+  return !isSideDishRecipe(r)
+}
+
+/**
+ * レシピが副菜枠の提案対象か。dishTypeがあれば最優先（'side'または'soup'）で使い、
+ * 無ければ現行のタグヒューリスティックにフォールバックする（既存挙動を維持）。
+ * dishType='dessert'はどちらの判定でもfalseになる（主菜からも副菜からも除外）
+ */
+function isSideCandidate(r: Recipe): boolean {
+  if (r.dishType) return SIDE_DISH_TYPES.includes(r.dishType)
+  return isSideSuggestable(r)
 }
 
 /** レシピが持つジャンルタグ（和食/洋食/中華のいずれか。無ければundefined） */
@@ -145,17 +169,18 @@ export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Reci
   )
   const slotPool = slotMatched.length > 0 ? slotMatched : base
 
-  // 主菜/副菜の役割で絞り込む。roleが指定されていればそれを優先し、未指定時は
+  // 主菜/副菜の役割で絞り込む（dishType優先・未設定はタグヒューリスティックにフォールバック。
+  // isMainCandidate/isSideCandidate参照）。roleが指定されていればそれを優先し、未指定時は
   // 従来どおり夕食・昼食枠だけ主菜を優先する後方互換ロジックを使う
   let rolePool = slotPool
   if (options.role === 'main') {
-    const mains = slotPool.filter((r) => !isSideDishRecipe(r))
+    const mains = slotPool.filter((r) => isMainCandidate(r))
     if (mains.length > 0) rolePool = mains
   } else if (options.role === 'side') {
-    const sides = slotPool.filter((r) => isSideSuggestable(r))
+    const sides = slotPool.filter((r) => isSideCandidate(r))
     if (sides.length > 0) rolePool = sides
   } else if (options.slot === 'dinner' || options.slot === 'lunch') {
-    const mains = slotPool.filter((r) => !isSideDishRecipe(r))
+    const mains = slotPool.filter((r) => isMainCandidate(r))
     if (mains.length > 0) rolePool = mains
   }
 

@@ -238,6 +238,7 @@ type RecipeSetContent = Pick<
   | 'cookMinutes'
   | 'effortLevel'
   | 'tags'
+  | 'dishType'
   | 'season'
   | 'suitableFor'
   | 'ingredients'
@@ -251,7 +252,7 @@ type RecipeSetContent = Pick<
 /**
  * 同一セット由来の再取込（resolveDuplicateTitleActionが'updateName'を返すケース）で、
  * 既存レシピの内容を更新した結果を返す（純ロジック・DB非依存）。
- * 更新: servings/cookMinutes/effortLevel/tags/season/suitableFor/ingredients/steps/
+ * 更新: servings/cookMinutes/effortLevel/tags/dishType/season/suitableFor/ingredients/steps/
  *       quickSteps/memo/sourceUrl/keywords/sourceSetName + searchWords・updatedAt
  * 保持: 上記以外すべて（id・createdAt・isFavorite・cookedLogs・photo・isStarter・iconKey等の
  *       ユーザーデータ・表示設定。existingをベースに更新フィールドだけ上書きするため自動的に保持される）
@@ -270,6 +271,7 @@ export function buildUpdatedSetRecipe(
       cookMinutes: source.cookMinutes,
       effortLevel: source.effortLevel,
       tags: source.tags,
+      dishType: source.dishType,
       season: source.season,
       suitableFor: source.suitableFor,
       ingredients: source.ingredients,
@@ -288,6 +290,7 @@ export function buildUpdatedSetRecipe(
     cookMinutes: incoming.cookMinutes,
     effortLevel: incoming.effortLevel,
     tags: incoming.tags,
+    dishType: incoming.dishType,
     season: incoming.season,
     suitableFor: incoming.suitableFor,
     ingredients: incoming.ingredients,

@@ -65,6 +65,14 @@ export interface CookedLog {
 /** 季節タグ（任意）。ホームの提案がこれを見て今の季節のレシピを優先する */
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter' | 'all'
 
+/**
+ * 料理の種別（任意・2026-07-13献立の主菜+副菜提案精度向上対応）。
+ * 献立プランナーの自動提案でこれがあれば最優先で使う（logic/mealPlan.tsのisMainCandidate/
+ * isSideCandidate）。未設定のレシピ（主にユーザー自作）は現行のタグヒューリスティックに
+ * フォールバックする（既存挙動を壊さない）。dessertはどちらの提案プールにも入らない
+ */
+export type DishType = 'main' | 'side' | 'soup' | 'dessert'
+
 /** レシピ本体（IndexedDB に保存される形） */
 export interface Recipe {
   id?: number
@@ -75,6 +83,8 @@ export interface Recipe {
   cookMinutes?: number
   effortLevel: EffortLevel
   tags: string[]
+  /** 料理の種別（任意）。未設定は献立提案でタグヒューリスティックにフォールバックする */
+  dishType?: DishType
   ingredients: Ingredient[]
   steps: Step[]
   /**
@@ -340,6 +350,7 @@ export type RecipeInput = Pick<
   | 'cookMinutes'
   | 'effortLevel'
   | 'tags'
+  | 'dishType'
   | 'ingredients'
   | 'steps'
   | 'quickSteps'

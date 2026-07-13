@@ -34,6 +34,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'ミートボールの甘酢あん',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['和食', 'お弁当', '作り置き'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -95,6 +96,7 @@ export const recipes: SetRecipeDef[] = [
     title: '卯の花(おからの炒り煮)',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -138,6 +140,7 @@ export const recipes: SetRecipeDef[] = [
     title: '切り干し大根のハリハリ漬け',
     servings: 2, cookMinutes: 30, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -169,6 +172,7 @@ export const recipes: SetRecipeDef[] = [
     title: '肉巻きおにぎり',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['和食', 'お弁当', '作り置き'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['breakfast', 'lunch'],
     ingredients: [
@@ -214,6 +218,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'れんこんのきんぴら',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -248,6 +253,7 @@ export const recipes: SetRecipeDef[] = [
     title: '高野豆腐の含め煮',
     servings: 2, cookMinutes: 20, effortLevel: 'normal',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -282,6 +288,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'ちくわときゅうりの土佐酢あえ',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['和食', '作り置き'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -311,6 +318,7 @@ export const recipes: SetRecipeDef[] = [
     title: '甘辛手羽先の照り焼き',
     servings: 2, cookMinutes: 25, effortLevel: 'normal',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'main',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -349,6 +357,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'こんにゃくの炒り煮',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
@@ -389,6 +398,7 @@ export const recipes: SetRecipeDef[] = [
     title: '手作り鮭フレーク',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['和食', '作り置き', 'お弁当'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['breakfast', 'lunch'],
     ingredients: [
