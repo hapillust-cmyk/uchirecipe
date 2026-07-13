@@ -288,6 +288,22 @@ export interface Settings {
 /** レシピ一覧の表示形式 */
 export type RecipeListLayout = 'grid' | 'list'
 
+/**
+ * 削除した配布セット由来レシピの「再取込除外」記録（トゥームストーン。2026-07-13 Fable設計）。
+ * 配布セット（テーマ）のレシピを削除したとき (setId, title) を残しておき、
+ * 同じテーマの再取込（再読み込み）で削除した品が復活しないようにする。
+ * 設定のテーマ一覧「除外中◯品・すべて戻す」で記録を消せば、次の取込で戻る
+ */
+export interface SetExclusion {
+  id?: number
+  /** 配布セットID（Recipe.sourceSetIdと同じ値。例: "kintore"） */
+  setId: string
+  /** 除外する品の料理名（セット内で一意。importRecipeSetの重複判定と同じくtitleで照合する） */
+  title: string
+  /** 記録した日時（ミリ秒） */
+  excludedAt: number
+}
+
 export const defaultSettings: Settings = {
   id: 1,
   ngIngredients: [],

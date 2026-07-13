@@ -1,6 +1,12 @@
 import { db } from '../db/db'
 import { getSettings, updateSettings } from '../db/settings'
-import { defaultSettings, type CookedLog, type Recipe, type Settings } from '../db/types'
+import {
+  defaultSettings,
+  type CookedLog,
+  type Recipe,
+  type SetExclusion,
+  type Settings,
+} from '../db/types'
 import { buildSearchWords } from './kana'
 
 /**
@@ -29,6 +35,12 @@ export interface BackupFile {
   /** 配布用のレシピセットにはsettingsを含めない（個人設定の器を配布物に持たせないため） */
   settings?: Settings
   recipes: BackupRecipe[]
+  /**
+   * 削除した配布セット品の再取込除外記録（トゥームストーン。2026-07-13）。
+   * 個人のバックアップにのみ含め、復元で除外状態も戻す。
+   * この項目が無い古いバックアップも従来どおり復元できる（任意項目）
+   */
+  setExclusions?: Omit<SetExclusion, 'id'>[]
   /** 配布レシピセットのID・表示名・版番号（個人のバックアップファイルには無い） */
   setId?: string
   setName?: string
@@ -60,6 +72,9 @@ function base64ToBlob(base64: string, type: string): Blob {
 export async function exportBackup(includeCookedLogPhotos = false): Promise<string> {
   const recipes = await db.recipes.toArray()
   const settings = await getSettings()
+  // 再取込除外の記録（トゥームストーン）も含める（復元で除外状態も戻る。2026-07-13）。
+  // idは復元先で採番し直すため含めない
+  const setExclusions = (await db.setExclusions.toArray()).map(({ id: _unused, ...rest }) => rest)
   const backupRecipes: BackupRecipe[] = await Promise.all(
     recipes.map(async ({ photo, cookedLogs, ...rest }) => ({
       ...rest,
@@ -81,6 +96,7 @@ export async function exportBackup(includeCookedLogPhotos = false): Promise<stri
     exportedAt: new Date().toISOString(),
     settings,
     recipes: backupRecipes,
+    setExclusions,
   }
   return JSON.stringify(file)
 }
@@ -136,6 +152,11 @@ export interface ImportResult {
   updated: number
   /** 既存と重複していたため取り込まなかったレシピ数（merge時のみ発生） */
   skipped: number
+  /**
+   * 削除済み（再取込除外の記録あり）のため取り込まなかったレシピ数
+   * （importRecipeSetのみ発生。importBackupでは常に0。2026-07-13トゥームストーン）
+   */
+  excluded: number
 }
 
 /**
@@ -152,8 +173,14 @@ export async function importBackup(
 ): Promise<ImportResult> {
   const recipes = file.recipes.map(toRecipe)
 
+  // バックアップ内の再取込除外記録（トゥームストーン。2026-07-13）。無い古いバックアップは空扱い。
+  // 手作業で編集されたファイルにも耐えるよう、setId/titleの無い行は捨てて正規化する
+  const backupExclusions: SetExclusion[] = (file.setExclusions ?? [])
+    .filter((e) => !!e && typeof e.setId === 'string' && !!e.setId && typeof e.title === 'string' && !!e.title)
+    .map((e) => ({ setId: e.setId, title: e.title, excludedAt: e.excludedAt ?? Date.now() }))
+
   if (mode === 'replace') {
-    await db.transaction('rw', db.recipes, db.settings, async () => {
+    await db.transaction('rw', db.recipes, db.settings, db.setExclusions, async () => {
       await db.recipes.clear()
       // 設定も復元。基本レシピの二重投入を防ぐため starterSeeded は必ず true にする
       await db.settings.put({
@@ -163,14 +190,18 @@ export async function importBackup(
         starterSeeded: true,
       })
       await db.recipes.bulkAdd(recipes)
+      // 再取込除外の記録も置き換える（復元で除外状態も戻る。
+      // 記録の無い古いバックアップでは空になるだけで、復元自体は従来どおり成功する）
+      await db.setExclusions.clear()
+      if (backupExclusions.length > 0) await db.setExclusions.bulkAdd(backupExclusions)
     })
-    return { added: recipes.length, updated: 0, skipped: 0 }
+    return { added: recipes.length, updated: 0, skipped: 0, excluded: 0 }
   }
 
   // merge: 1件ずつ id で照合する
   let added = 0
   let skipped = 0
-  await db.transaction('rw', db.recipes, async () => {
+  await db.transaction('rw', db.recipes, db.setExclusions, async () => {
     for (const recipe of recipes) {
       if (recipe.id == null) {
         // 古い形式などIDが無い場合は照合できないので新規として追加
@@ -188,8 +219,20 @@ export async function importBackup(
         skipped++
       }
     }
+    // 再取込除外の記録は (setId, title) で照合し、無いものだけ追加する（今の記録は消さない）
+    if (backupExclusions.length > 0) {
+      const existingKeys = new Set(
+        (await db.setExclusions.toArray()).map((e) => `${e.setId}\n${e.title}`),
+      )
+      for (const exclusion of backupExclusions) {
+        const key = `${exclusion.setId}\n${exclusion.title}`
+        if (existingKeys.has(key)) continue
+        existingKeys.add(key)
+        await db.setExclusions.add(exclusion)
+      }
+    }
   })
-  return { added, updated: 0, skipped }
+  return { added, updated: 0, skipped, excluded: 0 }
 }
 
 /** URLが見つからない・壊れている場合の理由を、呼び出し側が文言を出し分けられるよう表す */
@@ -214,6 +257,31 @@ export async function fetchRecipeSet(url: string): Promise<BackupFile> {
     // 本文がHTMLなら「見つからない」寄りの文言、それ以外は「壊れている」寄りの文言にする
     throw new RecipeSetFetchError(text.trim().startsWith('<') ? 'not_found' : 'invalid')
   }
+}
+
+/**
+ * レシピ削除時に残す「再取込除外」の記録（トゥームストーン）を作る（純ロジック・DB非依存。
+ * 2026-07-13 Fable設計）。配布セット由来（sourceSetIdあり）のレシピだけが対象で、
+ * 自作レシピなど sourceSetId の無いレシピは null（記録しない）
+ */
+export function exclusionRecordFor(
+  recipe: Pick<Recipe, 'sourceSetId' | 'title'>,
+): Pick<SetExclusion, 'setId' | 'title'> | null {
+  if (!recipe.sourceSetId) return null
+  return { setId: recipe.sourceSetId, title: recipe.title.trim() }
+}
+
+/**
+ * 除外記録の一覧から「このセットで取り込まない料理名」の集合を作る（純ロジック・DB非依存）。
+ * importRecipeSet が新規追加の直前に照合する。setId の無いファイル（個人バックアップ形式など）は
+ * 除外の対象外＝空集合。記録を消した後（「すべて戻す」後）は集合に入らないので、次の取込で復活する
+ */
+export function buildExclusionTitleSet(
+  exclusions: readonly Pick<SetExclusion, 'setId' | 'title'>[],
+  setId: string | undefined,
+): Set<string> {
+  if (!setId) return new Set()
+  return new Set(exclusions.filter((e) => e.setId === setId).map((e) => e.title.trim()))
 }
 
 /**
@@ -311,15 +379,20 @@ export function buildUpdatedSetRecipe(
  * - settingsは取り込まない（配布元の設定で自分の設定を上書きしないため）
  * - 同一セットの再取込（修正版JSONの配信・テーマ改名など）では重複させず、既存レシピの内容を
  *   更新する（resolveDuplicateTitleAction参照。buildUpdatedSetRecipeでユーザーデータを保持）
+ * - ユーザーが削除した品（setExclusionsに記録あり）は追加しない（再取込で復活させない。
+ *   excludedカウントで件数を返す。2026-07-13トゥームストーン）
  */
 export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
   let added = 0
   let updated = 0
   let skipped = 0
-  await db.transaction('rw', db.recipes, async () => {
+  let excluded = 0
+  await db.transaction('rw', db.recipes, db.setExclusions, async () => {
     const existingByTitle = new Map(
       (await db.recipes.toArray()).map((r) => [r.title.trim(), r] as const),
     )
+    // 削除済みの品（トゥームストーン）は再取込で復活させない（2026-07-13 Fable設計）
+    const excludedTitles = buildExclusionTitleSet(await db.setExclusions.toArray(), file.setId)
     for (const backupRecipe of file.recipes) {
       const { id: _unused, ...rest } = toRecipe(backupRecipe)
       const title = rest.title.trim()
@@ -341,6 +414,11 @@ export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
         skipped++
         continue
       }
+      if (excludedTitles.has(title)) {
+        // ユーザーが削除した品。新規追加だけをブロックする（既存レシピの更新・スキップには影響しない）
+        excluded++
+        continue
+      }
       const now = Date.now()
       const newRecipe: Recipe = {
         ...rest,
@@ -356,7 +434,7 @@ export async function importRecipeSet(file: BackupFile): Promise<ImportResult> {
       added++
     }
   })
-  return { added, updated, skipped }
+  return { added, updated, skipped, excluded }
 }
 
 /** 30日以上バックアップしていない（または一度もしていない）か */
