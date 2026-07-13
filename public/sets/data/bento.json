@@ -1,7 +1,7 @@
 {
   "app": "uchi-recipe",
   "version": 1,
-  "exportedAt": "2026-07-13T01:54:41.113Z",
+  "exportedAt": "2026-07-13T02:49:13.430Z",
   "setId": "bento",
   "setName": "和食の作り置き・お弁当",
   "setVersion": 1,
@@ -16,6 +16,7 @@
         "お弁当",
         "作り置き"
       ],
+      "dishType": "main",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -150,6 +151,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -253,6 +255,7 @@
         "和食",
         "作り置き"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -336,6 +339,7 @@
         "お弁当",
         "作り置き"
       ],
+      "dishType": "main",
       "season": "all",
       "suitableFor": [
         "breakfast",
@@ -428,6 +432,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -510,6 +515,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -590,6 +596,7 @@
         "和食",
         "作り置き"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -679,6 +686,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "main",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -760,6 +768,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",
@@ -850,6 +859,7 @@
         "作り置き",
         "お弁当"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "breakfast",

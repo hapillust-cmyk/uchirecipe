@@ -452,6 +452,65 @@ eq('news: 未記録(起動直後の一瞬)は抑制', isNewsSuppressed(undefined
       1,
     )
   }
+  // ---- dishType優先・タグへのフォールバック(2026-07-13 dishType導入・献立の主菜+副菜提案精度向上) ----
+
+  // dishTypeがあれば最優先で使う: タグに副菜系タグ(汁物)があってもdishType:'main'なら主菜候補になり、
+  // 逆にタグは副菜系を含まなくてもdishType:'side'なら主菜候補にならない(旧タグ判定なら結果が逆転する組み合わせ)
+  {
+    const recipes = [
+      mkRecipe(1, { tags: ['汁物'], dishType: 'main' }),
+      mkRecipe(2, { tags: ['和食'], dishType: 'side' }),
+    ]
+    const picks = Array.from({ length: 10 }, () => suggestForSlot(recipes, opts({ role: 'main' }))?.id)
+    eq('dishType優先: dishTypeがタグより優先される(タグ汁物でもdishType:mainなら主菜候補)', picks.every((id) => id === 1), true)
+  }
+
+  // dishType未設定のレシピ(ユーザー自作)は現行のタグヒューリスティックにフォールバックする(既存挙動を維持)
+  {
+    const recipes = [mkRecipe(1, { tags: ['汁物'] }), mkRecipe(2, { tags: ['和食'] })]
+    const picks = Array.from({ length: 10 }, () => suggestForSlot(recipes, opts({ role: 'main' }))?.id)
+    eq('dishType未設定はタグヒューリスティックにフォールバックする(既存挙動維持)', picks.every((id) => id === 2), true)
+  }
+
+  // dishType:'dessert'は主菜からも副菜からも除外される(タグが「定番」のみでdishType側が最終判定になる)
+  {
+    const mainPickRecipes = [
+      mkRecipe(1, { tags: ['定番'], dishType: 'dessert' }),
+      mkRecipe(2, { tags: ['和食'], dishType: 'main' }),
+    ]
+    const mainPicks = Array.from(
+      { length: 10 },
+      () => suggestForSlot(mainPickRecipes, opts({ role: 'main' }))?.id,
+    )
+    eq('dishType:dessert は主菜候補から除外される', mainPicks.every((id) => id === 2), true)
+
+    const sidePickRecipes = [
+      mkRecipe(1, { tags: ['定番'], dishType: 'dessert' }),
+      mkRecipe(3, { tags: ['和食'], dishType: 'side' }),
+    ]
+    const sidePicks = Array.from(
+      { length: 10 },
+      () => suggestForSlot(sidePickRecipes, opts({ role: 'side' }))?.id,
+    )
+    eq('dishType:dessert は副菜候補からも除外される', sidePicks.every((id) => id === 3), true)
+  }
+
+  // 本件の眼目: きんぴら等の「作り置き副菜」はタグ(作り置き/お弁当等)だけでは副菜と判別できず
+  // 従来は主菜側に混ざっていたが、dishType:'side'を明示すれば副菜枠に提案されるようになる
+  {
+    const kinpira = mkRecipe(1, {
+      title: 'きんぴらごぼう',
+      tags: ['和食', '作り置き', 'お弁当'],
+      dishType: 'side',
+    })
+    const mainDish = mkRecipe(2, { tags: ['和食', '定番'], dishType: 'main' })
+    const picks = Array.from(
+      { length: 10 },
+      () => suggestForSlot([kinpira, mainDish], opts({ role: 'side' }))?.id,
+    )
+    eq('dishType: きんぴら(dishType:side・作り置きタグのみ)が副菜枠に提案される', picks.every((id) => id === 1), true)
+  }
+
   // genre優先: 指定ジャンルのタグを持つ品を優先し、一致が無ければ他ジャンルも許可する
   {
     const recipes = [mkRecipe(1, { tags: ['洋食'] }), mkRecipe(2, { tags: ['和食'] })]

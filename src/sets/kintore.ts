@@ -42,6 +42,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'レンジ蒸し鶏（自家製サラダチキン）',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['高たんぱく', '作り置き'],
+    dishType: 'main',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('鶏むね肉', '1', '枚'), i('塩', '1/2', '小さじ', undefined, 1), i('酒', '1', '大さじ', undefined, 1),
@@ -71,6 +72,7 @@ export const recipes: SetRecipeDef[] = [
     title: '鶏むねのガーリック照り焼き',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['高たんぱく', '和食'],
+    dishType: 'main',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('鶏むね肉', '1', '枚'), i('片栗粉', '1', '大さじ'), i('にんにく', '1', 'かけ', '1かけ=約5g'),
@@ -99,6 +101,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'ささみとブロッコリーのごま和え',
     servings: 3, cookMinutes: 15, effortLevel: 'easy',
     tags: ['高たんぱく', '作り置き', '和食'],
+    dishType: 'side',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('鶏ささみ', '4', '本'), i('ブロッコリー', '1', '株'), i('すりごま', '2', '大さじ', undefined, 1),
@@ -120,6 +123,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'サバ缶とトマトの煮込み',
     servings: 2, cookMinutes: 15, effortLevel: 'easy',
     tags: ['高たんぱく', '洋食'],
+    dishType: 'main',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('サバ水煮缶', '1', '缶', '1缶=約190gが目安'), i('カットトマト缶', '1', '缶'), i('玉ねぎ', '1/2', '個'),
@@ -139,6 +143,7 @@ export const recipes: SetRecipeDef[] = [
     title: '鶏ひき肉の豆腐ハンバーグ',
     servings: 2, cookMinutes: 20, effortLevel: 'easy',
     tags: ['高たんぱく', '和食'],
+    dishType: 'main',
     suitableFor: ['dinner'],
     ingredients: [
       i('鶏ひき肉', '200', 'g'), i('木綿豆腐', '1/2', '丁', '1丁=約300gが目安'), i('玉ねぎ', '1/4', '個'),
@@ -166,6 +171,7 @@ export const recipes: SetRecipeDef[] = [
     title: '漬けるだけ味玉',
     servings: 4, cookMinutes: 10, effortLevel: 'easy',
     tags: ['高たんぱく', '作り置き', '和食'],
+    dishType: 'side',
     ingredients: [
       i('卵', '4', '個'), i('めんつゆ（2倍濃縮）', '100', 'ml'), i('水', '100', 'ml'),
     ],
@@ -189,6 +195,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'オートミール卵雑炊',
     servings: 1, cookMinutes: 5, effortLevel: 'easy',
     tags: ['高たんぱく', '和食'],
+    dishType: 'main',
     suitableFor: ['breakfast'],
     ingredients: [
       i('オートミール', '30', 'g'), i('卵', '1', '個'), i('水またはだし汁', '150', 'ml'),
@@ -214,6 +221,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'エビとブロッコリーの卵炒め',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['高たんぱく', '中華'],
+    dishType: 'main',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('むきえび', '100', 'g', '冷凍なら解凍して水気を拭いてから使う'), i('ブロッコリー', '1/2', '株'), i('卵', '2', '個'),
@@ -237,6 +245,7 @@ export const recipes: SetRecipeDef[] = [
     title: '鶏団子スープ',
     servings: 3, cookMinutes: 20, effortLevel: 'easy',
     tags: ['高たんぱく', '汁物', '和食'],
+    dishType: 'soup',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [
       i('鶏ひき肉', '200', 'g'), i('しょうが', '1', 'かけ', '1かけ=約15g・親指の第一関節くらい'), i('片栗粉', '1', '大さじ'),
@@ -264,6 +273,7 @@ export const recipes: SetRecipeDef[] = [
     title: 'ツナと蒸し大豆の香味サラダ',
     servings: 2, cookMinutes: 10, effortLevel: 'easy',
     tags: ['洋食', '高たんぱく', 'サラダ'],
+    dishType: 'side',
     season: 'all',
     suitableFor: ['lunch', 'dinner'],
     ingredients: [

@@ -11,7 +11,7 @@ import {
   Trash2,
   ClipboardPaste,
 } from 'lucide-react'
-import type { EffortLevel, IconKey, MealSlot, RecipeInput, Season } from '../db/types'
+import type { DishType, EffortLevel, IconKey, MealSlot, RecipeInput, Season } from '../db/types'
 import { createRecipe, deleteRecipe, getRecipe, listRecipes, updateRecipe } from '../db/recipes'
 import { useSettings } from '../db/settings'
 import { usePriceEntries } from '../db/prices'
@@ -69,6 +69,7 @@ type FormDraft = {
   showIconInsteadOfPhoto: boolean
   season?: Season
   suitableFor: MealSlot[]
+  dishType?: DishType
 }
 
 /** 新規と編集で下書きを分ける(編集はレシピごとに分ける) */
@@ -91,6 +92,7 @@ function readDraft(key: string): FormDraft | null {
 const effortLevels: EffortLevel[] = ['easy', 'normal', 'fancy']
 const seasons: Exclude<Season, 'all'>[] = ['spring', 'summer', 'autumn', 'winter']
 const mealSlots: MealSlot[] = ['breakfast', 'lunch', 'dinner']
+const dishTypes: DishType[] = ['main', 'side', 'soup', 'dessert']
 
 const inputCls =
   'mt-1 block w-full rounded-sm border border-edge bg-surface px-3 py-3 text-base text-ink placeholder:text-ink-muted/60'
@@ -141,6 +143,7 @@ function RecipeFormInner() {
   const [showIconInsteadOfPhoto, setShowIconInsteadOfPhoto] = useState(false)
   const [season, setSeason] = useState<Season>()
   const [suitableFor, setSuitableFor] = useState<MealSlot[]>([])
+  const [dishType, setDishType] = useState<DishType>()
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -222,6 +225,7 @@ function RecipeFormInner() {
       showIconInsteadOfPhoto: recipe.showIconInsteadOfPhoto ?? false,
       season: recipe.season,
       suitableFor: recipe.suitableFor ?? [],
+      dishType: recipe.dishType,
     } satisfies FormDraft)
     setTitle(recipe.title)
     setPhoto(recipe.photo)
@@ -257,6 +261,7 @@ function RecipeFormInner() {
     setShowIconInsteadOfPhoto(recipe.showIconInsteadOfPhoto ?? false)
     setSeason(recipe.season)
     setSuitableFor(recipe.suitableFor ?? [])
+    setDishType(recipe.dishType)
   }, [loadedRecipe])
 
   // 現在の入力内容(下書きに保存する形)。1文字変わるたびに再計算される
@@ -279,6 +284,7 @@ function RecipeFormInner() {
         showIconInsteadOfPhoto,
         season,
         suitableFor,
+        dishType,
       } satisfies FormDraft),
     [
       title,
@@ -297,6 +303,7 @@ function RecipeFormInner() {
       showIconInsteadOfPhoto,
       season,
       suitableFor,
+      dishType,
     ],
   )
 
@@ -358,6 +365,7 @@ function RecipeFormInner() {
     setShowIconInsteadOfPhoto(d.showIconInsteadOfPhoto ?? false)
     setSeason(d.season)
     setSuitableFor(d.suitableFor ?? [])
+    setDishType(d.dishType)
     setPendingDraft(null)
   }
 
@@ -498,6 +506,7 @@ function RecipeFormInner() {
         cookMinutes: cookMinutes.trim() ? Number(cookMinutes) : undefined,
         effortLevel,
         tags: effectiveTags,
+        dishType,
         ingredients: ingredients.map((row) => {
           // 単位欄が空のまま分量欄に「大さじ3」等と書かれていたら自動で分ける
           // (そのままだと人数変更が効かないため。「少々」「適量」はそのまま)。
@@ -865,6 +874,28 @@ function RecipeFormInner() {
               }`}
             >
               {ja.mealPlan.slot[slot]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 料理の種別（任意・もう一度押すと解除。献立プランナーの主菜/副菜提案に使う） */}
+      <div className="mt-[var(--space-md)]">
+        <span className={labelCls}>{ja.form.dishTypeLabel}</span>
+        <p className="mt-1 text-sm text-ink-muted">{ja.form.dishTypeDescription}</p>
+        <div className="mt-1 grid grid-cols-4 gap-[var(--space-sm)]">
+          {dishTypes.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setDishType((current) => (current === value ? undefined : value))}
+              className={`rounded-md border py-3 font-bold shadow-sm ${
+                dishType === value
+                  ? 'border-accent bg-accent text-app'
+                  : 'border-edge bg-surface text-ink-muted'
+              }`}
+            >
+              {ja.dishType[value]}
             </button>
           ))}
         </div>

@@ -1,7 +1,7 @@
 {
   "app": "uchi-recipe",
   "version": 1,
-  "exportedAt": "2026-07-13T01:54:41.112Z",
+  "exportedAt": "2026-07-13T02:49:13.429Z",
   "setId": "kintore",
   "setName": "高たんぱくごはん",
   "setVersion": 2,
@@ -15,6 +15,7 @@
         "高たんぱく",
         "作り置き"
       ],
+      "dishType": "main",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -78,6 +79,7 @@
         "高たんぱく",
         "和食"
       ],
+      "dishType": "main",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -162,6 +164,7 @@
         "作り置き",
         "和食"
       ],
+      "dishType": "side",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -234,6 +237,7 @@
         "高たんぱく",
         "洋食"
       ],
+      "dishType": "main",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -312,6 +316,7 @@
         "高たんぱく",
         "和食"
       ],
+      "dishType": "main",
       "suitableFor": [
         "dinner"
       ],
@@ -388,6 +393,7 @@
         "作り置き",
         "和食"
       ],
+      "dishType": "side",
       "ingredients": [
         {
           "name": "卵",
@@ -435,6 +441,7 @@
         "高たんぱく",
         "和食"
       ],
+      "dishType": "main",
       "suitableFor": [
         "breakfast"
       ],
@@ -498,6 +505,7 @@
         "高たんぱく",
         "中華"
       ],
+      "dishType": "main",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -573,6 +581,7 @@
         "汁物",
         "和食"
       ],
+      "dishType": "soup",
       "suitableFor": [
         "lunch",
         "dinner"
@@ -659,6 +668,7 @@
         "高たんぱく",
         "サラダ"
       ],
+      "dishType": "side",
       "season": "all",
       "suitableFor": [
         "lunch",

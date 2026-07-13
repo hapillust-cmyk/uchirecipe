@@ -366,6 +366,12 @@ export const ja = {
     winter: '冬',
     all: '通年',
   },
+  dishType: {
+    main: '主菜',
+    side: '副菜',
+    soup: '汁物',
+    dessert: 'デザート',
+  },
   recipes: {
     title: 'レシピ',
     empty: 'まだレシピがありません',
@@ -509,6 +515,9 @@ export const ja = {
     suitableForLabel: '向いている時間帯（任意）',
     suitableForDescription:
       '献立プランナーの自動提案で優先されます。何も選ばなければ制限なしとして扱われます',
+    dishTypeLabel: '料理の種別（任意）',
+    dishTypeDescription:
+      '献立プランナーの主菜・副菜の自動提案に使われます。もう一度押すと解除できます',
     draftFound: '書きかけの下書きがあります。復元しますか？（写真は下書きに含まれません）',
     draftRestore: '復元する',
     draftDiscard: '破棄する',
