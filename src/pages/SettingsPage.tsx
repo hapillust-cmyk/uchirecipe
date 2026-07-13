@@ -131,6 +131,14 @@ export default function SettingsPage() {
   const importModeRef = useRef<'replace' | 'merge'>('merge')
   const [recipeSetUrl, setRecipeSetUrl] = useState('')
   const [recipeSetLoading, setRecipeSetLoading] = useState(false)
+  // 「レシピセットを読み込む」欄の「URLから読み込む」「ファイルから読み込む」の結果メッセージ
+  // (2026-07-14 オーナー実機フィードバック: 以前は下部トーストのみだったため、縦に長い
+  // ページでは気づきにくかった)。この2つのボタン操作に限り、読み込み欄の上部にも
+  // テキストで表示し、下部トースト(setMessage)は呼ばない(二重表示しない)。
+  // set=クエリの直リンク取り込み(配布ページの外部リンクから来る一発取り込み)は、
+  // 下部トーストがタップで閉じられる既存の挙動としてテスト済みのため対象外(変更しない)。
+  // 他の操作(テーマ追加・バックアップ等)のトーストも変更しない
+  const [recipeSetMessage, setRecipeSetMessage] = useState('')
   const recipeSetFileRef = useRef<HTMLInputElement>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const [proCodeInput, setProCodeInput] = useState('')
@@ -186,7 +194,10 @@ export default function SettingsPage() {
       clearParam()
       return
     }
-    // レシピセットの取り込みは「レシピ」タブの内容なので、直リンクで開いたときも自動でそこへ切り替える
+    // レシピセットの取り込みは「レシピ」タブの内容なので、直リンクで開いたときも自動でそこへ切り替える。
+    // このフローは配布ページの外部リンクから来る一発取り込みで、画面下部のトースト表示が
+    // 既存の挙動(タップで閉じられる)としてテスト済みのため、修正4の対象(読み込み欄上部の
+    // テキスト表示)には含めない(setMessage/下部トーストのまま変更しない)
     setActiveTab('recipe')
     let cancelled = false
     void (async () => {
@@ -298,6 +309,7 @@ export default function SettingsPage() {
     }
   }
 
+  // addTheme(テーマ一覧の1タップ取り込み)・set=直リンク取り込み専用。従来どおり下部トーストのまま変更しない
   const showRecipeSetResult = (result: {
     added: number
     updated: number
@@ -309,9 +321,28 @@ export default function SettingsPage() {
 
   // fetchRecipeSetの失敗理由(URLが存在しない/中身が壊れている)で文言を出し分ける
   // (2026-07-12実機報告: 存在しないset=IDを開いても「JSONファイルか確認して」としか
-  // 出ず、綴りミスに気づきにくかったため)
+  // 出ず、綴りミスに気づきにくかったため)。set=直リンク取り込み専用。従来どおり下部トーストのまま変更しない
   const showRecipeSetFetchError = (err: unknown) => {
     setMessage(
+      err instanceof RecipeSetFetchError && err.reason === 'not_found'
+        ? ja.settings.recipeSetNotFound
+        : ja.settings.recipeSetError,
+    )
+  }
+
+  // 「レシピセットを読み込む」欄の「URLから読み込む」「ファイルから読み込む」専用
+  // (2026-07-14 オーナー実機フィードバック)。結果を読み込み欄の上部テキスト(recipeSetMessage)
+  // で出す。下部トーストとの二重表示はしない
+  const showRecipeSetResultInline = (result: {
+    added: number
+    updated: number
+    skipped: number
+    excluded: number
+  }) => {
+    setRecipeSetMessage(formatRecipeSetResult(result))
+  }
+  const showRecipeSetFetchErrorInline = (err: unknown) => {
+    setRecipeSetMessage(
       err instanceof RecipeSetFetchError && err.reason === 'not_found'
         ? ja.settings.recipeSetNotFound
         : ja.settings.recipeSetError,
@@ -322,16 +353,17 @@ export default function SettingsPage() {
     const url = recipeSetUrl.trim()
     if (!url) return
     setRecipeSetLoading(true)
+    setRecipeSetMessage('')
     try {
       const file = await fetchRecipeSet(url)
       if (file.setId && !hasPaidRecipeAccess(settings)) {
-        setMessage(ja.settings.recipeSetBlocked)
+        setRecipeSetMessage(ja.settings.recipeSetBlocked)
         return
       }
-      showRecipeSetResult(await importRecipeSet(file))
+      showRecipeSetResultInline(await importRecipeSet(file))
       setRecipeSetUrl('')
     } catch (err) {
-      showRecipeSetFetchError(err)
+      showRecipeSetFetchErrorInline(err)
     } finally {
       setRecipeSetLoading(false)
     }
@@ -340,15 +372,16 @@ export default function SettingsPage() {
   const loadRecipeSetFromFile = async (file: File | undefined) => {
     if (!file) return
     setRecipeSetLoading(true)
+    setRecipeSetMessage('')
     try {
       const parsed = parseBackup(await file.text())
       if (parsed.setId && !hasPaidRecipeAccess(settings)) {
-        setMessage(ja.settings.recipeSetBlocked)
+        setRecipeSetMessage(ja.settings.recipeSetBlocked)
         return
       }
-      showRecipeSetResult(await importRecipeSet(parsed))
+      showRecipeSetResultInline(await importRecipeSet(parsed))
     } catch {
-      setMessage(ja.settings.recipeSetError)
+      setRecipeSetMessage(ja.settings.recipeSetError)
     } finally {
       setRecipeSetLoading(false)
     }
@@ -859,6 +892,17 @@ export default function SettingsPage() {
           <section className={sectionCls}>
             <h2 className="font-bold">{ja.settings.recipeSetTitle}</h2>
             <p className="mt-1 text-sm text-ink-muted">{ja.settings.recipeSetDescription}</p>
+            {/* 読み込み結果は読み込み欄の上部にテキストで表示する(2026-07-14 オーナー実機
+                フィードバック: 以前は下部トーストのみで、縦に長いページでは気づきにくかった。
+                この機能に限り上部テキストにし、下部トーストとの二重表示はしない) */}
+            {recipeSetMessage && (
+              <p
+                role="status"
+                className="mt-[var(--space-sm)] rounded-sm border border-accent bg-app px-3 py-2 text-sm font-bold text-accent"
+              >
+                {recipeSetMessage}
+              </p>
+            )}
             <div className="mt-[var(--space-sm)] flex gap-[var(--space-sm)]">
               <input
                 type="url"

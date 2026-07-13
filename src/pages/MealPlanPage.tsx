@@ -405,16 +405,32 @@ export default function MealPlanPage() {
     }
   }
 
-  /** 週の空いている枠(表示中の食事帯のみ・丸ごと空のもの)すべてに主菜+副菜のペアで埋める。
-   * 一部でも埋まっている枠は触らない(従来どおり) */
+  /**
+   * 週の表示中の食事帯すべてを、押すたびに新しい提案で埋め直す(再抽選)。
+   * 以前は空いている枠だけを埋める仕様だったため、埋まった後の2回目以降のタップが
+   * 無反応になっていた(2026-07-14オーナー実機フィードバック)。この対策として、
+   * 表示中の全枠(手動で選んだ枠も含む)の既存割り当てを一旦クリアしてから、
+   * suggestPairForSlotの既存のランダム性を使って主菜+副菜のペアで再提案する。
+   * 「まとめて立てる」という一括操作の性質上、手動で選んだ枠も上書きされる挙動は
+   * 妥当と判断した(Fable設計2026-07-14)。
+   * 表示中の食事帯に含まれない枠(例: 朝食を非表示にしている状態で夕食だけ埋め直す場合の朝食)
+   * の既存レシピは、重複を避けるための除外対象として引き続き使う。
+   */
   const fillWeek = async () => {
     if (!recipes) return
     setMessage('')
-    const usedRecipeIds = (entries ?? []).map((e) => e.recipeId)
+    const touchedKeys = new Set(
+      dates.flatMap((date) => visibleSlots.map((slot) => `${date}|${slot}`)),
+    )
+    const usedRecipeIds = (entries ?? [])
+      .filter((e) => !touchedKeys.has(`${e.date}|${e.slot}`))
+      .map((e) => e.recipeId)
     for (const date of dates) {
       for (const slot of visibleSlots) {
         const slotEntries = entriesByDateSlot.get(`${date}|${slot}`) ?? []
-        if (slotEntries.length > 0) continue
+        for (const entry of slotEntries) {
+          await removeMealEntry(entry.id!)
+        }
         const { main, side } = suggestPairForSlot(visibleRecipes, {
           quickOnly,
           excludeNg: true,
@@ -867,7 +883,7 @@ export default function MealPlanPage() {
           <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
           <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
           <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
-          <Link to="/recipes" className="mt-1 inline-block text-sm font-bold text-accent underline">
+          <Link to="/prices" className="mt-1 inline-block text-sm font-bold text-accent underline">
             {ja.mealPlan.weekCostNoteLink}
           </Link>
           {weeklyBudget != null && budgetDiff != null ? (

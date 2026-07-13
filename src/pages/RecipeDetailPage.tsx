@@ -25,7 +25,7 @@ import { useTodayList, addToTodayList, removeFromTodayList } from '../db/todayLi
 import { usePriceEntries } from '../db/prices'
 import { scaleAmount, formatAmountUnit } from '../logic/amount'
 import { ngMatchedIndices } from '../logic/ng'
-import { buildPriceIndex, estimateIngredientYen, estimateRecipeCost } from '../logic/priceEstimate'
+import { buildPriceIndex, estimateRecipeCost } from '../logic/priceEstimate'
 import { seasoningGroupColorToken } from '../logic/seasoningGroup'
 import { shareText, shareImageCard } from '../logic/share'
 import { deriveDoneLabel } from '../logic/timerLabel'
@@ -208,6 +208,9 @@ export default function RecipeDetailPage() {
     recipe.servings > 0
       ? Math.round((totalPrice * servings) / recipe.servings)
       : totalPrice
+  // 1食あたりの概算食費(2026-07-14 オーナー実機フィードバック: 合計だけでなく1食分の目安も
+  // 見たい。表示中のservings(人数変更に追従)で割る)
+  const perServingPrice = servings > 0 ? Math.round(scaledPrice / servings) : scaledPrice
 
   const saveLog = async () => {
     if (!logDate) return
@@ -407,6 +410,14 @@ export default function RecipeDetailPage() {
           )}
         </div>
 
+        {/* 1食あたりの概算食費(2026-07-14 オーナー実機フィードバック: 合計だけでなく
+            1食分の目安も見たい。表示中のservingsに追従) */}
+        {totalPrice > 0 && (
+          <p className="mt-0.5 text-sm text-ink-muted">
+            {ja.detail.pricePerServing.replace('{n}', perServingPrice.toLocaleString())}
+          </p>
+        )}
+
         {/* タグ */}
         {recipe.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
@@ -471,12 +482,6 @@ export default function RecipeDetailPage() {
           <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-surface shadow-sm">
             {recipe.ingredients.map((ing, index) => {
               const isNg = ngIndices.has(index)
-              // 材料に個別価格が無く、食材価格マスタの目安価格から計算した金額がある行だけ、
-              // 控えめな注記を出す（どの材料がマスタ由来か分かるように。2026-07-12 UX改修）。
-              // 由来のマスタ行が投入時の目安のままか、ユーザーが上書きした価格かで
-              // 「目安」表記の有無を出し分ける(2026-07-13 UIペルソナQA)
-              const masterEstimate =
-                ing.price == null || ing.price <= 0 ? estimateIngredientYen(ing, priceIndex) : undefined
               return (
                 <li
                   key={index}
@@ -503,14 +508,9 @@ export default function RecipeDetailPage() {
                       )}
                     </span>
                   </div>
-                  {masterEstimate != null && masterEstimate.yen > 0 && (
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      {(masterEstimate.source === 'default'
-                        ? ja.priceMaster.ingredientFromMasterNote
-                        : ja.priceMaster.ingredientFromMasterNoteCustom
-                      ).replace('{n}', String(masterEstimate.yen))}
-                    </p>
-                  )}
+                  {/* 材料行ごとの目安価格の注記は2026-07-14に廃止（オーナー実機フィードバック:
+                      「材料のメモ欄に目安価格が表示されている」の解消。概算食費セクション自体は
+                      残す(3a参照)。旧仕様はja.priceMaster.ingredientFromMasterNote*参照 */}
                   {ing.memo && (
                     <MemoText
                       text={ing.memo}

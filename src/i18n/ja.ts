@@ -143,7 +143,7 @@ export const ja = {
     noSuggestion: '提案できるレシピがありません。先にレシピを登録してください',
     weekCostTitle: '今週の概算食費',
     weekCostNote: '材料に価格を入力したレシピだけが計算対象です',
-    weekCostNoteLink: 'レシピの編集画面で価格を入力する',
+    weekCostNoteLink: '食材と価格を編集する',
     budgetCompareOver: '予算より約{n}円オーバーしています',
     budgetCompareUnder: '予算まで約{n}円の余裕があります',
     budgetNotSet: '設定画面で週の食費予算を登録すると、ここで比較できます',
@@ -561,6 +561,9 @@ export const ja = {
     favoriteOff: 'お気に入りを解除',
     priceAbout: '約',
     priceYen: '円',
+    // 1食あたりの概算食費(2026-07-14 オーナー実機フィードバック: 合計だけでなく
+    // 1食分の目安も見たい。{n}=合計÷表示中のservingsを丸めた値)
+    pricePerServing: '1食あたり 約{n}円',
     minutesSuffix: '分',
     /** 手順文中に時間が出てこない工程のタイマー(2026-07-12: 唐突に見える指摘への対応)。
      * ラベル体「目安◯分」にする(文章体「◯分が目安」は続くとくどく、ボタンに見えない
@@ -726,6 +729,9 @@ export const ja = {
     unitLabel: '単位（数量＋単位）',
     unitPlaceholder: '例: 1個、100g',
     add: '追加',
+    // 二重登録防止(2026-07-14 オーナー実機フィードバック): 正規化(前後空白・括弧書き除去)して
+    // 一致する食材が既にマスタにあるときに出す案内。既存の行を優先し、重複行は作らない
+    duplicateName: '「{name}」は既に登録済みです',
     remove: 'この食材を削除',
     priceYen: '円',
     // 一覧の各行のインライン編集欄（食材名ごとに区別できるようaria-labelへ{name}を差し込む）
