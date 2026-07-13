@@ -1711,11 +1711,15 @@ export async function seedStartersIfNeeded(): Promise<void> {
 
 /** reloadStarterRecipesが更新対象として扱う「内容」フィールド。
  * logic/backup.tsのRecipeSetContent（セット再取込の更新対象フィールド）と同じ範囲に揃えている
- * （quickCookMinutes・iconKey・showIconInsteadOfPhotoは対象外＝ユーザーの表示設定として保持される）。 */
+ * （iconKey・showIconInsteadOfPhotoは対象外＝ユーザーの表示設定として保持される）。
+ * intro・quickCookMinutesは2026-07バグ修正で追加(quickCookMinutesは時短版の合計時間という
+ * れっきとしたレシピ内容であり、iconKey等の表示設定と違って入れ直しで届くべき値だった) */
 type StarterContent = Pick<
   Recipe,
+  | 'intro'
   | 'servings'
   | 'cookMinutes'
+  | 'quickCookMinutes'
   | 'effortLevel'
   | 'tags'
   | 'season'
@@ -1744,8 +1748,10 @@ export function buildUpdatedStarterRecipe(
 ): Recipe | null {
   const content = (source: StarterContent) =>
     JSON.stringify({
+      intro: source.intro,
       servings: source.servings,
       cookMinutes: source.cookMinutes,
+      quickCookMinutes: source.quickCookMinutes,
       effortLevel: source.effortLevel,
       tags: source.tags,
       season: source.season,
@@ -1764,8 +1770,10 @@ export function buildUpdatedStarterRecipe(
 
   return {
     ...existing,
+    intro: incoming.intro,
     servings: incoming.servings,
     cookMinutes: incoming.cookMinutes,
+    quickCookMinutes: incoming.quickCookMinutes,
     effortLevel: incoming.effortLevel,
     tags: incoming.tags,
     season: incoming.season,

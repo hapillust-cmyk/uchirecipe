@@ -91,9 +91,10 @@ export async function deleteRecipe(id: number): Promise<void> {
 
 /**
  * 配布レシピ（テーマ/セット）由来のレシピをまとめて削除し、削除件数を返す。
- * 今日の献立・週間/月間プランナーはrecipeIdで参照するだけなので、
- * 単品削除(deleteRecipe)と同じくここでは追加の後始末は不要
- * （読み出し側が「該当レシピが見つからない」を無視して除外する既存の作りに委ねる）。
+ * 単品削除(deleteRecipe)と同様に、同一トランザクションで週間献立(mealPlans)・
+ * 今日の献立(todayList)から当該レシピの行も削除し、削除済みレシピを指す孤児データが
+ * 残らないようにする（2026-07バグ修正。従来はbulkDeleteのみで孤児が残っていた）。
+ * mealPlansはrecipeIdに索引が無いためfilterで該当行を洗い出してから削除する
  * 再取込除外の記録（トゥームストーン）はここでは追加しない: テーマ丸ごとの削除後に
  * ユーザーが自分で「追加する」を押すのは明確な再取込の意思表示であり、そこで全品除外扱いに
  * なってしまうと「追加したのに何も入らない」事故になるため（2026-07-13）。
@@ -101,9 +102,16 @@ export async function deleteRecipe(id: number): Promise<void> {
  * 戻したければテーマ一覧の「除外中◯品・すべて戻す」で解除できる）
  */
 export async function deleteRecipesBySourceSet(setId: string): Promise<number> {
-  const ids = await db.recipes.where('sourceSetId').equals(setId).primaryKeys()
-  await db.recipes.bulkDelete(ids)
-  return ids.length
+  return db.transaction('rw', db.recipes, db.mealPlans, db.todayList, async () => {
+    const ids = await db.recipes.where('sourceSetId').equals(setId).primaryKeys()
+    if (ids.length === 0) return 0
+    await db.recipes.bulkDelete(ids)
+    const idSet = new Set(ids)
+    const orphanMealPlanIds = await db.mealPlans.filter((e) => idSet.has(e.recipeId)).primaryKeys()
+    if (orphanMealPlanIds.length > 0) await db.mealPlans.bulkDelete(orphanMealPlanIds)
+    await db.todayList.where('recipeId').anyOf(ids).delete()
+    return ids.length
+  })
 }
 
 /**

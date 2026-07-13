@@ -43,12 +43,21 @@
 //         NUT-02(栄養価のめやす: Pro解錠済みで8項目の実パネルが出る(2026-07-13 第2弾で
 //         食物繊維・鉄・カルシウム+ビタミン注記を追加)・人数を変えても1人分の値は不変。
 //         M6-1 2026-07-12オーナー指示でNUTRITION_ENABLED有効化) /
+//         STEP0-01(手順0件のレシピ・2026-07バグ修正: 手順欄を空のまま保存(steps:[])しても、
+//         詳細画面に「調理中モードで見る」ボタンが表示されない=空配列で調理中モードを開いて
+//         クラッシュすることがないこと) /
 //         NUTSORT-01(栄養並び替え・2026-07-13 Fable設計: 無料では「カロリー(1食)」だけが並べ替えに
 //         出て「たんぱく質(1食)」は出ない・カロリー順の既定は昇順・算出不能レシピは昇順/降順とも末尾) /
 //         NUTSORT-02(栄養並び替え・Pro解錠済み: 「たんぱく質(1食)」が出て既定は降順) /
 //         TOMB-01(削除したセット品の再取込除外=トゥームストーン・2026-07-13 Fable設計:
 //         テーマ取り込み→1品削除→再取込で復活しない(「削除済みの除外中1件」表示)→テーマ一覧の
 //         「除外中1品・すべて戻す」で解除→再取込で復活する) /
+//         ORPHAN-01(テーマ一括削除の孤児防止・2026-07バグ修正: テーマ収録品を週間献立・
+//         今日の献立の両方に登録した状態でテーマごと削除しても、両テーブルに削除済み
+//         レシピを指す孤児行が残らないことをIndexedDB直読みで確認) /
+//         TODAYALL-01(「全て作った！」の一括反映・2026-07バグ修正: 記録追加(addCookedLog)と
+//         今日の献立クリアを1トランザクションにまとめた後も、正常系で両方が揃って反映される
+//         ことを確認。トランザクション途中断の再現は黒箱E2Eでは不可のため対象外) /
 //         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
 //         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
 //         PRICE-01(食材価格マスタ。材料に価格未入力のレシピでもマスタ目安価格が詳細の
@@ -535,6 +544,33 @@ try {
   check('DISHTYPE-01 もう一度押すと選択が解除される', !(await isChipActive(sideChipEdit)))
 
   // 後始末: 検証用に作成したレシピを削除
+  await page.getByRole('button', { name: 'このレシピを削除' }).click()
+  await page.waitForTimeout(800)
+
+  // --- STEP0-01: 手順0件のレシピ(バグ修正2026-07)。手順欄を空のまま保存すると
+  // cleanInput()で空の手順行が除かれ steps:[] になる。この状態の詳細画面で
+  // 「調理中モードで見る」ボタンが表示されず(押せてクラッシュすることがない)ことを確認する ---
+  currentCheck = 'STEP0-01'
+  await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByPlaceholder('例: 肉じゃが').fill('E2E手順0件確認レシピ')
+  await page.getByPlaceholder('例: じゃがいも').first().fill('テスト材料')
+  // 手順本文は空のまま保存する(このレシピが手順0件になる)
+  await page.getByRole('button', { name: '保存する' }).click()
+  await page.waitForTimeout(800)
+  const step0DetailText = await page.textContent('body')
+  check(
+    'STEP0-01 保存自体は成功する(詳細にタイトルが出る)',
+    step0DetailText.includes('E2E手順0件確認レシピ'),
+  )
+  check(
+    'STEP0-01 手順0件では「調理中モードで見る」ボタンが表示されない',
+    !step0DetailText.includes('調理中モードで見る'),
+  )
+
+  // 後始末: 検証用に作成したレシピを削除
+  await page.locator('a[href*="/edit"]').first().click()
+  await page.waitForTimeout(500)
   await page.getByRole('button', { name: 'このレシピを削除' }).click()
   await page.waitForTimeout(800)
 
@@ -1307,6 +1343,233 @@ try {
       )
     } finally {
       await tbBrowser.close()
+    }
+  }
+
+  // --- ORPHAN-01: テーマ一括削除で週間献立・今日の献立に孤児が残らない(2026-07バグ修正)。
+  // 従来はdeleteRecipesBySourceSetがdb.recipes.bulkDeleteのみで、削除済みレシピを指す
+  // mealPlans/todayListの行が残ってしまっていた。テーマ「高たんぱくごはん」(kintore)を
+  // 取り込み、収録品の1つを週間献立・今日の献立の両方に登録してからテーマごと削除し、
+  // 両テーブルから該当行が消えている(IndexedDB直読み)ことを確認する。週間献立への登録は
+  // UIのピッカー経路が長い(MEALPLAN-01/02で別途検証済み)ため、実データ形状に合わせて
+  // IndexedDBへ直接1行だけ書き込んで再現する。テーマ取り込みには追加レシピパック解錠が
+  // 必要なため、TOMB-01と同様settings.recipePackCodeを直接書き込む。他チェックに影響しない
+  // よう専用のbrowser/contextで完結させる ---
+  currentCheck = 'ORPHAN-01'
+  {
+    const obBrowser = await chromium.launch()
+    const obContext = await obBrowser.newContext()
+    const obPage = await obContext.newPage()
+    obPage.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@ORPHAN-01] ${err.message}`)
+    })
+    obPage.on('dialog', (dialog) => dialog.accept())
+    try {
+      await obPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await obPage.waitForTimeout(1800) // 初回シード完了待ち
+      await obPage.evaluate(async () => {
+        const req = indexedDB.open('uchi-recipe')
+        const idb = await new Promise((resolve, reject) => {
+          req.onsuccess = () => resolve(req.result)
+          req.onerror = () => reject(req.error)
+        })
+        await new Promise((resolve, reject) => {
+          const tx = idb.transaction('settings', 'readwrite')
+          const store = tx.objectStore('settings')
+          const getReq = store.get(1)
+          getReq.onsuccess = () => {
+            const current = getReq.result || { id: 1 }
+            const putReq = store.put({
+              ...current,
+              id: 1,
+              recipePackCode: 'UP-E2E-TEST-ONLY',
+              recipePackActivatedAt: Date.now(),
+            })
+            putReq.onsuccess = () => resolve(undefined)
+            putReq.onerror = () => reject(putReq.error)
+          }
+          getReq.onerror = () => reject(getReq.error)
+        })
+        idb.close()
+      })
+
+      // 1) テーマ「高たんぱくごはん」(kintore・10品)を取り込む
+      await obPage.goto(`${BASE}/#/settings?set=kintore`, { waitUntil: 'networkidle' })
+      await obPage.waitForTimeout(2000)
+      check(
+        'ORPHAN-01 テーマの取り込み(10品追加)',
+        (await obPage.textContent('body')).includes('10件追加しました'),
+      )
+
+      // 2) 収録品の1つ(漬けるだけ味玉)を「今日つくる」に追加し、そのidを控える
+      await obPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await obPage.waitForTimeout(600)
+      await obPage.locator('input[type="search"]').fill('漬けるだけ味玉')
+      await obPage.waitForTimeout(400)
+      await obPage.getByText('漬けるだけ味玉', { exact: true }).first().click()
+      await obPage.waitForTimeout(500)
+      const targetRecipeId = Number(obPage.url().match(/#\/recipes\/(\d+)/)?.[1])
+      await obPage.getByRole('button', { name: '今日つくる' }).click()
+      await obPage.waitForTimeout(300)
+
+      // 3) 同じレシピを週間献立にも登録する(IndexedDB直接書き込み。理由は上のコメント参照)
+      await obPage.evaluate(
+        (recipeId) =>
+          new Promise((resolve, reject) => {
+            const req = indexedDB.open('uchi-recipe')
+            req.onsuccess = () => {
+              const idb = req.result
+              const tx = idb.transaction('mealPlans', 'readwrite')
+              const addReq = tx.objectStore('mealPlans').add({
+                date: '2026-08-01',
+                slot: 'dinner',
+                recipeId,
+                role: 'main',
+              })
+              addReq.onsuccess = () => resolve(undefined)
+              addReq.onerror = () => reject(addReq.error)
+            }
+            req.onerror = () => reject(req.error)
+          }),
+        targetRecipeId,
+      )
+
+      const countByRecipeId = (storeName) =>
+        obPage.evaluate(
+          ({ storeName, recipeId }) =>
+            new Promise((resolve, reject) => {
+              const req = indexedDB.open('uchi-recipe')
+              req.onsuccess = () => {
+                const idb = req.result
+                const tx = idb.transaction(storeName, 'readonly')
+                const getAllReq = tx.objectStore(storeName).getAll()
+                getAllReq.onsuccess = () =>
+                  resolve(getAllReq.result.filter((row) => row.recipeId === recipeId).length)
+                getAllReq.onerror = () => reject(getAllReq.error)
+              }
+              req.onerror = () => reject(req.error)
+            }),
+          { storeName, recipeId: targetRecipeId },
+        )
+
+      // 前提確認: 削除前は両テーブルに対象レシピの行が実在する
+      check('ORPHAN-01 前提: 今日の献立に対象レシピの行がある', (await countByRecipeId('todayList')) === 1)
+      check('ORPHAN-01 前提: 週間献立に対象レシピの行がある', (await countByRecipeId('mealPlans')) === 1)
+
+      // 4) テーマごと削除する(設定画面の「このテーマのレシピを削除」。確認ダイアログは自動承諾)
+      await obPage.goto(`${BASE}/#/settings?section=themes`, { waitUntil: 'networkidle' })
+      await obPage.waitForTimeout(1000)
+      await obPage.getByRole('button', { name: 'このテーマのレシピを削除' }).click()
+      await obPage.waitForTimeout(800)
+      check(
+        'ORPHAN-01 テーマ削除の結果メッセージが出る',
+        (await obPage.textContent('body')).includes('削除しました'),
+      )
+
+      // 5) 孤児が残っていない: 週間献立・今日の献立のどちらにも対象レシピの行が無い
+      check(
+        'ORPHAN-01 テーマ一括削除後、今日の献立に孤児が残らない',
+        (await countByRecipeId('todayList')) === 0,
+      )
+      check(
+        'ORPHAN-01 テーマ一括削除後、週間献立に孤児が残らない',
+        (await countByRecipeId('mealPlans')) === 0,
+      )
+
+      // 孤児データが残っていた場合の描画クラッシュも合わせて検出する(画面上は普通に表示される)
+      await obPage.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await obPage.waitForTimeout(600)
+      check(
+        'ORPHAN-01 献立タブが孤児データでクラッシュせず表示される',
+        (await obPage.textContent('body')).includes('今日の献立'),
+      )
+    } finally {
+      await obBrowser.close()
+    }
+  }
+
+  // --- TODAYALL-01: 「全て作った！」で記録の追加とリストのクリアが一括で反映される
+  // (2026-07バグ修正)。従来はmarkAllTodayListCookedが記録ループ(addCookedLog)と
+  // db.todayList.clear()を別トランザクションで行っていたため、途中で中断すると
+  // 「一部だけ記録されてリストは残る/消える」不整合が起き得た。1つのトランザクションに
+  // まとめたことで、正常系では記録とクリアが必ず両方揃って反映されることを確認する
+  // (黒箱のE2Eではトランザクション途中の強制中断は再現できないため、原子性そのものは
+  // markTodayListCookedと同じreentrantトランザクション方式であることをコードレビューで
+  // 担保し、ここでは正常系の一括反映が壊れていないことを回帰確認する) ---
+  currentCheck = 'TODAYALL-01'
+  {
+    const taBrowser = await chromium.launch()
+    const taContext = await taBrowser.newContext()
+    const taPage = await taContext.newPage()
+    taPage.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@TODAYALL-01] ${err.message}`)
+    })
+    try {
+      await taPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await taPage.waitForTimeout(1800) // 初回シード完了待ち
+
+      // 基本レシピ2品(肉じゃが・カレーライス)を「今日つくる」に追加する
+      await taPage.getByText('肉じゃが', { exact: true }).first().click()
+      await taPage.waitForTimeout(500)
+      await taPage.getByRole('button', { name: '今日つくる' }).click()
+      await taPage.waitForTimeout(300)
+      await taPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await taPage.waitForTimeout(500)
+      await taPage.getByText('カレーライス', { exact: true }).first().click()
+      await taPage.waitForTimeout(500)
+      await taPage.getByRole('button', { name: '今日つくる' }).click()
+      await taPage.waitForTimeout(300)
+
+      await taPage.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await taPage.waitForTimeout(600)
+      const beforeText = await taPage.textContent('body')
+      check(
+        'TODAYALL-01 前提: 今日の献立に2品とも表示される',
+        beforeText.includes('肉じゃが') && beforeText.includes('カレーライス'),
+      )
+
+      await taPage.getByRole('button', { name: '全て作った！' }).click()
+      await taPage.waitForTimeout(800)
+      const afterText = await taPage.textContent('body')
+      check(
+        'TODAYALL-01 「全て作った！」の後、今日の献立が空になる(clearが実行される)',
+        afterText.includes('まだ今日つくるものが決まっていません'),
+      )
+
+      // IndexedDBを直読みし、両方のレシピにcookedLogsが実際に追加され、todayListが空になったことを確認する
+      const state = await taPage.evaluate(
+        () =>
+          new Promise((resolve, reject) => {
+            const req = indexedDB.open('uchi-recipe')
+            req.onsuccess = () => {
+              const idb = req.result
+              const tx = idb.transaction(['recipes', 'todayList'], 'readonly')
+              let recipes, today
+              const recipesReq = tx.objectStore('recipes').getAll()
+              const todayReq = tx.objectStore('todayList').getAll()
+              recipesReq.onsuccess = () => {
+                recipes = recipesReq.result
+                if (today !== undefined) resolve({ recipes, today })
+              }
+              todayReq.onsuccess = () => {
+                today = todayReq.result
+                if (recipes !== undefined) resolve({ recipes, today })
+              }
+              recipesReq.onerror = () => reject(recipesReq.error)
+              todayReq.onerror = () => reject(todayReq.error)
+            }
+            req.onerror = () => reject(req.error)
+          }),
+      )
+      const nikujaga = state.recipes.find((r) => r.title === '肉じゃが')
+      const curry = state.recipes.find((r) => r.title === 'カレーライス')
+      check('TODAYALL-01 肉じゃがに作った記録が追加される', (nikujaga?.cookedLogs?.length ?? 0) > 0)
+      check('TODAYALL-01 カレーライスに作った記録が追加される', (curry?.cookedLogs?.length ?? 0) > 0)
+      check('TODAYALL-01 今日の献立テーブルが空になる(clear実行)', state.today.length === 0)
+    } finally {
+      await taBrowser.close()
     }
   }
 
