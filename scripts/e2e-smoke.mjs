@@ -27,6 +27,9 @@
 //         2026-07-13 削除→再追加からユーザーデータ保持方式への改修) /
 //         PACK-01(Pro解錠済み・パック未解錠のとき追加レシピパックのコード入力欄がdisabledになり
 //         案内文が出ること、Pro版の機能一覧が解錠中ずっと表示され続けること。2026-07-13 UI改善) /
+//         RECIPESET-01(修正4・2026-07-14オーナー実機フィードバック: 「レシピセットを読み込む」欄の
+//         「URLから読み込む」結果を読み込み欄の上部にテキストで表示し、以前の下部トーストとしては
+//         二重に出ないこと。エラー(見つからない)・成功の両方を確認) /
 //         SMK-19(静的ページがアプリ本体にすり替わらない。SWが動くpreviewでの実行時に実質検証) /
 //         SCROLL-01(一覧のスクロール位置復元。iPhone SE実機フィードバック 2026-07-11。
 //         webkit+375x667ビューポートで検証。60秒滞在バリエーション込み。他のチェックはchromiumのまま) /
@@ -61,14 +64,18 @@
 //         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
 //         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
 //         PRICE-01(食材価格マスタ。材料に価格未入力のレシピでもマスタ目安価格が詳細の
-//         概算食費・材料行の注記に反映され、マスタ編集に追従すること。2026-07-13
+//         概算食費に反映され、マスタ編集に追従すること。2026-07-13
 //         オーナー実機フィードバックで詳細画面の概算食費欄の「一部は目安価格から計算しています」
 //         注記を削除、同日中に週の献立側も削除(mixedNote定義自体を撤去)したため、
-//         その不在をMEALPLAN-01側でも確認する) /
+//         その不在をMEALPLAN-01側でも確認する。2026-07-14修正3a/3bで、材料行ごとの
+//         目安価格の注記(「（目安◯円）」)は表示しないこと・概算食費に「1食あたり」も
+//         追加表示されること(既定人数2人で50÷2=25円等)を確認) /
 //         INLINE-01(「食材と価格」一覧の行内編集。2026-07-12 UX改修で編集モーダルを廃止し、
 //         価格欄への直接入力+Enter/blurで即保存。2026-07-13 UI改善で「目安」/「自分の価格」
 //         バッジは廃止したため「デフォルトに戻す」ボタンの出現/消失で編集反映を確認・
-//         検索絞り込みを確認) /
+//         検索絞り込みを確認。2026-07-14修正2a/2b/2cで、手入力で既定値に戻すと
+//         「デフォルトに戻す」ボタンが消えること・正規化(前後空白/括弧除去)して同名の
+//         食材は追加を拒否すること・追加入力欄が一覧より上に表示されることを確認) /
 //         合わせ調味料ライン表示 /
 //         PRO-FALLBACK-01(crypto.subtleが使えないinsecure context(LAN実機のhttp://等)でも、
 //         純JSのSHA-256フォールバック(src/logic/sha256.ts)でPro解錠コード検証が動くこと。
@@ -87,6 +94,12 @@
 //         2行になっていること・「＋枠を追加」で行を増やせること・行単位のサイコロは他の行に
 //         影響しないこと・枠が丸ごと空のときのサイコロ/まとめて献立を立てるは主菜+副菜のペアで
 //         埋まること・まとめて献立を立てるのアイコンがDicesであること) /
+//         MEALPLAN-04(修正1b・2026-07-14オーナー実機フィードバック: 「まとめて献立を立てる」は
+//         以前は空き枠だけ埋めるため2回目以降のタップが無反応だった。押すたびに表示中の全枠
+//         (手動選択枠も含む)を一旦クリアしてから再抽選することを、mealPlansの行idが
+//         クリア→再作成で入れ替わることで確認する) /
+//         修正1a(献立タブの概算食費リンクの文言「食材と価格を編集する」・遷移先/pricesを
+//         MEALPLAN-01内で確認) /
 //         BACKUP-01(バックアップの全ユーザーデータ対応・2026-07-13データ堅牢性強化: 価格編集+
 //         週献立割当+在庫品を実際の「ファイルに書き出す」ボタン(Playwrightのdownloadイベントで
 //         捕捉)で書き出し→まっさらな別プロファイルへ「読み込む(置き換え)」で復元し、
@@ -1784,8 +1797,14 @@ try {
     !priceDetailBefore.includes('一部は目安価格から計算しています'),
   )
   check(
-    'PRICE-01 材料行にも目安価格由来の注記が出る(2026-07-12 UX改修)',
-    priceDetailBefore.includes('（目安50円）'),
+    'PRICE-01(修正3b) 材料行ごとの目安価格の注記は表示しない' +
+      '(2026-07-14 オーナー実機フィードバック「材料のメモ欄に目安価格が表示されている」の解消で機能削除)',
+    !priceDetailBefore.includes('（目安50円）'),
+  )
+  // 修正3a: 概算食費(合計)に加えて「1食あたり」も表示される。既定servings=2なので50÷2=25円
+  check(
+    'PRICE-01(修正3a) 「1食あたり」の概算食費も表示される(既定人数2人・50÷2=約25円)',
+    priceDetailBefore.includes('1食あたり 約25円'),
   )
 
   // 設定から「食材と価格」を開き、初期値30件の投入と目安の注意書きを確認する。
@@ -1824,6 +1843,60 @@ try {
     (await onionPriceInput.inputValue()) === '999',
   )
 
+  // 修正2a: 手入力で既定値(50円)に戻すと「デフォルトに戻す」ボタンも消えることを確認する。
+  // 以前は編集フラグが一方通行だったため、値を既定値に戻してもボタンが残るバグがあった
+  await onionPriceInput.fill('50')
+  await onionPriceInput.press('Enter')
+  await page.waitForTimeout(400)
+  check(
+    'INLINE-01(修正2a) 手入力で既定値と一致させると「デフォルトに戻す」ボタンが消える',
+    !(await onionRow.textContent()).includes('デフォルトに戻す'),
+  )
+  // 後続の検証用に再度999へ編集し直す
+  await onionPriceInput.fill('999')
+  await onionPriceInput.press('Enter')
+  await page.waitForTimeout(400)
+
+  // 修正2b: 重複食材の登録防止。既に登録済みの「玉ねぎ」を追加しようとすると拒否される
+  // exact:trueが必須(部分一致だと検索欄「食材名で絞り込む」や各行の「{name}の価格（円）」等と衝突する)
+  const addNameInput = page.getByLabel('食材名', { exact: true })
+  const addPriceInput = page.getByLabel('価格（円）', { exact: true })
+  const addUnitInput = page.getByLabel('単位（数量＋単位）', { exact: true })
+  await addNameInput.fill('玉ねぎ')
+  await addPriceInput.fill('80')
+  await addUnitInput.fill('1個')
+  await page.getByRole('button', { name: '追加', exact: true }).click()
+  await page.waitForTimeout(300)
+  check(
+    'INLINE-01(修正2b) 既に登録済みの食材名は追加を拒否し、案内メッセージが出る',
+    (await page.textContent('body')).includes('「玉ねぎ」は既に登録済みです'),
+  )
+  check(
+    'INLINE-01(修正2b) 拒否後も「玉ねぎ」の行は1件のまま増えない',
+    (await page.locator('li', { hasText: '玉ねぎ' }).count()) === 1,
+  )
+  // 前後の空白・括弧付きの表記ゆれも正規化して同一とみなし拒否される
+  await addNameInput.fill('  玉ねぎ（小）  ')
+  await page.getByRole('button', { name: '追加', exact: true }).click()
+  await page.waitForTimeout(300)
+  check(
+    'INLINE-01(修正2b) 表記ゆれ(前後空白・括弧書き)も正規化して重複と判定する',
+    (await page.textContent('body')).includes('「玉ねぎ」は既に登録済みです') &&
+      (await page.locator('li', { hasText: '玉ねぎ' }).count()) === 1,
+  )
+  await addNameInput.fill('')
+  await addPriceInput.fill('')
+  await addUnitInput.fill('')
+  await page.waitForTimeout(200)
+
+  // 修正2c: 追加入力欄が一覧より上に表示される(食材名欄のY座標 < 玉ねぎ行のY座標)
+  const addNameBox = await addNameInput.boundingBox()
+  const onionRowBoxForOrder = await onionRow.boundingBox()
+  check(
+    'INLINE-01(修正2c) 追加入力欄が一覧より上に表示される',
+    !!addNameBox && !!onionRowBoxForOrder && addNameBox.y < onionRowBoxForOrder.y,
+  )
+
   // 検索/絞り込み: 存在しない食材名で0件表示になることを確認してから解除する
   const searchInput = page.getByPlaceholder('食材名で絞り込む')
   await searchInput.fill('ぜったいにないよみとうしょくざい')
@@ -1835,9 +1908,7 @@ try {
   await searchInput.fill('')
   await page.waitForTimeout(300)
 
-  // 詳細画面に戻り、編集後の価格が概算食費・材料行の注記に反映されることを確認する。
-  // 由来種別の出し分け(2026-07-13 UIペルソナQA): ユーザーが上書きした価格なので
-  // 「目安」の語は付かず「（999円）」になる(「（目安999円）」にはならない)
+  // 詳細画面に戻り、編集後の価格が概算食費に反映されることを確認する(999円・1食あたり500円)
   await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
   await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
@@ -1848,8 +1919,12 @@ try {
     priceDetailAfter.includes('約999円'),
   )
   check(
-    'INLINE-01 上書き価格由来の行は「目安」を外した注記になる(（999円）)',
-    priceDetailAfter.includes('（999円）') && !priceDetailAfter.includes('（目安999円）'),
+    'PRICE-01(修正3a) 「1食あたり」も編集後の価格に追従する(999÷2=約500円)',
+    priceDetailAfter.includes('1食あたり 約500円'),
+  )
+  check(
+    'PRICE-01(修正3b) 材料行ごとの注記は編集後も表示しない',
+    !priceDetailAfter.includes('（999円）') && !priceDetailAfter.includes('（目安999円）'),
   )
 
   // 「デフォルトに戻す」で投入時の価格に復元できることを確認する
@@ -1868,14 +1943,20 @@ try {
     (await onionRowAgain.getByLabel('玉ねぎの価格（円）').inputValue()) === '50',
   )
 
-  // 目安に戻した後は、詳細の注記も「目安」表記に戻ることを確認する(由来種別の往復)
+  // デフォルトに戻した後は、詳細の概算食費も50円(1食あたり25円)に戻ることを確認する。
+  // 材料行ごとの目安価格由来の注記は2026-07-14に機能ごと削除したため、ここでは確認しない
   await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
   await page.getByText('E2E価格マスタ確認レシピ', { exact: true }).first().click()
   await page.waitForTimeout(500)
+  const priceDetailAfterReset = await page.textContent('body')
   check(
-    'INLINE-01 「目安に戻す」後は詳細の注記も「目安」表記に戻る(（目安50円）)',
-    (await page.textContent('body')).includes('（目安50円）'),
+    'INLINE-01 「デフォルトに戻す」後は詳細の概算食費も50円に戻る',
+    priceDetailAfterReset.includes('約50円'),
+  )
+  check(
+    'PRICE-01(修正3b) 材料行ごとの注記はデフォルト復元後も表示しない',
+    !priceDetailAfterReset.includes('（目安50円）'),
   )
 
   // 後始末: テスト用レシピを削除（削除は詳細画面からなので、いったんレシピ詳細に戻る）
@@ -1966,6 +2047,18 @@ try {
         'MEALPLAN-01(Fix3) 概算食費セクションにマスタ由来の注記は出ない' +
           '(2026-07-13 オーナー実機フィードバックで詳細に続き週の献立側も削除)',
         !mpAssignedText.includes('一部は目安価格から計算しています'),
+      )
+
+      // 2026-07-14: 概算食費欄のリンク文言を「食材と価格を編集する」に変更し、
+      // 遷移先も/recipesから/prices(食材と価格ページ)に変更した
+      const weekCostLink = mpPage.getByRole('link', { name: '食材と価格を編集する' })
+      check(
+        'MEALPLAN-01(修正1a) 概算食費欄のリンク文言が「食材と価格を編集する」になる',
+        await weekCostLink.isVisible(),
+      )
+      check(
+        'MEALPLAN-01(修正1a) リンクの遷移先が/prices(食材と価格ページ)になる',
+        (await weekCostLink.getAttribute('href'))?.includes('/prices'),
       )
 
       // Fix4: 埋まった枠を再度開くと現在のレシピ行に「選択中」バッジが出る
@@ -2211,6 +2304,154 @@ try {
       )
     } finally {
       await mp3Browser.close()
+    }
+  }
+
+  // --- MEALPLAN-04: 「まとめて献立を立てる」の再抽選(修正1b・2026-07-14オーナー実機
+  // フィードバック)。以前は空き枠だけ埋めるため2回目以降のタップが無反応だった。
+  // 押すたびに表示中の全枠(手動で選んだ枠含む)の既存割り当てを一旦クリアしてから
+  // 主菜+副菜のペアで埋め直す(再抽選)ことを、mealPlansテーブルの行idが
+  // クリア→再作成で入れ替わる(削除+追加のため必ず新しいautoIncrement idになる)ことで検証する ---
+  currentCheck = 'MEALPLAN-04'
+  {
+    const mp4Browser = await chromium.launch()
+    const mp4Context = await mp4Browser.newContext()
+    const mp4Page = await mp4Context.newPage()
+    mp4Page.on('console', (msg) => {
+      if (msg.type() !== 'error') return
+      const text = msg.text()
+      if (text.includes('cloudflareinsights') || text.includes('ERR_FAILED')) return
+      errors.push(`[console@MEALPLAN-04] ${text}`)
+    })
+    mp4Page.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@MEALPLAN-04] ${err.message}`)
+    })
+    try {
+      await mp4Page.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await mp4Page.waitForTimeout(1800) // 初回シード完了待ち(既定表示は夕食のみ)
+
+      const dinnerMealPlanIds = () =>
+        mp4Page.evaluate(
+          () =>
+            new Promise((resolve, reject) => {
+              const req = indexedDB.open('uchi-recipe')
+              req.onsuccess = () => {
+                const idb = req.result
+                const tx = idb.transaction('mealPlans', 'readonly')
+                const getAllReq = tx.objectStore('mealPlans').getAll()
+                getAllReq.onsuccess = () =>
+                  resolve(
+                    getAllReq.result.filter((row) => row.slot === 'dinner').map((row) => row.id),
+                  )
+                getAllReq.onerror = () => reject(getAllReq.error)
+              }
+              req.onerror = () => reject(req.error)
+            }),
+        )
+
+      const fillWeekBtn = mp4Page.getByRole('button', { name: 'まとめて献立を立てる' })
+      await fillWeekBtn.click()
+      await mp4Page.waitForTimeout(1000)
+      check(
+        'MEALPLAN-04 1回目の「まとめて献立を立てる」で全枠(7日×主菜+副菜=14件)が埋まる',
+        (await mp4Page.getByText('未定', { exact: true }).count()) === 0,
+      )
+      const idsAfterFirst = await dinnerMealPlanIds()
+      check('MEALPLAN-04 1回目の結果、mealPlansの行が14件作られる', idsAfterFirst.length === 14)
+
+      await fillWeekBtn.click()
+      await mp4Page.waitForTimeout(1000)
+      check(
+        'MEALPLAN-04 2回目のタップも無反応にならず、全枠が引き続き埋まっている(以前は無反応バグがあった)',
+        (await mp4Page.getByText('未定', { exact: true }).count()) === 0,
+      )
+      const idsAfterSecond = await dinnerMealPlanIds()
+      check('MEALPLAN-04 2回目の結果も、mealPlansの行が14件のまま', idsAfterSecond.length === 14)
+      const overlappingIds = idsAfterSecond.filter((id) => idsAfterFirst.includes(id))
+      check(
+        'MEALPLAN-04 2回目は「全部埋まっているので無視」ではなく、全行を一旦クリアしてから' +
+          '再作成する(旧idが1件も残らない=以前の「空き枠だけ埋める」実装なら2回目は無反応で' +
+          'idが完全一致していたはず)',
+        overlappingIds.length === 0,
+        `overlap=${JSON.stringify(overlappingIds)}`,
+      )
+    } finally {
+      await mp4Browser.close()
+    }
+  }
+
+  // --- RECIPESET-01: 修正4(2026-07-14 オーナー実機フィードバック)。「レシピセットを読み込む」欄の
+  // 「URLから読み込む」の結果を、読み込み欄の上部にテキストで表示する(以前は下部トーストのみで、
+  // 縦に長いページでは気づきにくかった)。エラー(見つからない)・成功の両方で読み込み欄の上部に
+  // 表示され、下部トースト(押して閉じるボタン)としては二重に出ないことを確認する。
+  // 他の操作(テーマ追加・set=直リンク等)のトーストは変更していないため対象外。
+  // review2.json(setId無し=Pro/パック解錠不要)を使い、専用のまっさらプロファイルで完結させる ---
+  currentCheck = 'RECIPESET-01'
+  {
+    const rsBrowser = await chromium.launch()
+    const rsContext = await rsBrowser.newContext()
+    const rsPage = await rsContext.newPage()
+    rsPage.on('console', (msg) => {
+      if (msg.type() !== 'error') return
+      const text = msg.text()
+      if (text.includes('cloudflareinsights') || text.includes('ERR_FAILED')) return
+      errors.push(`[console@RECIPESET-01] ${text}`)
+    })
+    rsPage.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@RECIPESET-01] ${err.message}`)
+    })
+    try {
+      await rsPage.goto(`${BASE}/#/settings`, { waitUntil: 'networkidle' })
+      await rsPage.waitForTimeout(1000)
+      await rsPage.getByRole('button', { name: 'レシピ', exact: true }).click()
+      await rsPage.waitForTimeout(300)
+
+      const urlInput = rsPage.getByPlaceholder('https://…')
+      const loadUrlBtn = rsPage.getByRole('button', { name: 'URLから読み込む' })
+
+      // エラー(見つからない)パス
+      await urlInput.fill(`${BASE}/sets/data/does-not-exist-e2e.json`)
+      await loadUrlBtn.click()
+      await rsPage.waitForTimeout(600)
+      check(
+        'RECIPESET-01(修正4) 存在しないURLの結果が読み込み欄の上部にテキストで出る',
+        (await rsPage.textContent('body')).includes(
+          '指定されたURLにレシピセットが見つかりませんでした',
+        ),
+      )
+      const errorMsgBox = await rsPage
+        .getByText('指定されたURLにレシピセットが見つかりませんでした', { exact: false })
+        .first()
+        .boundingBox()
+      const urlInputBox = await urlInput.boundingBox()
+      check(
+        'RECIPESET-01(修正4) 結果メッセージが読み込み欄(URL入力)より上に表示される',
+        !!errorMsgBox && !!urlInputBox && errorMsgBox.y < urlInputBox.y,
+      )
+      check(
+        'RECIPESET-01(修正4) 下部トースト(押して閉じるボタン)としては出ない(二重表示しない)',
+        (await rsPage
+          .getByRole('button', { name: '指定されたURLにレシピセットが見つかりませんでした', exact: false })
+          .count()) === 0,
+      )
+
+      // 成功パス(setId無しのreview2セットなのでPro/パック解錠不要)
+      await urlInput.fill(`${BASE}/sets/data/review2.json`)
+      await loadUrlBtn.click()
+      await rsPage.waitForTimeout(1000)
+      const afterSuccessText = await rsPage.textContent('body')
+      check(
+        'RECIPESET-01(修正4) 成功時も「◯件追加しました」が読み込み欄の上部に出る',
+        /\d+件追加しました/.test(afterSuccessText),
+      )
+      check(
+        'RECIPESET-01(修正4) 直前のエラーメッセージは成功後には残らない',
+        !afterSuccessText.includes('指定されたURLにレシピセットが見つかりませんでした'),
+      )
+    } finally {
+      await rsBrowser.close()
     }
   }
 

@@ -33,6 +33,12 @@ const blurOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
  * 2026-07-13 UI改善: 表記の簡素化。「目安」/「自分の価格」バッジを廃止し、代わりに
  * ページ冒頭の一文（ja.priceMaster.disclaimer）だけで説明する。上書き済みの行を戻す
  * ボタンの文言も「目安に戻す」→「デフォルトに戻す」に変更した
+ *
+ * 2026-07-14 オーナー実機フィードバック: (1)新規追加の入力欄を一覧の下から上へ移動、
+ * (2)正規化(前後空白・括弧書き除去)して既存と同名の食材は追加を拒否し案内メッセージを出す
+ * （db/prices.tsのaddPriceEntryが判定。二重登録を作らないことが目的）、
+ * (3)「デフォルトに戻す」が消えないバグを修正（db/prices.tsのupdatePriceEntryが
+ * 価格・単位を既定値と毎回比較してisDefaultを再判定するように変更）
  */
 export default function IngredientPricesPage() {
   const entries = usePriceEntries()
@@ -60,8 +66,17 @@ export default function IngredientPricesPage() {
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newUnit, setNewUnit] = useState('')
+  // 重複登録を拒否したときの案内メッセージ(2026-07-14 オーナー実機フィードバック)。
+  // 入力し直したら自然に消えるよう、各入力欄のonChangeでもクリアする
+  const [addError, setAddError] = useState('')
   const addNew = async () => {
-    await addPriceEntry(newName, Number(newPrice) || 0, newUnit)
+    const result = await addPriceEntry(newName, Number(newPrice) || 0, newUnit)
+    if (result.status === 'invalid') return
+    if (result.status === 'duplicate') {
+      setAddError(ja.priceMaster.duplicateName.replace('{name}', result.existingName))
+      return
+    }
+    setAddError('')
     setNewName('')
     setNewPrice('')
     setNewUnit('')
@@ -75,6 +90,61 @@ export default function IngredientPricesPage() {
         <p className="rounded-sm border border-edge bg-surface px-3 py-2 text-sm text-ink-muted">
           {ja.priceMaster.disclaimer}
         </p>
+
+        {/* 新規追加(2026-07-14 オーナー実機フィードバック: 一覧の下から上へ移動) */}
+        <div className="mt-[var(--space-md)] space-y-2 rounded-md border border-edge bg-surface p-[var(--space-sm)]">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => {
+              setNewName(e.target.value)
+              setAddError('')
+            }}
+            placeholder={ja.priceMaster.namePlaceholder}
+            aria-label={ja.priceMaster.nameLabel}
+            className={inputCls}
+          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={newPrice}
+              onChange={(e) => {
+                setNewPrice(e.target.value)
+                setAddError('')
+              }}
+              placeholder={ja.priceMaster.pricePlaceholder}
+              aria-label={ja.priceMaster.priceLabel}
+              className={inputCls}
+            />
+            <input
+              type="text"
+              value={newUnit}
+              onChange={(e) => {
+                setNewUnit(e.target.value)
+                setAddError('')
+              }}
+              placeholder={ja.priceMaster.unitPlaceholder}
+              aria-label={ja.priceMaster.unitLabel}
+              className={inputCls}
+            />
+          </div>
+          {addError && (
+            <p role="alert" className="text-sm font-bold text-warning">
+              {addError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => void addNew()}
+            disabled={!newName.trim() || !newUnit.trim() || !(Number(newPrice) > 0)}
+            className="flex w-full items-center justify-center gap-1 rounded-sm border border-edge bg-app py-2 text-sm font-bold text-accent shadow-sm disabled:opacity-40"
+          >
+            <Plus size={16} aria-hidden />
+            {ja.priceMaster.add}
+          </button>
+        </div>
 
         {entries && entries.length === 0 && (
           <p className="mt-[var(--space-md)] text-sm text-ink-muted">{ja.priceMaster.empty}</p>
@@ -118,47 +188,6 @@ export default function IngredientPricesPage() {
             )}
           </>
         )}
-
-        {/* 新規追加 */}
-        <div className="mt-[var(--space-md)] space-y-2 rounded-md border border-edge bg-surface p-[var(--space-sm)]">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder={ja.priceMaster.namePlaceholder}
-            aria-label={ja.priceMaster.nameLabel}
-            className={inputCls}
-          />
-          <div className="flex gap-2">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
-              placeholder={ja.priceMaster.pricePlaceholder}
-              aria-label={ja.priceMaster.priceLabel}
-              className={inputCls}
-            />
-            <input
-              type="text"
-              value={newUnit}
-              onChange={(e) => setNewUnit(e.target.value)}
-              placeholder={ja.priceMaster.unitPlaceholder}
-              aria-label={ja.priceMaster.unitLabel}
-              className={inputCls}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => void addNew()}
-            disabled={!newName.trim() || !newUnit.trim() || !(Number(newPrice) > 0)}
-            className="flex w-full items-center justify-center gap-1 rounded-sm border border-edge bg-app py-2 text-sm font-bold text-accent shadow-sm disabled:opacity-40"
-          >
-            <Plus size={16} aria-hidden />
-            {ja.priceMaster.add}
-          </button>
-        </div>
       </div>
     </div>
   )

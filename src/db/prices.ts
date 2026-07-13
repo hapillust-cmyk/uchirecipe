@@ -4,6 +4,7 @@ import { defaultSettings } from './types'
 import type { PriceEntry } from './types'
 import { PRICE_DEFAULTS } from '../data/priceDefaults'
 import { toHiragana } from '../logic/kana'
+import { normalizeIngredientNameForPrice } from '../logic/priceEstimate'
 
 const collator = new Intl.Collator('ja')
 
@@ -74,11 +75,34 @@ export function usePriceEntries() {
   return useLiveQuery(listPriceEntries, [])
 }
 
-/** 新規追加。名前・単位が空、または価格が0以下なら何もしない。新規行は常に「自分の価格」扱い */
-export async function addPriceEntry(name: string, pricePerUnit: number, unit: string): Promise<void> {
+/** addPriceEntryの結果種別（呼び出し側でメッセージを出し分けるため） */
+export type AddPriceEntryResult =
+  | { status: 'added' }
+  | { status: 'duplicate'; existingName: string }
+  | { status: 'invalid' }
+
+/**
+ * 新規追加。名前・単位が空、または価格が0以下なら何もしない({status:'invalid'}。
+ * 呼び出し側のボタンは既にこの条件でdisabledにしているため通常は起きない)。新規行は常に「自分の価格」扱い。
+ *
+ * 二重登録防止(2026-07-14 オーナー実機フィードバック): 正規化後の名前
+ * （前後の空白除去・括弧書き除去。normalizeIngredientNameForPriceと同じ規則）が
+ * 既存のマスタ行と一致する場合は追加せず{status:'duplicate'}を返す。
+ * 既存の行を優先し、重複行は作らない方針（どちらが優先されるか曖昧という不安の解消が目的）。
+ */
+export async function addPriceEntry(
+  name: string,
+  pricePerUnit: number,
+  unit: string,
+): Promise<AddPriceEntryResult> {
   const trimmedName = name.trim()
   const trimmedUnit = unit.trim()
-  if (!trimmedName || !trimmedUnit || !(pricePerUnit > 0)) return
+  if (!trimmedName || !trimmedUnit || !(pricePerUnit > 0)) return { status: 'invalid' }
+  const normalized = normalizeIngredientNameForPrice(trimmedName)
+  const existing = (await db.prices.toArray()).find(
+    (e) => normalizeIngredientNameForPrice(e.name) === normalized,
+  )
+  if (existing) return { status: 'duplicate', existingName: existing.name }
   await db.prices.add({
     name: trimmedName,
     pricePerUnit,
@@ -86,12 +110,18 @@ export async function addPriceEntry(name: string, pricePerUnit: number, unit: st
     updatedAt: Date.now(),
     isDefault: false,
   })
+  return { status: 'added' }
 }
 
 /**
  * 既存の1件を部分更新する（一覧のインライン編集用。渡したフィールドだけ書き換える）。
- * 目安価格(isDefault)の行の価格・単位を書き換えると、以後は「自分の価格」扱いになる
- * （名前だけの変更ではバッジは変わらない。目安バッジは価格・単位が目安のままかどうかの印のため）
+ * 価格・単位が投入時の既定値(defaultPricePerUnit/defaultUnit)と一致するかどうかで
+ * isDefaultを毎回再判定する（名前だけの変更では判定に使う値が変わらないため結果も変わらない）。
+ *
+ * 2026-07-14 オーナー実機フィードバックで修正: 以前は「編集したらfalseにする」だけの
+ * 一方通行だったため、手で既定値に戻しても「デフォルトに戻す」ボタンが消えないバグがあった。
+ * 既定値情報が無い行(ユーザーが追加した独自食材等)はdefaultPricePerUnit/defaultUnitが
+ * 無いため常にisDefault=falseになる（従来どおり「デフォルトに戻す」は出ない）。
  */
 export async function updatePriceEntry(
   id: number,
@@ -103,15 +133,17 @@ export async function updatePriceEntry(
   const nextUnit = patch.unit !== undefined ? patch.unit.trim() : current.unit
   const nextPrice = patch.pricePerUnit !== undefined ? patch.pricePerUnit : current.pricePerUnit
   if (!nextName || !nextUnit || !(nextPrice > 0)) return
-  const priceOrUnitChanged =
-    (patch.pricePerUnit !== undefined && patch.pricePerUnit !== current.pricePerUnit) ||
-    (patch.unit !== undefined && nextUnit !== current.unit)
+  const matchesDefault =
+    current.defaultPricePerUnit != null &&
+    current.defaultUnit != null &&
+    nextPrice === current.defaultPricePerUnit &&
+    nextUnit === current.defaultUnit
   await db.prices.update(id, {
     name: nextName,
     pricePerUnit: nextPrice,
     unit: nextUnit,
     updatedAt: Date.now(),
-    ...(priceOrUnitChanged && current.isDefault ? { isDefault: false } : {}),
+    isDefault: matchesDefault,
   })
 }
 
