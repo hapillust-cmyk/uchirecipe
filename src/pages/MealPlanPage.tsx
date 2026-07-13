@@ -14,11 +14,13 @@ import {
   TriangleAlert,
   Lock,
   Route,
+  RotateCcw,
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
 import { usePriceEntries } from '../db/prices'
 import { useMealPlanRange, assignMeal, clearMeal } from '../db/mealPlan'
+import Toast from '../components/Toast'
 import {
   useTodayList,
   removeFromTodayList,
@@ -106,6 +108,8 @@ export default function MealPlanPage() {
   const today = useMemo(todayString, [])
   const [weekStart, setWeekStart] = useState(() => weekDates(new Date())[0])
   const dates = useMemo(() => weekDates(new Date(`${weekStart}T00:00:00`)), [weekStart])
+  // 今、当週を見ているか(Fix1: 中央チップの「今週へ戻る」ラベル/アイコンは当週以外のときだけ出す)
+  const isAtCurrentWeek = dates[0] === weekDates(new Date())[0]
 
   const entries = useMealPlanRange(dates[0], dates[6])
 
@@ -121,6 +125,8 @@ export default function MealPlanPage() {
     () => monthLeadingBlanks(new Date(`${monthAnchor}T00:00:00`)),
     [monthAnchor],
   )
+  // 今、当月を見ているか(Fix2: 中央チップの「今月へ戻る」ラベル/アイコンは当月以外のときだけ出す)
+  const isAtCurrentMonth = monthAnchor.slice(0, 7) === todayString().slice(0, 7)
   const monthEntries = useMealPlanRange(
     monthDatesList[0],
     monthDatesList[monthDatesList.length - 1],
@@ -151,8 +157,12 @@ export default function MealPlanPage() {
     const next = visibleSlots.includes(slot)
       ? visibleSlots.filter((s) => s !== slot)
       : [...visibleSlots, slot]
-    // 全部外すことはできない（何も見えなくなるため）
-    if (next.length === 0) return
+    // 全部外すことはできない（何も見えなくなるため）。以前は無反応だっただけだったが、
+    // 何も起きない理由が伝わらないとの指摘(第4波ペルソナPDCA Fix6)を受け、トーストで説明する
+    if (next.length === 0) {
+      setMessage(ja.mealPlan.slotFilterKeepOne)
+      return
+    }
     void updateSettings({ visibleMealSlots: next })
   }
   const recipeById = useMemo(() => {
@@ -223,6 +233,20 @@ export default function MealPlanPage() {
     if (!q) return visibleRecipes
     return visibleRecipes.filter((r) => r.title.includes(q))
   }, [visibleRecipes, pickerQuery])
+  // 今開いている枠に現在割り当て済みのレシピID(Fix4: 埋まった枠を開いても他の候補と
+  // 同じ見た目で無確認上書きしてしまう問題の対策で、先頭固定＋選択中バッジに使う)
+  const currentPickerRecipeId = pickerTarget
+    ? entryMap.get(`${pickerTarget.date}|${pickerTarget.slot}`)?.recipeId
+    : undefined
+  // 表示用リスト: 現在割り当て済みのレシピが絞り込み結果に含まれるときだけ先頭に固定する。
+  // 検索で絞り込まれて対象外になった場合は並べ替えない(＝バッジも出ない)
+  const displayedRecipes = useMemo(() => {
+    if (currentPickerRecipeId == null) return filteredRecipes
+    const idx = filteredRecipes.findIndex((r) => r.id === currentPickerRecipeId)
+    if (idx <= 0) return filteredRecipes
+    const current = filteredRecipes[idx]
+    return [current, ...filteredRecipes.slice(0, idx), ...filteredRecipes.slice(idx + 1)]
+  }, [filteredRecipes, currentPickerRecipeId])
 
   const suggest = async (date: string, slot: MealSlot) => {
     if (!recipes) return
@@ -431,6 +455,7 @@ export default function MealPlanPage() {
         <button
           type="button"
           onClick={() => setViewMode('week')}
+          aria-pressed={viewMode === 'week'}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             viewMode === 'week'
               ? 'border-accent bg-accent text-app'
@@ -442,6 +467,7 @@ export default function MealPlanPage() {
         <button
           type="button"
           onClick={() => setViewMode('month')}
+          aria-pressed={viewMode === 'month'}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             viewMode === 'month'
               ? 'border-accent bg-accent text-app'
@@ -467,8 +493,10 @@ export default function MealPlanPage() {
               <button
                 type="button"
                 onClick={() => setMonthAnchor(todayString())}
-                className="text-sm font-bold text-ink-muted"
+                aria-label={isAtCurrentMonth ? undefined : ja.mealPlan.thisMonth}
+                className="flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-ink-muted shadow-sm"
               >
+                {!isAtCurrentMonth && <RotateCcw size={14} className="text-accent" aria-hidden />}
                 {monthAnchor.slice(0, 4)}/{monthAnchor.slice(5, 7)}
               </button>
               <button
@@ -547,8 +575,10 @@ export default function MealPlanPage() {
         <button
           type="button"
           onClick={() => setWeekStart(weekDates(new Date())[0])}
-          className="text-sm font-bold text-ink-muted"
+          aria-label={isAtCurrentWeek ? undefined : ja.mealPlan.thisWeek}
+          className="flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-ink-muted shadow-sm"
         >
+          {!isAtCurrentWeek && <RotateCcw size={14} className="text-accent" aria-hidden />}
           {dates[0].replaceAll('-', '/')} 〜 {dates[6].replaceAll('-', '/')}
         </button>
         <button
@@ -571,6 +601,7 @@ export default function MealPlanPage() {
             key={slot}
             type="button"
             onClick={() => toggleSlot(slot)}
+            aria-pressed={visibleSlots.includes(slot)}
             className={`rounded-sm border px-3 py-2 text-sm font-bold ${
               visibleSlots.includes(slot)
                 ? 'border-accent bg-accent text-app'
@@ -587,6 +618,7 @@ export default function MealPlanPage() {
         <button
           type="button"
           onClick={() => setQuickOnly((v) => !v)}
+          aria-pressed={quickOnly}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             quickOnly ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
           }`}
@@ -603,14 +635,12 @@ export default function MealPlanPage() {
         </button>
       </div>
 
-      {message && (
-        <p className="mt-[var(--space-sm)] rounded-sm border border-edge bg-surface px-3 py-2 text-sm text-ink-muted">
-          {message}
-        </p>
-      )}
+      <Toast message={message} onClose={() => setMessage('')} />
 
-      {/* 週の概算食費（材料に価格を1件も入力していない場合はセクションごと非表示） */}
-      {hasPricedRecipe && (
+      {/* 週の概算食費（材料に価格を1件も入力していない場合、または何も割り当てていない
+          場合(weekCost===0)はセクションごと非表示。マスタ初期値由来の「約0円」ノイズを消す。
+          第4波ペルソナPDCA Fix3） */}
+      {hasPricedRecipe && weekCost > 0 && (
         <section className="mt-[var(--space-md)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
           <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
           <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
@@ -645,7 +675,7 @@ export default function MealPlanPage() {
           >
             <h2 className="font-bold">
               {dowLabels[dayIndex]} {date.replaceAll('-', '/')}
-              {date === today && <span className="ml-2 text-sm text-accent">{ja.mealPlan.thisWeek}</span>}
+              {date === today && <span className="ml-2 text-sm text-accent">{ja.mealPlan.todayBadge}</span>}
             </h2>
             <div className="mt-[var(--space-sm)] space-y-1">
               {visibleSlots.map((slot) => {
@@ -758,8 +788,10 @@ export default function MealPlanPage() {
               </p>
             ) : (
               <ul className="divide-y divide-edge rounded-md border border-edge bg-surface shadow-sm">
-                {filteredRecipes.map((recipe) => (
-                  <li key={recipe.id}>
+                {displayedRecipes.map((recipe) => {
+                  const isCurrentPick = recipe.id === currentPickerRecipeId
+                  return (
+                  <li key={recipe.id} className={isCurrentPick ? 'bg-accent/10' : undefined}>
                     <button
                       type="button"
                       onClick={() => void pickRecipe(recipe.id!)}
@@ -773,6 +805,11 @@ export default function MealPlanPage() {
                         />
                       )}
                       <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
+                      {isCurrentPick && (
+                        <span className="shrink-0 rounded-sm border border-accent px-1.5 py-0.5 text-xs font-bold text-accent">
+                          {ja.mealPlan.pickCurrentBadge}
+                        </span>
+                      )}
                       <span className="flex shrink-0 items-center gap-2 text-xs text-ink-muted">
                         {recipe.cookMinutes != null && recipe.cookMinutes > 0 && (
                           <span className="inline-flex items-center gap-0.5">
@@ -787,7 +824,8 @@ export default function MealPlanPage() {
                       </span>
                     </button>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
           </div>

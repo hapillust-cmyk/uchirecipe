@@ -38,7 +38,14 @@
 //         PRO-FALLBACK-01(crypto.subtleが使えないinsecure context(LAN実機のhttp://等)でも、
 //         純JSのSHA-256フォールバック(src/logic/sha256.ts)でPro解錠コード検証が動くこと。
 //         2026-07-13。他チェックが使う既存サーバーとは別に自前でpreviewサーバーをport 4194で
-//         起動して検証する)。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
+//         起動して検証する) /
+//         MEALPLAN-01(献立タブ・週プランナー。第4波ペルソナPDCA・2026-07-13裁定:
+//         週移動の中央チップが「今週へ戻る」ボタンとして機能しaria-labelが状態に応じて出し分けられる
+//         こと(Fix1)・概算食費セクションは未割当時は非表示で割当後に表示されること(Fix3)・
+//         ピッカー再オープンで現在レシピに「選択中」バッジが出ること(Fix4)・フィルタ/トグルの
+//         aria-pressed(Fix5)・最後の食事帯フィルタを外そうとしたときの説明トースト(Fix6)) /
+//         MEALPLAN-02(献立タブ・月カレンダー。同波Fix2: 月移動の中央チップの「今月へ戻る」導線。
+//         Pro解錠コード入力UI経由で解錠してから検証)。console/pageerrorは全工程で監視(既知のCF計測CORSは除外)
 import { chromium, webkit } from 'playwright'
 import { spawn, execSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -1077,6 +1084,200 @@ try {
   await page.waitForTimeout(500)
   await page.getByRole('button', { name: 'このレシピを削除' }).click()
   await page.waitForTimeout(800)
+
+  // --- MEALPLAN-01: 献立タブ・週プランナー(第4波ペルソナPDCA Fix1/3/4/5/6。まっさらプロファイル
+  // で検証するため専用browser/contextを使う)。
+  // Fix1: 週移動の中央チップ(以前は無ラベルの地の文だった)は、当週表示中はaria-labelなし、
+  //       当週以外を見ているときだけaria-label(今週へ戻る)が付く「戻るボタン」になっていること
+  // Fix3: 何も割り当てていない週は概算食費セクションが非表示、割り当てると表示されること
+  // Fix4: 埋まった枠のピッカーを再度開くと、現在のレシピの行に「選択中」バッジが出ること
+  // Fix5: 食事帯フィルタ・時短優先トグル・週/月トグルにaria-pressedが付くこと(見た目は変更なし)
+  // Fix6: 最後の1つの食事帯フィルタを外そうとすると無反応ではなく説明トーストが出ること ---
+  currentCheck = 'MEALPLAN-01'
+  {
+    const mpBrowser = await chromium.launch()
+    const mpContext = await mpBrowser.newContext()
+    const mpPage = await mpContext.newPage()
+    mpPage.on('console', (msg) => {
+      if (msg.type() !== 'error') return
+      const text = msg.text()
+      if (text.includes('cloudflareinsights') || text.includes('ERR_FAILED')) return
+      errors.push(`[console@MEALPLAN-01] ${text}`)
+    })
+    mpPage.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@MEALPLAN-01] ${err.message}`)
+    })
+    try {
+      await mpPage.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await mpPage.waitForTimeout(1800) // 初回シード完了待ち
+
+      // Fix3: まっさらプロファイル・未割当時は概算食費セクションが無い
+      const mpEmptyText = await mpPage.textContent('body')
+      check(
+        'MEALPLAN-01(Fix3) 未割当時は概算食費セクションが無い',
+        !mpEmptyText.includes('今週の概算食費'),
+      )
+
+      // Fix1: 週移動の中央チップ。まず当週表示中はaria-labelが無いことを確認
+      const weekCenterBtn = mpPage.locator('button', { hasText: '〜' }).first()
+      const weekTextAtCurrent = (await weekCenterBtn.textContent())?.trim()
+      check(
+        'MEALPLAN-01(Fix1) 当週表示中は中央チップにaria-labelが無い',
+        (await weekCenterBtn.getAttribute('aria-label')) === null,
+      )
+      await mpPage.locator('button[aria-label="次の週"]').click()
+      await mpPage.waitForTimeout(400)
+      check(
+        'MEALPLAN-01(Fix1) 「次の週」で来週へ→中央チップにaria-label(今週へ戻る)が付く',
+        (await weekCenterBtn.getAttribute('aria-label')) === '今週へ戻る',
+      )
+      await weekCenterBtn.click()
+      await mpPage.waitForTimeout(400)
+      check(
+        'MEALPLAN-01(Fix1) 中央チップをタップすると当週へ戻る(日付レンジが元に戻る)',
+        (await weekCenterBtn.textContent())?.trim() === weekTextAtCurrent,
+      )
+      check(
+        'MEALPLAN-01(Fix1) 当週へ戻った後は中央チップのaria-labelが再び消える',
+        (await weekCenterBtn.getAttribute('aria-label')) === null,
+      )
+
+      // Fix4+Fix3: 空き枠に「肉じゃが」を割り当てる(ピッカー経由)
+      await mpPage.getByText('未定', { exact: true }).first().click()
+      await mpPage.waitForTimeout(400)
+      check('MEALPLAN-01(Fix4) ピッカーが開く', (await mpPage.textContent('body')).includes('レシピを選ぶ'))
+      await mpPage.getByPlaceholder('レシピ名で絞り込み').fill('肉じゃが')
+      await mpPage.waitForTimeout(300)
+      await mpPage.getByText('肉じゃが', { exact: true }).first().click()
+      await mpPage.waitForTimeout(400)
+      const mpAssignedText = await mpPage.textContent('body')
+      check('MEALPLAN-01(Fix3) 割り当てると概算食費セクションが出る', mpAssignedText.includes('今週の概算食費'))
+      const costMatch = mpAssignedText.match(/約([\d,]+)円/)
+      check(
+        'MEALPLAN-01(Fix3) 表示された概算食費は0円ではない',
+        !!costMatch && Number(costMatch[1].replace(/,/g, '')) > 0,
+        `costMatch=${costMatch?.[0]}`,
+      )
+
+      // Fix4: 埋まった枠を再度開くと現在のレシピ行に「選択中」バッジが出る
+      await mpPage.getByRole('button', { name: '肉じゃが' }).first().click()
+      await mpPage.waitForTimeout(400)
+      const currentPickRow = mpPage.locator('li', { hasText: '選択中' })
+      check('MEALPLAN-01(Fix4) 「選択中」バッジが出る', await currentPickRow.isVisible())
+      check(
+        'MEALPLAN-01(Fix4) 「選択中」バッジは現在のレシピ(肉じゃが)の行に付く',
+        (await currentPickRow.textContent())?.includes('肉じゃが'),
+      )
+      await mpPage.locator('button[aria-label="閉じる"]').click()
+      await mpPage.waitForTimeout(300)
+
+      // Fix5: aria-pressed(見た目は変更しない)
+      const quickToggleBtn = mpPage.getByRole('button', { name: '自動提案は時短レシピ優先' })
+      check('MEALPLAN-01(Fix5) 時短優先トグルは既定でaria-pressed=false', (await quickToggleBtn.getAttribute('aria-pressed')) === 'false')
+      await quickToggleBtn.click()
+      await mpPage.waitForTimeout(200)
+      check('MEALPLAN-01(Fix5) 時短優先トグルON後はaria-pressed=true', (await quickToggleBtn.getAttribute('aria-pressed')) === 'true')
+      await quickToggleBtn.click() // 元に戻す
+      await mpPage.waitForTimeout(200)
+      const breakfastFilterBtn = mpPage.getByRole('button', { name: '朝食', exact: true })
+      const lunchFilterBtn = mpPage.getByRole('button', { name: '昼食', exact: true })
+      const dinnerFilterBtn = mpPage.getByRole('button', { name: '夕食', exact: true })
+      check('MEALPLAN-01(Fix5) 食事帯フィルタは既定で全てaria-pressed=true', (await breakfastFilterBtn.getAttribute('aria-pressed')) === 'true')
+      const weekToggleBtn = mpPage.getByRole('button', { name: '週', exact: true })
+      const monthToggleBtn = mpPage.getByRole('button', { name: '月', exact: true })
+      check('MEALPLAN-01(Fix5) 週/月トグルにもaria-pressedが付く(週表示中はtrue/false)', (await weekToggleBtn.getAttribute('aria-pressed')) === 'true' && (await monthToggleBtn.getAttribute('aria-pressed')) === 'false')
+
+      // Fix6: 最後の1つの食事帯フィルタを外そうとすると説明トーストが出て外れない
+      await lunchFilterBtn.click()
+      await mpPage.waitForTimeout(200)
+      await dinnerFilterBtn.click()
+      await mpPage.waitForTimeout(200)
+      check(
+        'MEALPLAN-01(Fix6) 事前条件: 朝食だけが表示中',
+        (await breakfastFilterBtn.getAttribute('aria-pressed')) === 'true' &&
+          (await lunchFilterBtn.getAttribute('aria-pressed')) === 'false' &&
+          (await dinnerFilterBtn.getAttribute('aria-pressed')) === 'false',
+      )
+      await breakfastFilterBtn.click() // 最後の1つを外そうとする
+      await mpPage.waitForTimeout(300)
+      check(
+        'MEALPLAN-01(Fix6) 最後の1枠を外そうとすると説明トーストが出る',
+        (await mpPage.textContent('body')).includes('少なくとも1つの食事帯は表示します'),
+      )
+      check(
+        'MEALPLAN-01(Fix6) 朝食フィルタは外れずaria-pressed=trueのまま',
+        (await breakfastFilterBtn.getAttribute('aria-pressed')) === 'true',
+      )
+    } finally {
+      await mpBrowser.close()
+    }
+  }
+
+  // --- MEALPLAN-02: 献立タブ・月カレンダー(第4波ペルソナPDCA Fix2)。Pro解錠(実際のコード入力UI経由)
+  // →月表示→「前の月」→中央チップにaria-label(今月へ戻る)→タップで当月へ戻ることを確認する。
+  // Pro解錠はPRO-FALLBACK-01と同じテスト用コード(docs/22記載・販売用ではない)を使う ---
+  currentCheck = 'MEALPLAN-02'
+  {
+    const mp2Browser = await chromium.launch()
+    const mp2Context = await mp2Browser.newContext()
+    const mp2Page = await mp2Context.newPage()
+    mp2Page.on('console', (msg) => {
+      if (msg.type() !== 'error') return
+      const text = msg.text()
+      if (text.includes('cloudflareinsights') || text.includes('ERR_FAILED')) return
+      errors.push(`[console@MEALPLAN-02] ${text}`)
+    })
+    mp2Page.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@MEALPLAN-02] ${err.message}`)
+    })
+    try {
+      await mp2Page.goto(`${BASE}/#/settings?section=pro`, { waitUntil: 'networkidle' })
+      await mp2Page.waitForTimeout(1500)
+      await mp2Page.getByPlaceholder('解錠コード (例: UR-XXXX-XXXX)').fill('UR-96QS-2VSZ')
+      await mp2Page.getByRole('button', { name: '解錠する', exact: true }).first().click()
+      await mp2Page.waitForTimeout(1000)
+      check(
+        'MEALPLAN-02 前提: Pro解錠が成功する',
+        (await mp2Page.textContent('body')).includes('Pro版をご利用いただきありがとうございます'),
+      )
+
+      await mp2Page.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await mp2Page.waitForTimeout(800)
+      await mp2Page.getByRole('button', { name: '月', exact: true }).click()
+      await mp2Page.waitForTimeout(400)
+      check(
+        'MEALPLAN-02 前提: Pro解錠済みで月カレンダーが開く(ゲートでない)',
+        !(await mp2Page.textContent('body')).includes('月間表示はPro版の機能です'),
+      )
+
+      const monthCenterBtn = mp2Page.locator('button').filter({ hasText: '/' }).first()
+      const monthTextAtCurrent = (await monthCenterBtn.textContent())?.trim()
+      check(
+        'MEALPLAN-02(Fix2) 当月表示中は中央チップにaria-labelが無い',
+        (await monthCenterBtn.getAttribute('aria-label')) === null,
+      )
+      await mp2Page.locator('button[aria-label="前の月"]').click()
+      await mp2Page.waitForTimeout(400)
+      check(
+        'MEALPLAN-02(Fix2) 「前の月」で先月へ→中央チップにaria-label(今月へ戻る)が付く',
+        (await monthCenterBtn.getAttribute('aria-label')) === '今月へ戻る',
+      )
+      await monthCenterBtn.click()
+      await mp2Page.waitForTimeout(400)
+      check(
+        'MEALPLAN-02(Fix2) 中央チップをタップすると当月へ戻る(年月表示が元に戻る)',
+        (await monthCenterBtn.textContent())?.trim() === monthTextAtCurrent,
+      )
+      check(
+        'MEALPLAN-02(Fix2) 当月へ戻った後は中央チップのaria-labelが再び消える',
+        (await monthCenterBtn.getAttribute('aria-label')) === null,
+      )
+    } finally {
+      await mp2Browser.close()
+    }
+  }
 
   // --- SMK-19: 静的ページ(/about/配下・/sets/)がSW有効でも200でアプリ本体にすり替わらない ---
   // アプリ本体のtitleは「うちレシピ」単独。静的ページは必ず「◯◯｜うちレシピ」形式のtitleを持つ
