@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, X, Download, Upload, Link2, RotateCcw, ChevronUp, ChevronDown, Info, Coins } from 'lucide-react'
 import { useSettings, updateSettings } from '../db/settings'
 import { listRecipes, deleteRecipesBySourceSet } from '../db/recipes'
+import { listSetExclusions, clearSetExclusions } from '../db/setExclusions'
 import { reloadStarterRecipes, starterCount } from '../db/starters'
 import {
   downloadBackup,
@@ -93,24 +94,37 @@ const sectionDeepLinks: Record<string, { tab: SettingsTab; elementId: string }> 
 /**
  * importRecipeSetの結果メッセージを組み立てる。更新（内容が変わっていた再取込）が
  * 1件以上あるときだけ「{a}件追加・{u}件更新しました」系にし、無いときは従来文言のまま
- * （u=0のときまで新文言を出すと冗長なため・2026-07-12）
+ * （u=0のときまで新文言を出すと冗長なため・2026-07-12）。
+ * 削除済み（再取込除外の記録あり）のため取り込まなかった品があるときだけ
+ * 「（削除済みの除外中{e}件）」を末尾に付ける（0件なら出さない・2026-07-13トゥームストーン）
  */
-function formatRecipeSetResult(result: { added: number; updated: number; skipped: number }): string {
-  if (result.updated > 0) {
-    return ja.settings.recipeSetResultWithUpdate
-      .replace('{a}', String(result.added))
-      .replace('{u}', String(result.updated))
-      .replace('{s}', String(result.skipped))
+function formatRecipeSetResult(result: {
+  added: number
+  updated: number
+  skipped: number
+  excluded: number
+}): string {
+  const base =
+    result.updated > 0
+      ? ja.settings.recipeSetResultWithUpdate
+          .replace('{a}', String(result.added))
+          .replace('{u}', String(result.updated))
+          .replace('{s}', String(result.skipped))
+      : ja.settings.recipeSetResult
+          .replace('{a}', String(result.added))
+          .replace('{s}', String(result.skipped))
+  if (result.excluded > 0) {
+    return base + ja.settings.recipeSetResultExcluded.replace('{e}', String(result.excluded))
   }
-  return ja.settings.recipeSetResult
-    .replace('{a}', String(result.added))
-    .replace('{s}', String(result.skipped))
+  return base
 }
 
 /** 設定: NG食材 / 画面を暗くしない / テーマ */
 export default function SettingsPage() {
   const settings = useSettings()
   const recipes = useLiveQuery(listRecipes, [])
+  // 再取込除外の記録(トゥームストーン)。テーマ一覧の「除外中◯品・すべて戻す」表示に使う
+  const setExclusions = useLiveQuery(listSetExclusions, [])
   const [ngInput, setNgInput] = useState('')
   const [message, setMessage] = useState('')
   const importFileRef = useRef<HTMLInputElement>(null)
@@ -284,7 +298,12 @@ export default function SettingsPage() {
     }
   }
 
-  const showRecipeSetResult = (result: { added: number; updated: number; skipped: number }) => {
+  const showRecipeSetResult = (result: {
+    added: number
+    updated: number
+    skipped: number
+    excluded: number
+  }) => {
     setMessage(formatRecipeSetResult(result))
   }
 
@@ -416,6 +435,21 @@ export default function SettingsPage() {
 
   // テーマごとの取込済み判定: そのテーマ由来(sourceSetId一致)のレシピが1件でも端末にあるか
   const importedThemeIds = new Set((recipes ?? []).map((r) => r.sourceSetId).filter(Boolean))
+
+  // テーマごとの「除外中」(削除済みで再取込しない)品数(トゥームストーン・2026-07-13 Fable設計)
+  const exclusionCountByTheme = new Map<string, number>()
+  for (const exclusion of setExclusions ?? []) {
+    exclusionCountByTheme.set(
+      exclusion.setId,
+      (exclusionCountByTheme.get(exclusion.setId) ?? 0) + 1,
+    )
+  }
+
+  /** テーマの除外記録をすべて消す(「除外中◯品・すべて戻す」)。次にそのテーマを取り込むと戻る */
+  const restoreThemeExclusions = async (theme: ThemeManifestEntry) => {
+    await clearSetExclusions(theme.id)
+    setMessage(ja.settings.themeExclusionRestored.replace('{name}', theme.title))
+  }
 
   const addTheme = async (theme: ThemeManifestEntry) => {
     setThemeBusyId(theme.id)
@@ -900,6 +934,8 @@ export default function SettingsPage() {
                   const imported = importedThemeIds.has(theme.id)
                   const expanded = expandedThemeIds.includes(theme.id)
                   const items = theme.items ?? []
+                  // 削除済みで再取込しない品数(トゥームストーン)。1件以上なら「すべて戻す」を出す
+                  const excludedCount = exclusionCountByTheme.get(theme.id) ?? 0
                   return (
                     <li
                       key={theme.id}
@@ -994,6 +1030,19 @@ export default function SettingsPage() {
                           </>
                         )}
                       </div>
+                      {/* 削除済みで再取込しない品(トゥームストーン)があるときだけ「すべて戻す」を出す。
+                          タップで除外記録を消し、次にこのテーマを取り込むと戻る(2026-07-13 Fable設計) */}
+                      {excludedCount > 0 && (
+                        <div className="mt-[var(--space-sm)]">
+                          <button
+                            type="button"
+                            onClick={() => void restoreThemeExclusions(theme)}
+                            className="text-sm font-bold text-accent underline"
+                          >
+                            {ja.settings.themeExclusionRestore.replace('{n}', String(excludedCount))}
+                          </button>
+                        </div>
+                      )}
                     </li>
                   )
                 })}

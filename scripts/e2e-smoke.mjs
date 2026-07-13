@@ -40,6 +40,12 @@
 //         NUT-02(栄養価のめやす: Pro解錠済みで8項目の実パネルが出る(2026-07-13 第2弾で
 //         食物繊維・鉄・カルシウム+ビタミン注記を追加)・人数を変えても1人分の値は不変。
 //         M6-1 2026-07-12オーナー指示でNUTRITION_ENABLED有効化) /
+//         NUTSORT-01(栄養並び替え・2026-07-13 Fable設計: 無料では「カロリー(1食)」だけが並べ替えに
+//         出て「たんぱく質(1食)」は出ない・カロリー順の既定は昇順・算出不能レシピは昇順/降順とも末尾) /
+//         NUTSORT-02(栄養並び替え・Pro解錠済み: 「たんぱく質(1食)」が出て既定は降順) /
+//         TOMB-01(削除したセット品の再取込除外=トゥームストーン・2026-07-13 Fable設計:
+//         テーマ取り込み→1品削除→再取込で復活しない(「削除済みの除外中1件」表示)→テーマ一覧の
+//         「除外中1品・すべて戻す」で解除→再取込で復活する) /
 //         FOCUS-MEMO-01(調理中モードの▽折りたたみメモが詳細画面と同じ小窓タップで開閉し、
 //         「｜」改行・「・」箇条書きも小窓内で効くこと。2026-07-12 Fable裁定) /
 //         PRICE-01(食材価格マスタ。材料に価格未入力のレシピでもマスタ目安価格が詳細の
@@ -463,6 +469,75 @@ try {
   // 後始末: 検証用に作成したレシピを削除
   await page.getByRole('button', { name: 'このレシピを削除' }).click()
   await page.waitForTimeout(800)
+
+  // --- NUTSORT-01: 栄養並び替え(2026-07-13 Fable設計)。無料(未解錠)では「カロリー(1食)」だけが
+  // 並べ替えに出て「たんぱく質(1食)」は出ない(Pro解錠時のみ)こと、カロリー順の既定は昇順で、
+  // 栄養を算出できないレシピ(材料が成分表に名寄せできない自作レシピ)は昇順・降順どちらでも
+  // 末尾に回ることを確認する ---
+  currentCheck = 'NUTSORT-01'
+  // 算出不能なレシピを1件作る(材料名が成分表のどの食品にも名寄せできない)
+  await page.goto(`${BASE}/#/recipes/new`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.getByPlaceholder('例: 肉じゃが').fill('E2E栄養並び替え確認レシピ')
+  await page.getByPlaceholder('例: じゃがいも').first().fill('謎のたべもの')
+  await page.getByPlaceholder('例: じゃがいもを一口大に切る').first().fill('謎のたべものを盛り付ける')
+  await page.getByRole('button', { name: '保存する' }).click()
+  await page.waitForTimeout(800)
+  await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.locator('button[aria-label="絞り込み"]').click()
+  await page.waitForTimeout(300)
+  const nutSortPanelText = await page.textContent('body')
+  check(
+    'NUTSORT-01 並べ替えに「カロリー(1食)」が出る(栄養機能が有効なら無料でも表示)',
+    nutSortPanelText.includes('カロリー(1食)'),
+  )
+  check(
+    'NUTSORT-01 未解錠では「たんぱく質(1食)」は出ない(Pro解錠時のみ)',
+    !nutSortPanelText.includes('たんぱく質(1食)'),
+  )
+  await page.getByRole('button', { name: 'カロリー(1食)', exact: true }).click()
+  await page.waitForTimeout(500)
+  const kcalAscActive = await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const target = buttons.find((b) => b.textContent?.trim() === '昇順')
+    return target ? target.className.includes('border-accent') : false
+  })
+  check('NUTSORT-01 カロリー順の既定は昇順(低い方から)', kcalAscActive)
+  const nutCardTitles = () =>
+    page.locator('div.grid.grid-cols-2 a[href^="#/recipes/"] p.font-bold').allTextContents()
+  const kcalAscTitles = await nutCardTitles()
+  check(
+    'NUTSORT-01 算出不能なレシピは昇順で末尾に回る',
+    kcalAscTitles.length > 1 && kcalAscTitles[kcalAscTitles.length - 1] === 'E2E栄養並び替え確認レシピ',
+    `末尾=${kcalAscTitles[kcalAscTitles.length - 1]}`,
+  )
+  await page.getByRole('button', { name: '降順', exact: true }).click()
+  await page.waitForTimeout(500)
+  const kcalDescTitles = await nutCardTitles()
+  check(
+    'NUTSORT-01 降順でも算出不能なレシピは末尾のまま',
+    kcalDescTitles.length > 1 &&
+      kcalDescTitles[kcalDescTitles.length - 1] === 'E2E栄養並び替え確認レシピ',
+    `末尾=${kcalDescTitles[kcalDescTitles.length - 1]}`,
+  )
+  check(
+    'NUTSORT-01 昇順と降順で先頭が入れ替わる(実際にカロリー順で並んでいる)',
+    kcalAscTitles.length > 1 && kcalAscTitles[0] !== kcalDescTitles[0],
+    `昇順先頭=${kcalAscTitles[0]} 降順先頭=${kcalDescTitles[0]}`,
+  )
+  // 後始末: 並べ替えを既定に戻してパネルを閉じ、検証用レシピを削除する
+  await page.getByRole('button', { name: '更新順', exact: true }).click()
+  await page.waitForTimeout(200)
+  await page.getByRole('button', { name: '決定' }).click()
+  await page.waitForTimeout(300)
+  await page.getByText('E2E栄養並び替え確認レシピ', { exact: true }).first().click()
+  await page.waitForTimeout(500)
+  await page.locator('a[href*="/edit"]').first().click()
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: 'このレシピを削除' }).click()
+  await page.waitForTimeout(800)
+  await page.evaluate(() => sessionStorage.removeItem('uchirecipe:recipesListState'))
 
   // --- SMK-14(簡易): 未解錠でのセット取り込みは丁寧にブロックされる ---
   currentCheck = 'SMK-14'
@@ -949,6 +1024,39 @@ try {
         !!perMatchBefore && !!perMatchAfter && perMatchBefore[1] === perMatchAfter[1],
         `変更前=${perMatchBefore?.[1]} 変更後=${perMatchAfter?.[1]}`,
       )
+
+      // --- NUTSORT-02: 栄養並び替え(Pro解錠済み・2026-07-13 Fable設計)。
+      // 「たんぱく質(1食)」が並べ替えの選択肢に出て、選ぶと既定が降順(多い方から)になることを
+      // 確認する(無料側で出ないことはNUTSORT-01で検証済み)。NUT-02と同じ解錠済みcontextを使う ---
+      currentCheck = 'NUTSORT-02'
+      await nutPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await nutPage.waitForTimeout(800)
+      await nutPage.locator('button[aria-label="絞り込み"]').click()
+      await nutPage.waitForTimeout(300)
+      const proSortPanelText = await nutPage.textContent('body')
+      check(
+        'NUTSORT-02 Pro解錠済みでは「たんぱく質(1食)」が並べ替えに出る',
+        proSortPanelText.includes('たんぱく質(1食)'),
+      )
+      check(
+        'NUTSORT-02 「カロリー(1食)」も引き続き出る',
+        proSortPanelText.includes('カロリー(1食)'),
+      )
+      await nutPage.getByRole('button', { name: 'たんぱく質(1食)', exact: true }).click()
+      await nutPage.waitForTimeout(500)
+      const proteinDescActive = await nutPage.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'))
+        const target = buttons.find((b) => b.textContent?.trim() === '降順')
+        return target ? target.className.includes('border-accent') : false
+      })
+      check('NUTSORT-02 たんぱく質順の既定は降順(多い方から)', proteinDescActive)
+      const proteinTitles = await nutPage
+        .locator('div.grid.grid-cols-2 a[href^="#/recipes/"] p.font-bold')
+        .allTextContents()
+      check(
+        'NUTSORT-02 たんぱく質順でも一覧が表示される(console/pageerror監視でエラー0を担保)',
+        proteinTitles.length > 0,
+      )
     } finally {
       await nutBrowser.close()
     }
@@ -1014,6 +1122,123 @@ try {
       )
     } finally {
       await packBrowser.close()
+    }
+  }
+
+  // --- TOMB-01: 削除したセット品の再取込除外(トゥームストーン・2026-07-13 Fable設計)。
+  // テーマ「高たんぱくごはん」(kintore・10品)を取り込む→1品(漬けるだけ味玉)を削除→
+  // 再取込(#/settings?set=直リンク)しても復活せず「削除済みの除外中1件」と出る→
+  // テーマ一覧の「除外中1品・すべて戻す」で解除(次の取込で戻る旨のトースト)→
+  // もう一度取り込むと復活する、の一連を確認する。テーマ取り込みには追加レシピパック解錠が
+  // 必要なため、NUT-02と同様settings.recipePackCodeをIndexedDBへ直接書き込んで再現する。
+  // 他チェックの解錠状態・レシピに影響しないよう、専用のbrowser/contextで完結させる ---
+  currentCheck = 'TOMB-01'
+  {
+    const tbBrowser = await chromium.launch()
+    const tbContext = await tbBrowser.newContext()
+    const tbPage = await tbContext.newPage()
+    tbPage.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@TOMB-01] ${err.message}`)
+    })
+    // 削除確認・?set=直リンクの取り込み確認ダイアログを自動承諾する
+    tbPage.on('dialog', (dialog) => dialog.accept())
+    try {
+      await tbPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(1800) // 初回シード完了待ち(settingsレコードもこの時点で作られる)
+      await tbPage.evaluate(async () => {
+        const req = indexedDB.open('uchi-recipe')
+        const idb = await new Promise((resolve, reject) => {
+          req.onsuccess = () => resolve(req.result)
+          req.onerror = () => reject(req.error)
+        })
+        await new Promise((resolve, reject) => {
+          const tx = idb.transaction('settings', 'readwrite')
+          const store = tx.objectStore('settings')
+          const getReq = store.get(1)
+          getReq.onsuccess = () => {
+            const current = getReq.result || { id: 1 }
+            const putReq = store.put({
+              ...current,
+              id: 1,
+              recipePackCode: 'UP-E2E-TEST-ONLY',
+              recipePackActivatedAt: Date.now(),
+            })
+            putReq.onsuccess = () => resolve(undefined)
+            putReq.onerror = () => reject(putReq.error)
+          }
+          getReq.onerror = () => reject(getReq.error)
+        })
+        idb.close()
+      })
+
+      // 1) テーマを取り込む(?set=直リンク。確認ダイアログは自動承諾)
+      await tbPage.goto(`${BASE}/#/settings?set=kintore`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(2000)
+      check(
+        'TOMB-01 テーマの初回取り込み(10品追加)',
+        (await tbPage.textContent('body')).includes('10件追加しました'),
+      )
+
+      // 2) 取り込んだうち1品(漬けるだけ味玉)を編集画面から削除する(確認ダイアログは自動承諾)
+      await tbPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(600)
+      await tbPage.locator('input[type="search"]').fill('漬けるだけ味玉')
+      await tbPage.waitForTimeout(400)
+      await tbPage.getByText('漬けるだけ味玉', { exact: true }).first().click()
+      await tbPage.waitForTimeout(500)
+      await tbPage.locator('a[href*="/edit"]').first().click()
+      await tbPage.waitForTimeout(500)
+      await tbPage.getByRole('button', { name: 'このレシピを削除' }).click()
+      await tbPage.waitForTimeout(800)
+      // 一覧の検索条件(sessionStorage)に検索語が残ると以降の一覧確認が絞り込まれたままになるため消す
+      await tbPage.evaluate(() => sessionStorage.removeItem('uchirecipe:recipesListState'))
+
+      // 3) 再取込しても復活せず、「削除済みの除外中1件」と表示される
+      await tbPage.goto(`${BASE}/#/settings?set=kintore`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(2000)
+      check(
+        'TOMB-01 再取込の結果に「削除済みの除外中1件」が出る',
+        (await tbPage.textContent('body')).includes('削除済みの除外中1件'),
+      )
+      await tbPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(600)
+      check(
+        'TOMB-01 再取込しても削除した品は復活しない',
+        !(await tbPage.textContent('body')).includes('漬けるだけ味玉'),
+      )
+
+      // 4) テーマ一覧の「除外中1品・すべて戻す」で解除→トーストで「次に取り込むと戻る」旨を案内
+      await tbPage.goto(`${BASE}/#/settings?section=themes`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(1000)
+      const restoreButton = tbPage.getByRole('button', { name: '除外中1品・すべて戻す' })
+      check('TOMB-01 テーマ一覧に「除外中1品・すべて戻す」ボタンが出る', await restoreButton.isVisible())
+      await restoreButton.click()
+      await tbPage.waitForTimeout(400)
+      check(
+        'TOMB-01 解除すると「次にこのテーマを取り込むと戻ります」のトーストが出る',
+        (await tbPage.textContent('body')).includes('次にこのテーマを取り込むと戻ります'),
+      )
+      check(
+        'TOMB-01 解除後は「除外中」ボタンが消える',
+        !(await restoreButton.isVisible().catch(() => false)),
+      )
+
+      // 5) もう一度取り込むと削除していた品が復活する
+      await tbPage.goto(`${BASE}/#/settings?set=kintore`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(2000)
+      check(
+        'TOMB-01 解除後の再取込で1件追加される',
+        (await tbPage.textContent('body')).includes('1件追加しました'),
+      )
+      await tbPage.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await tbPage.waitForTimeout(600)
+      check(
+        'TOMB-01 解除→再取込で削除した品が復活する',
+        (await tbPage.textContent('body')).includes('漬けるだけ味玉'),
+      )
+    } finally {
+      await tbBrowser.close()
     }
   }
 

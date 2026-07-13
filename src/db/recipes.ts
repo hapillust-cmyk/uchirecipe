@@ -2,6 +2,7 @@ import { db } from './db'
 import { defaultSettings } from './types'
 import type { CookedLog, Recipe, RecipeInput } from './types'
 import { buildSearchWords, SEARCH_INDEX_VERSION, searchIndexNeedsRebuild } from '../logic/kana'
+import { exclusionRecordFor } from '../logic/backup'
 import { READINGS_VERSION } from '../logic/ingredientReadings'
 
 /** 入力の掃除: 名前が空の材料行・本文が空の手順行は保存しない */
@@ -56,9 +57,30 @@ export async function updateRecipe(id: number, input: RecipeInput): Promise<void
   })
 }
 
-/** レシピを削除 */
+/**
+ * レシピを削除。配布セット（テーマ）由来のレシピなら (setId, title) の「再取込除外」記録を残し、
+ * テーマの再取込（再読み込み）で削除した品が復活しないようにする（トゥームストーン。
+ * 2026-07-13 Fable設計。確認ダイアログは出さない＝設定のテーマ一覧「すべて戻す」で戻せるため）
+ */
 export async function deleteRecipe(id: number): Promise<void> {
-  await db.recipes.delete(id)
+  await db.transaction('rw', db.recipes, db.setExclusions, async () => {
+    const recipe = await db.recipes.get(id)
+    if (recipe) {
+      const record = exclusionRecordFor(recipe)
+      if (record) {
+        // 同じ (setId, title) の記録が既にあれば増やさない（何度削除しても記録は1件のまま）
+        const already = await db.setExclusions
+          .where('setId')
+          .equals(record.setId)
+          .and((e) => e.title === record.title)
+          .count()
+        if (already === 0) {
+          await db.setExclusions.add({ ...record, excludedAt: Date.now() })
+        }
+      }
+    }
+    await db.recipes.delete(id)
+  })
 }
 
 /**
@@ -66,6 +88,11 @@ export async function deleteRecipe(id: number): Promise<void> {
  * 今日の献立・週間/月間プランナーはrecipeIdで参照するだけなので、
  * 単品削除(deleteRecipe)と同じくここでは追加の後始末は不要
  * （読み出し側が「該当レシピが見つからない」を無視して除外する既存の作りに委ねる）。
+ * 再取込除外の記録（トゥームストーン）はここでは追加しない: テーマ丸ごとの削除後に
+ * ユーザーが自分で「追加する」を押すのは明確な再取込の意思表示であり、そこで全品除外扱いに
+ * なってしまうと「追加したのに何も入らない」事故になるため（2026-07-13）。
+ * 既に個別削除で残っている除外記録は消さずに尊重する（再取込しても個別削除した品は戻らない。
+ * 戻したければテーマ一覧の「除外中◯品・すべて戻す」で解除できる）
  */
 export async function deleteRecipesBySourceSet(setId: string): Promise<number> {
   const ids = await db.recipes.where('sourceSetId').equals(setId).primaryKeys()

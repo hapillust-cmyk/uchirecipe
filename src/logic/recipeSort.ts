@@ -1,9 +1,10 @@
 import type { Recipe } from '../db/types'
 import { toHiragana } from './kana'
+import { computeRecipeNutrition } from './nutrition'
 import type { SearchResult } from './search'
 
-/** レシピ一覧の並べ替えオプション */
-export type RecipeSortOption = 'updated' | 'pantryMatch' | 'kana' | 'cooked'
+/** レシピ一覧の並べ替えオプション（kcal/protein=栄養並び替え。2026-07-13 Fable設計） */
+export type RecipeSortOption = 'updated' | 'pantryMatch' | 'kana' | 'cooked' | 'kcal' | 'protein'
 
 /** 並べ替えの昇順/降順（2026-07-13 UI改善） */
 export type SortDirection = 'asc' | 'desc'
@@ -11,13 +12,50 @@ export type SortDirection = 'asc' | 'desc'
 /**
  * 並べ替えの種類ごとの既定方向。「あいうえお順」だけ昇順（あ→ん）が自然で、
  * それ以外（更新順=新しい順・よく使う順=多い順・在庫一致順=多い順）は降順が自然なため、
- * 種類を切り替えたときはこの既定値にリセットする（呼び出し側で使う）
+ * 種類を切り替えたときはこの既定値にリセットする（呼び出し側で使う）。
+ * 栄養並び替えの既定は「カロリー=低い方から（ヘルシー志向）・たんぱく質=多い方から（高たんぱく志向）」
+ * （2026-07-13。どちらも昇順/降順トグルで反転できる）
  */
 export const defaultSortDirection: Record<RecipeSortOption, SortDirection> = {
   updated: 'desc',
   pantryMatch: 'desc',
   kana: 'asc',
   cooked: 'desc',
+  kcal: 'asc',
+  protein: 'desc',
+}
+
+/**
+ * 栄養並び替え用の1食（1人分）あたりの値。null は算出不能（材料が名寄せできない自作レシピ等）で、
+ * 昇順/降順に関わらず常に末尾へ回す
+ */
+export interface NutrientSortValue {
+  kcal: number | null
+  proteinG: number | null
+}
+
+/**
+ * 全レシピ分の栄養並び替え値（1食あたり）をまとめて計算する（2026-07-13 Fable設計）。
+ * 栄養概算はレシピ数×材料数に比例して重いので、呼び出し側（RecipesPage）は
+ * 栄養並び替えを選んでいる間だけ useMemo で1回計算し、毎レンダー再計算しない。
+ * 計算に含められた材料が1つも無いレシピは null（算出不能）にする
+ * （NutritionTeaser が「0kcal」を表示しないのと同じ判定基準）
+ */
+export function buildNutrientSortValues(recipes: Recipe[]): Map<number, NutrientSortValue> {
+  const map = new Map<number, NutrientSortValue>()
+  for (const recipe of recipes) {
+    if (recipe.id === undefined) continue
+    const nutrition = computeRecipeNutrition(recipe)
+    if (nutrition.items.length === 0) {
+      map.set(recipe.id, { kcal: null, proteinG: null })
+    } else {
+      map.set(recipe.id, {
+        kcal: nutrition.perServing.kcal,
+        proteinG: nutrition.perServing.proteinG,
+      })
+    }
+  }
+  return map
 }
 
 const collator = new Intl.Collator('ja')
@@ -33,7 +71,7 @@ function pantryMatchCount(recipe: Recipe, normalizedPantryNames: string[]): numb
 
 /** 各並べ替えの「昇順」方向の比較値（updatedAt・かな順・作った回数・在庫一致数のいずれか） */
 function compareAscending(
-  option: RecipeSortOption,
+  option: Exclude<RecipeSortOption, 'kcal' | 'protein'>,
   a: SearchResult,
   b: SearchResult,
   normalizedPantryNames: string[],
@@ -58,17 +96,38 @@ function compareAscending(
  * （例: kanaの昇順=あいうえお順、updatedの降順=新しい順）。
  * 省略時はその並べ替えの既定方向（defaultSortDirection）を使うため、
  * 昇順/降順トグルを触っていないユーザーには従来どおりの並びを保つ。
- * 同点のときは常に更新順（新しい順）を維持する（directionの影響を受けない）
+ * 同点のときは常に更新順（新しい順）を維持する（directionの影響を受けない）。
+ * 栄養並び替え（kcal/protein）では nutrientValues（buildNutrientSortValues の結果）を渡すこと。
+ * 値が null（算出不能）のレシピは昇順/降順に関わらず常に末尾に回す
  */
 export function sortResults(
   results: SearchResult[],
   option: RecipeSortOption,
   pantryNames: string[],
   direction: SortDirection = defaultSortDirection[option],
+  nutrientValues?: ReadonlyMap<number, NutrientSortValue>,
 ): SearchResult[] {
-  const normalizedPantry = option === 'pantryMatch' ? pantryNames.map(toHiragana) : []
   const sign = direction === 'asc' ? 1 : -1
   const sorted = [...results]
+
+  if (option === 'kcal' || option === 'protein') {
+    const valueOf = (result: SearchResult): number | null => {
+      const value = result.recipe.id === undefined ? undefined : nutrientValues?.get(result.recipe.id)
+      if (!value) return null
+      return option === 'kcal' ? value.kcal : value.proteinG
+    }
+    sorted.sort((a, b) => {
+      const av = valueOf(a)
+      const bv = valueOf(b)
+      // 算出不能（null）は昇順/降順に関わらず常に末尾へ
+      if ((av === null) !== (bv === null)) return av === null ? 1 : -1
+      if (av !== null && bv !== null && av !== bv) return sign * (av - bv)
+      return b.recipe.updatedAt - a.recipe.updatedAt
+    })
+    return sorted
+  }
+
+  const normalizedPantry = option === 'pantryMatch' ? pantryNames.map(toHiragana) : []
   sorted.sort(
     (a, b) =>
       sign * compareAscending(option, a, b, normalizedPantry) ||

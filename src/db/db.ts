@@ -4,6 +4,7 @@ import type {
   PantryItem,
   PriceEntry,
   Recipe,
+  SetExclusion,
   Settings,
   ShoppingItem,
   TodayListItem,
@@ -21,6 +22,7 @@ class UchiRecipeDB extends Dexie {
   mealPlans!: Table<MealPlanEntry, number>
   todayList!: Table<TodayListItem, number>
   prices!: Table<PriceEntry, number>
+  setExclusions!: Table<SetExclusion, number>
 
   constructor() {
     super('uchi-recipe')
@@ -109,6 +111,19 @@ class UchiRecipeDB extends Dexie {
       mealPlans: '++id, date, [date+slot]',
       todayList: '++id, recipeId, addedAt',
       prices: '++id, name, updatedAt',
+    })
+    // バージョン11: 削除した配布セット由来レシピの「再取込除外」記録（トゥームストーン）テーブルを
+    // 追加（2026-07-13 Fable設計）。配布セットのレシピを削除しても記録が残らず、テーマ再取込で
+    // 復活してしまう問題への対応。新規テーブルのみの追加で既存データには影響しない（upgrade関数不要）
+    this.version(11).stores({
+      recipes: '++id, title, *tags, *searchWords, updatedAt, sourceSetId',
+      settings: 'id',
+      pantryItems: '++id, name',
+      shoppingItems: '++id, order',
+      mealPlans: '++id, date, [date+slot]',
+      todayList: '++id, recipeId, addedAt',
+      prices: '++id, name, updatedAt',
+      setExclusions: '++id, setId, title',
     })
   }
 }

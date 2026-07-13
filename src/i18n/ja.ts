@@ -278,6 +278,8 @@ export const ja = {
     recipeSetResult: '{a}件追加しました（重複{s}件はスキップ）',
     /** 更新（内容が変わっていた再取込）が1件以上あるときのみ使う。u=0のときはrecipeSetResultのまま */
     recipeSetResultWithUpdate: '{a}件追加・{u}件更新しました（重複{s}件はスキップ）',
+    /** 削除済みのため取り込まなかった品があるとき（1件以上）だけ末尾に付ける。0件なら出さない（2026-07-13） */
+    recipeSetResultExcluded: '（削除済みの除外中{e}件）',
     recipeSetError: '読み込めませんでした。レシピセットのJSONファイルか確認してください',
     recipeSetNotFound: '指定されたURLにレシピセットが見つかりませんでした。IDの綴りが正しいか確認してください',
     recipeSetDeepLinkConfirm: '「{name}」（{n}品）を追加しますか？',
@@ -342,6 +344,10 @@ export const ja = {
     themeDelete: 'このテーマのレシピを削除',
     themeDeleteConfirm: '「{name}」のレシピをすべて削除します。よろしいですか？',
     themeDeleteDone: '「{name}」のレシピを削除しました（{n}件）',
+    // 削除したセット品の再取込除外(トゥームストーン・2026-07-13 Fable設計)。
+    // 個別に削除した品は再取込しても復活しない。このボタンで除外記録を消すと次の取込で戻る
+    themeExclusionRestore: '除外中{n}品・すべて戻す',
+    themeExclusionRestored: '「{name}」の除外を解除しました。次にこのテーマを取り込むと戻ります',
     aboutTitle: 'うちレシピについて',
     aboutPageLink: 'アプリの紹介ページを見る',
     termsLink: '利用規約・プライバシーポリシー',
@@ -404,6 +410,10 @@ export const ja = {
     sortPantryMatch: '在庫との一致が多いレシピ順',
     sortKana: 'あいうえお順',
     sortCooked: 'よく使う順',
+    // 栄養並び替え(2026-07-13 Fable設計)。カロリー順は栄養機能が有効なら常時表示、
+    // たんぱく質順はPro解錠時のみ表示(無料の栄養表示はカロリー・塩分のみ、の既存の線引きに合わせる)
+    sortKcal: 'カロリー(1食)',
+    sortProtein: 'たんぱく質(1食)',
     // 並べ替えの昇順/降順トグル(2026-07-13 UI改善)。既定は並べ替えの種類ごとに異なる
     // (あいうえお順のみ昇順が既定、それ以外は降順が既定。logic/recipeSort.tsのdefaultSortDirection参照)
     sortAsc: '昇順',

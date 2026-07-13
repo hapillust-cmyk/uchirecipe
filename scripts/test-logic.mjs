@@ -28,7 +28,17 @@ import { isNewsSuppressed } from '../src/logic/news.ts'
 import { suggestForSlot, suggestPairForSlot } from '../src/logic/mealPlan.ts'
 import { buildShoppingCandidates } from '../src/logic/shopping.ts'
 import { hasLaterHandsOnStep } from '../src/logic/cookNavi.ts'
-import { resolveDuplicateTitleAction, buildUpdatedSetRecipe } from '../src/logic/backup.ts'
+import {
+  resolveDuplicateTitleAction,
+  buildUpdatedSetRecipe,
+  exclusionRecordFor,
+  buildExclusionTitleSet,
+} from '../src/logic/backup.ts'
+import {
+  sortResults,
+  defaultSortDirection,
+  buildNutrientSortValues,
+} from '../src/logic/recipeSort.ts'
 import {
   totalCookedLogPhotoBytes,
   isOverCookedPhotoLimit,
@@ -866,6 +876,96 @@ eq(
   eq('planStarterReload: 内容が変わった既存titleは更新対象になる', plan.toUpdate.length, 1)
   eq('planStarterReload: 更新対象のidは既存のまま', plan.toUpdate[0]?.id, existingStarter.id)
   eq('旧title品は削除される(starterDefsに無いtitle)', plan.toDeleteIds, [otherExisting.id])
+}
+
+// ---------- 栄養並び替え(2026-07-13 Fable設計: カロリー/たんぱく質(1食)。算出不能は常に末尾) ----------
+{
+  const mkRecipe = (id, title, ingredients, updatedAt) => ({
+    id,
+    title,
+    servings: 2,
+    effortLevel: 'easy',
+    tags: [],
+    ingredients,
+    steps: [],
+    isFavorite: false,
+    cookedLogs: [],
+    searchWords: [],
+    createdAt: updatedAt,
+    updatedAt,
+  })
+  // 砂糖100g / 砂糖10g / 名寄せできない材料のみ(自作レシピ相当) の3件
+  const rHigh = mkRecipe(1, '高カロリー', [{ name: '砂糖', amount: '100', unit: 'g' }], 100)
+  const rLow = mkRecipe(2, '低カロリー', [{ name: '砂糖', amount: '10', unit: 'g' }], 200)
+  const rUnknown = mkRecipe(3, '算出不能', [{ name: '謎のたべもの', amount: '適量', unit: '' }], 300)
+  const values = buildNutrientSortValues([rHigh, rLow, rUnknown])
+  eq('栄養並び替え値: 名寄せできないレシピはnull(算出不能)', values.get(3), {
+    kcal: null,
+    proteinG: null,
+  })
+  eq('栄養並び替え値: 計算できるレシピは正の数値', values.get(2).kcal > 0, true)
+  eq(
+    '栄養並び替え値: 1食あたり(servingsで割った値)である',
+    Math.abs(values.get(1).kcal - values.get(2).kcal * 10) < 1e-6,
+    true,
+  )
+  const results = [rUnknown, rHigh, rLow].map((recipe) => ({
+    recipe,
+    usedCount: 0,
+    wantedCount: 0,
+  }))
+  eq(
+    'カロリー昇順: 低→高で、算出不能は末尾',
+    sortResults(results, 'kcal', [], 'asc', values).map((r) => r.recipe.id),
+    [2, 1, 3],
+  )
+  eq(
+    'カロリー降順: 高→低でも算出不能は末尾のまま',
+    sortResults(results, 'kcal', [], 'desc', values).map((r) => r.recipe.id),
+    [1, 2, 3],
+  )
+  eq(
+    'たんぱく質降順: 同値(砂糖はたんぱく質ほぼ0)なら更新順(新しい順)で安定し、算出不能は末尾',
+    sortResults(results, 'protein', [], 'desc', values).map((r) => r.recipe.id),
+    [2, 1, 3],
+  )
+  eq('カロリーの既定方向は昇順(低い方から)', defaultSortDirection.kcal, 'asc')
+  eq('たんぱく質の既定方向は降順(多い方から)', defaultSortDirection.protein, 'desc')
+}
+
+// ---------- 削除したセット品の再取込除外(トゥームストーン・2026-07-13 Fable設計) ----------
+{
+  // 削除時の記録: 配布セット由来なら(setId, title)を記録し、自作レシピは記録しない
+  eq(
+    '除外記録: セット由来レシピは(setId, title)を記録する',
+    exclusionRecordFor({ sourceSetId: 'kintore', title: ' 漬けるだけ味玉 ' }),
+    { setId: 'kintore', title: '漬けるだけ味玉' },
+  )
+  eq('除外記録: 自作レシピ(sourceSetIdなし)は記録しない', exclusionRecordFor({ title: '味玉' }), null)
+
+  // 取込時の照合: 記録に一致する品はスキップ(importRecipeSetが追加直前にこの集合で判定する)
+  const exclusions = [{ setId: 'kintore', title: '漬けるだけ味玉' }]
+  eq(
+    '取込時: 除外記録に一致する品はスキップされる',
+    buildExclusionTitleSet(exclusions, 'kintore').has('漬けるだけ味玉'),
+    true,
+  )
+  eq(
+    '取込時: 別セットの同名品は除外しない(setIdまで一致した場合だけ)',
+    buildExclusionTitleSet(exclusions, 'bento').has('漬けるだけ味玉'),
+    false,
+  )
+  eq(
+    '取込時: setIdの無いファイル(個人バックアップ形式)は除外対象なし',
+    buildExclusionTitleSet(exclusions, undefined).size,
+    0,
+  )
+  // 解除(「すべて戻す」で記録を消す)→再取込で復活する
+  eq(
+    '解除後(記録を消した後)は再取込で復活する(除外されない)',
+    buildExclusionTitleSet([], 'kintore').has('漬けるだけ味玉'),
+    false,
+  )
 }
 
 // ---------- freeLimit(本番はフラグOFF=絶対にブロックしない不変条件) ----------

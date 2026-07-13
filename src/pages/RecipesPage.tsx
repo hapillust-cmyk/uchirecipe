@@ -26,9 +26,11 @@ import {
 import {
   sortResults,
   defaultSortDirection,
+  buildNutrientSortValues,
   type RecipeSortOption,
   type SortDirection,
 } from '../logic/recipeSort'
+import { NUTRITION_TEASER_ENABLED, isNutritionUnlocked } from '../logic/nutrition'
 import { countFreeLimitRecipes, isNearFreeLimit, FREE_LIMIT } from '../logic/freeLimit'
 import { splitValues } from '../logic/textSplit'
 import RecipeCard from '../components/RecipeCard'
@@ -59,7 +61,7 @@ const tagOptions: { value: TagFilter; label: string }[] = [
   { value: 'お弁当', label: 'お弁当' },
 ]
 
-const sortOptions: { value: RecipeSortOption; label: string }[] = [
+const baseSortOptions: { value: RecipeSortOption; label: string }[] = [
   { value: 'updated', label: ja.search.sortUpdated },
   { value: 'pantryMatch', label: ja.search.sortPantryMatch },
   { value: 'kana', label: ja.search.sortKana },
@@ -178,6 +180,29 @@ export default function RecipesPage() {
 
   const hideStarters = settings?.hideStarters ?? false
 
+  // 栄養並び替え(2026-07-13 Fable設計)。「カロリー(1食)」は栄養機能(無料のカロリー・塩分表示)が
+  // 有効なら常に、「たんぱく質(1食)」はPro解錠時のみ選択肢に出す(無料の栄養表示はカロリー・塩分
+  // のみ、という既存の線引きに合わせる)
+  const nutritionUnlocked = isNutritionUnlocked(!!settings?.proCode)
+  const sortOptions = useMemo(() => {
+    const options = [...baseSortOptions]
+    if (NUTRITION_TEASER_ENABLED || nutritionUnlocked) {
+      options.push({ value: 'kcal', label: ja.search.sortKcal })
+    }
+    if (nutritionUnlocked) {
+      options.push({ value: 'protein', label: ja.search.sortProtein })
+    }
+    return options
+  }, [nutritionUnlocked])
+
+  // 栄養並び替え用の値(1食あたり)。計算が重いので栄養並び替えを選んでいる間だけ、
+  // 全レシピ分をまとめて1回計算する(毎レンダー再計算しない)
+  const nutrientSortActive = sort === 'kcal' || sort === 'protein'
+  const nutrientSortValues = useMemo(() => {
+    if (!recipes || !nutrientSortActive) return undefined
+    return buildNutrientSortValues(recipes)
+  }, [recipes, nutrientSortActive])
+
   // 絞り込み無しでも常に見える総件数(2026-07-13 UI改善)。「基本レシピを表示しない」設定は
   // 一覧の表示そのものに反映される設定なのでここにも反映し、検索語等の絞り込みは反映しない
   const totalCount = useMemo(() => {
@@ -200,7 +225,7 @@ export default function RecipesPage() {
       quickOnly,
       ngIngredients: ngIngredients ?? [],
     })
-    return sortResults(found, sort, pantryNames, sortDirection)
+    return sortResults(found, sort, pantryNames, sortDirection, nutrientSortValues)
   }, [
     recipes,
     hideStarters,
@@ -216,6 +241,7 @@ export default function RecipesPage() {
     sort,
     sortDirection,
     pantryNames,
+    nutrientSortValues,
   ])
 
   const filtersActive =
