@@ -425,7 +425,7 @@ export default function RecipeDetailPage() {
               <span
                 key={tag}
                 className="rounded-sm px-2 py-0.5 text-sm text-accent"
-                style={{ background: 'color-mix(in oklab, var(--accent) 12%, var(--bg))' }}
+                style={{ background: 'var(--icon-tile)' }}
               >
                 {tag}
               </span>
