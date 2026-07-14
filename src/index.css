@@ -122,15 +122,15 @@
 :root[data-theme="brown"] {
   /* 色はオーナーが実機からスポイトで採取した実測値(2026-07-14) */
   --page: #bea687;          /* ページ背景: モカ茶 */
-  --bg: #f1efed;            /* クリーム(入力欄・ボタン文字) */
+  --bg: #fffbf5;            /* クリーム(入力欄・ボタン文字) */
   --text: #392104;          /* 文字: 黒に近い濃茶 */
-  --accent: #eb8f1e;        /* アクセント: 鮮やかオレンジ */
+  --accent: #ef8d15;        /* アクセント: 鮮やかオレンジ */
   --warning: #a8351f;
-  --surface: #f1efed;       /* カード面 */
+  --surface: #fffbf5;       /* カード面 */
   --text-muted: #7a5a33;    /* 補足テキスト(--textより薄い茶) */
   --border: #e6e0d7;        /* --bgに合う淡い線 */
   --on-accent: #392104;     /* アクセント(オレンジ)上の文字は黒っぽい濃茶に(オーナー指定) */
-  --icon-tile: #d6cabb;     /* レシピアイコン背景タイル(オーナー実測値・濃淡なしで統一) */
+  --icon-tile: #eee3d8;     /* レシピアイコン背景タイル(オーナー実測値・濃淡なしで統一) */
   --shadow-sm: 0 1px 3px rgb(64 48 31 / 0.14);
   --shadow-md: 0 4px 14px rgb(64 48 31 / 0.18);
   --chip-food-meat: #c2255c;
@@ -157,7 +157,7 @@
   --surface: #fdfbf4;       /* カード面 */
   --text-muted: #556340;    /* 補足テキスト(濃緑寄りの落ち着いた olive) */
   --border: #e7e3d3;        /* --bgに合う淡い線 */
-  --icon-tile: #fbf9df;     /* レシピアイコン背景タイル(オーナー実測値・濃淡なしで統一) */
+  --icon-tile: #f2f5cc;     /* レシピアイコン背景タイル(オーナー実測値・濃淡なしで統一) */
   --chip-food-meat: #c2255c;
   --chip-food-seafood: #1971c2;
   --chip-food-vegetable: #256e35;
@@ -172,6 +172,7 @@
 /* トークンを Tailwind のクラス名（bg-app, text-accent 等）として使えるようにする */
 @theme inline {
   --color-app: var(--bg);
+  --color-page: var(--page);
   --color-surface: var(--surface);
   --color-ink: var(--text);
   --color-ink-muted: var(--text-muted);

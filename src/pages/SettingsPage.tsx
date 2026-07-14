@@ -551,7 +551,7 @@ export default function SettingsPage() {
       {/* タブ切り替え(2026-07-12オーナー実機フィードバック: 縦に長大化したため上部タブで分割)。
           2026-07-13 UI改善: スクロールしても上部に固定(sticky)する。settings-tabbarクラスは
           index.cssでis-ipad(マルチタスクボタン対策)の上余白をback-header同様に追加している */}
-      <div className="settings-tabbar sticky top-0 z-10 -mx-[var(--space-md)] mt-[var(--space-sm)] bg-app/95 px-[var(--space-md)] py-2 backdrop-blur">
+      <div className="settings-tabbar sticky top-0 z-10 -mx-[var(--space-md)] mt-[var(--space-sm)] bg-page/95 px-[var(--space-md)] py-2 backdrop-blur">
         <div className="grid grid-cols-4 gap-1">
           {settingsTabs.map((tab) => (
             <button
