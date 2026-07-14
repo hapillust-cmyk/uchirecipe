@@ -561,7 +561,7 @@ export default function SettingsPage() {
               aria-pressed={activeTab === tab.id}
               className={`rounded-md border py-2.5 text-xs font-bold shadow-sm ${
                 activeTab === tab.id
-                  ? 'border-accent bg-accent text-app'
+                  ? 'border-accent bg-accent text-on-accent'
                   : 'border-edge bg-surface text-ink-muted'
               }`}
             >
@@ -761,7 +761,7 @@ export default function SettingsPage() {
                   onClick={() => updateSettings({ theme: option.value })}
                   className={`rounded-md border py-3 font-bold shadow-sm ${
                     settings.theme === option.value
-                      ? 'border-accent bg-accent text-app'
+                      ? 'border-accent bg-accent text-on-accent'
                       : 'border-edge bg-surface text-ink-muted'
                   }`}
                 >
@@ -1129,7 +1129,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => downloadBackup(includeCookedPhotos)}
-              className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+              className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
             >
               <Download size={18} aria-hidden />
               {ja.settings.backupExport}
@@ -1209,7 +1209,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => void activatePro()}
                     disabled={proChecking || !proCodeInput.trim()}
-                    className="inline-flex shrink-0 items-center rounded-sm bg-accent px-4 font-bold text-app disabled:opacity-40"
+                    className="inline-flex shrink-0 items-center rounded-sm bg-accent px-4 font-bold text-on-accent disabled:opacity-40"
                   >
                     {proChecking ? ja.settings.proActivating : ja.settings.proActivate}
                   </button>
@@ -1260,7 +1260,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => void activatePack()}
                     disabled={!!settings.proCode || packChecking || !packCodeInput.trim()}
-                    className="inline-flex shrink-0 items-center rounded-sm bg-accent px-4 font-bold text-app disabled:opacity-40"
+                    className="inline-flex shrink-0 items-center rounded-sm bg-accent px-4 font-bold text-on-accent disabled:opacity-40"
                   >
                     {packChecking ? ja.settings.packActivating : ja.settings.packActivate}
                   </button>

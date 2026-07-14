@@ -31,10 +31,9 @@ import { ja } from '../i18n/ja'
 import { usePhotoUrl } from './usePhotoUrl'
 
 /* 写真がないレシピ（または「アイコン表示」を選んだレシピ）用のプレースホルダー:
-   料理名・タグ・材料から選んだ料理アイコン＋タグ（なければ料理名）で決まる色の濃さ。
-   色はページ色(--page)とカード面色(--surface)の混ぜ合わせだけで作る（トークン外の色は
-   使わない。2026-07-14: 従来の--accent×--bgから変更。彩度のあるテーマ(グリーン/ブラウン)
-   でもページ色の淡いタイルとしてなじむようにし、アイコン自体の色(text-accent)は変えない） */
+   料理名・タグ・材料から選んだ料理アイコンを表示する。背景は--icon-tile(2026-07-14
+   オーナー指定)で全レシピ共通の1色に統一する（従来はレシピごとにハッシュで濃淡を
+   変えていたが廃止）。アイコン自体の色(text-accent)は変えない */
 export const iconComponents: Record<IconKey, typeof UtensilsCrossed> = {
   rice: CookingPot,
   noodle: Utensils,
@@ -58,19 +57,6 @@ export const seasonIcons: Record<Exclude<Season, 'all'>, typeof Flower2> = {
   winter: Snowflake,
 }
 
-// 写真なしカードの背景の濃さ(--page色の混合比)。タグ由来のハッシュで振り分けて
-// 単調さを避ける意匠。最小16%は「色あせて見える」とオーナー指摘(2026-07-12)があり、
-// 濃い段との差が3倍を超えない範囲(26〜52%)へ引き上げていたが、2026-07-14の配色変更
-// (--accent×--bg → --page×--surface)に伴い、彩度のあるテーマ(グリーン/ブラウン)でも
-// 浮かないよう上限を40%程度に抑えて比率はそのまま縮小した
-const mixRatios = [20, 26, 32, 40] as const
-
-function hashString(text: string): number {
-  let hash = 0
-  for (const ch of text) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  return Math.abs(hash)
-}
-
 /** 写真なし（または表示優先）レシピの代わり絵。iconKey を指定すれば手動選択したアイコンで固定表示 */
 export function RecipePlaceholder({
   recipe,
@@ -79,15 +65,12 @@ export function RecipePlaceholder({
   recipe: Pick<Recipe, 'title' | 'tags' | 'ingredients' | 'iconKey'>
   iconSize?: number
 }) {
-  const seed = recipe.tags[0] ?? recipe.title
-  const hash = hashString(seed)
   const key = recipe.iconKey ?? pickIconKey(recipe)
   const Icon = iconComponents[key]
-  const ratio = mixRatios[Math.floor(hash / 7) % mixRatios.length]
   return (
     <div
       className="flex h-full w-full items-center justify-center"
-      style={{ background: `color-mix(in oklab, var(--page) ${ratio}%, var(--surface))` }}
+      style={{ background: 'var(--icon-tile)' }}
     >
       <Icon size={iconSize} className="text-accent" aria-hidden />
     </div>
@@ -185,7 +168,7 @@ export default function RecipeCard({
               <span
                 title={ja.card.todayBadge}
                 aria-label={ja.card.todayBadge}
-                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-app"
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent"
               >
                 <CalendarCheck2 size={12} aria-hidden />
               </span>
@@ -273,7 +256,7 @@ export default function RecipeCard({
         <span
           title={ja.card.todayBadge}
           aria-label={ja.card.todayBadge}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-app shadow-sm"
+          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-accent text-on-accent shadow-sm"
         >
           <CalendarCheck2 size={16} aria-hidden />
         </span>

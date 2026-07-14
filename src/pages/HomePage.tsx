@@ -230,7 +230,7 @@ export default function HomePage() {
             <p className="text-ink-muted">{ja.home.empty}</p>
             <Link
               to="/recipes/new"
-              className="mt-[var(--space-md)] inline-block rounded-md bg-accent px-6 py-3 font-bold text-app shadow-sm"
+              className="mt-[var(--space-md)] inline-block rounded-md bg-accent px-6 py-3 font-bold text-on-accent shadow-sm"
             >
               {ja.home.goRegister}
             </Link>
@@ -245,7 +245,7 @@ export default function HomePage() {
                   onClick={() => setCondition(option.value)}
                   className={`rounded-sm border px-3 py-2 text-sm font-bold ${
                     condition === option.value
-                      ? 'border-accent bg-accent text-app'
+                      ? 'border-accent bg-accent text-on-accent'
                       : 'border-edge bg-surface text-ink-muted'
                   }`}
                 >
@@ -258,7 +258,7 @@ export default function HomePage() {
                   onClick={() => setPantryOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 rounded-sm border px-3 py-2 text-sm font-bold ${
                     pantryOnly
-                      ? 'border-accent bg-accent text-app'
+                      ? 'border-accent bg-accent text-on-accent'
                       : 'border-edge bg-surface text-ink-muted'
                   }`}
                 >
@@ -437,7 +437,7 @@ export default function HomePage() {
         </div>
         <button
           type="submit"
-          className="shrink-0 rounded-md bg-accent px-4 font-bold text-app shadow-sm"
+          className="shrink-0 rounded-md bg-accent px-4 font-bold text-on-accent shadow-sm"
         >
           {ja.home.searchButton}
         </button>

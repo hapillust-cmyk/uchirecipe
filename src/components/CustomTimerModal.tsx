@@ -124,7 +124,7 @@ export default function CustomTimerModal({
         <button
           type="button"
           onClick={onStart}
-          className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 text-lg font-bold text-app shadow-sm"
+          className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 text-lg font-bold text-on-accent shadow-sm"
         >
           {ja.timer.customStart}
         </button>

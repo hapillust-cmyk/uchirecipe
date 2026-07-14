@@ -489,7 +489,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
           <button
             type="button"
             onClick={onComplete ?? onClose}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md"
           >
             <Check size={22} aria-hidden />
             {ja.focus.complete}
@@ -498,7 +498,7 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
           <button
             type="button"
             onClick={() => goTo(index + 1)}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
+            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md"
           >
             {ja.focus.next}
             <ChevronRight size={22} aria-hidden />

@@ -70,7 +70,7 @@ const baseSortOptions: { value: RecipeSortOption; label: string }[] = [
 
 const chipCls = (active: boolean) =>
   `rounded-sm border px-3 py-2 text-sm font-bold ${
-    active ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
+    active ? 'border-accent bg-accent text-on-accent' : 'border-edge bg-surface text-ink-muted'
   }`
 
 /**
@@ -610,7 +610,7 @@ export default function RecipesPage() {
           <button
             type="button"
             onClick={() => setPanelOpen(false)}
-            className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+            className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
           >
             {ja.search.apply}
           </button>
@@ -688,7 +688,7 @@ export default function RecipesPage() {
       <Link
         to="/recipes/new"
         aria-label={ja.recipes.addRecipe}
-        className="fixed bottom-24 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-app shadow-md"
+        className="fixed bottom-24 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-md"
       >
         <Plus size={30} aria-hidden />
       </Link>

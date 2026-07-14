@@ -248,7 +248,7 @@ export default function CookNaviPage() {
                           >
                             <span
                               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                                selected ? 'border-accent bg-accent text-app' : 'border-edge text-ink-muted'
+                                selected ? 'border-accent bg-accent text-on-accent' : 'border-edge text-ink-muted'
                               }`}
                             >
                               {selected && <Check size={16} aria-hidden />}
@@ -278,7 +278,7 @@ export default function CookNaviPage() {
                     type="button"
                     onClick={() => setShowTimeline(true)}
                     disabled={selectedRecipes.length < 2}
-                    className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md disabled:opacity-40"
+                    className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md disabled:opacity-40"
                   >
                     <Route size={20} aria-hidden />
                     {ja.cookNavi.build}

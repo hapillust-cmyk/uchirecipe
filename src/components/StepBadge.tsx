@@ -10,7 +10,7 @@ type Props = {
 export default function StepBadge({ number, size = 32 }: Props) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full bg-accent font-bold text-app"
+      className="flex shrink-0 items-center justify-center rounded-full bg-accent font-bold text-on-accent"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.5) }}
     >
       {number === 'custom' ? <Timer size={Math.round(size * 0.55)} aria-hidden /> : number}
