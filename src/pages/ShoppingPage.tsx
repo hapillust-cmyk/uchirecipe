@@ -148,7 +148,7 @@ export default function ShoppingPage() {
                   onClick={() => void toggleShoppingChecked(item.id!)}
                   aria-pressed={item.isChecked}
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
-                    item.isChecked ? 'border-accent bg-accent text-app' : 'border-edge text-ink-muted'
+                    item.isChecked ? 'border-accent bg-accent text-on-accent' : 'border-edge text-ink-muted'
                   }`}
                 >
                   <CheckCircle2 size={18} aria-hidden />
@@ -219,7 +219,7 @@ export default function ShoppingPage() {
           <button
             type="button"
             onClick={() => setCompleteOpen(true)}
-            className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 text-lg font-bold text-app shadow-sm"
+            className="mt-[var(--space-md)] w-full rounded-md bg-accent py-3 text-lg font-bold text-on-accent shadow-sm"
           >
             {ja.shopping.complete}
           </button>
@@ -233,7 +233,7 @@ export default function ShoppingPage() {
               <button
                 type="button"
                 onClick={() => void runComplete(true)}
-                className="flex-1 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+                className="flex-1 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
               >
                 {ja.shopping.completeYes}
               </button>
@@ -272,7 +272,7 @@ export default function ShoppingPage() {
                     }
                     aria-pressed={c.checked}
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
-                      c.checked ? 'border-accent bg-accent text-app' : 'border-edge text-ink-muted'
+                      c.checked ? 'border-accent bg-accent text-on-accent' : 'border-edge text-ink-muted'
                     }`}
                   >
                     <CheckCircle2 size={18} aria-hidden />
@@ -301,7 +301,7 @@ export default function ShoppingPage() {
               <button
                 type="button"
                 onClick={() => void addConfirmed()}
-                className="flex-1 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+                className="flex-1 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
               >
                 {ja.shopping.addConfirmed}
               </button>
@@ -377,7 +377,7 @@ export default function ShoppingPage() {
               type="button"
               onClick={makeCandidates}
               disabled={selectedIds.length === 0}
-              className="w-full rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md disabled:opacity-40"
+              className="w-full rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md disabled:opacity-40"
             >
               {ja.shopping.makeCandidates}
               {selectedIds.length > 0 ? `（${selectedIds.length}）` : ''}

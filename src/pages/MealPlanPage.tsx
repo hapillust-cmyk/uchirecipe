@@ -570,7 +570,7 @@ export default function MealPlanPage() {
             <button
               type="button"
               onClick={() => void markAllTodayListCooked(todayListRecipes.map((r) => r.id!))}
-              className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+              className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
             >
               <CheckCircle2 size={18} aria-hidden />
               {ja.mealPlan.todayMarkAllCooked}
@@ -657,7 +657,7 @@ export default function MealPlanPage() {
           aria-pressed={viewMode === 'week'}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             viewMode === 'week'
-              ? 'border-accent bg-accent text-app'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-edge bg-surface text-ink-muted'
           }`}
         >
@@ -669,7 +669,7 @@ export default function MealPlanPage() {
           aria-pressed={viewMode === 'month'}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             viewMode === 'month'
-              ? 'border-accent bg-accent text-app'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-edge bg-surface text-ink-muted'
           }`}
         >
@@ -723,7 +723,7 @@ export default function MealPlanPage() {
                   onClick={() => goToWeekOf(date)}
                   className={`flex aspect-square flex-col items-center justify-center rounded-sm border text-sm ${
                     date === today
-                      ? 'border-accent bg-accent text-app font-bold'
+                      ? 'border-accent bg-accent text-on-accent font-bold'
                       : 'border-edge bg-surface text-ink'
                   }`}
                 >
@@ -803,7 +803,7 @@ export default function MealPlanPage() {
             aria-pressed={visibleSlots.includes(slot)}
             className={`rounded-sm border px-3 py-2 text-sm font-bold ${
               visibleSlots.includes(slot)
-                ? 'border-accent bg-accent text-app'
+                ? 'border-accent bg-accent text-on-accent'
                 : 'border-edge bg-surface text-ink-muted'
             }`}
           >
@@ -819,7 +819,7 @@ export default function MealPlanPage() {
           onClick={() => setQuickOnly((v) => !v)}
           aria-pressed={quickOnly}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
-            quickOnly ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
+            quickOnly ? 'border-accent bg-accent text-on-accent' : 'border-edge bg-surface text-ink-muted'
           }`}
         >
           {ja.mealPlan.quickOnlyToggle}
@@ -830,7 +830,7 @@ export default function MealPlanPage() {
           aria-pressed={genreFilter === undefined}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             genreFilter === undefined
-              ? 'border-accent bg-accent text-app'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-edge bg-surface text-ink-muted'
           }`}
         >
@@ -844,7 +844,7 @@ export default function MealPlanPage() {
             aria-pressed={genreFilter === genre}
             className={`rounded-sm border px-3 py-2 text-sm font-bold ${
               genreFilter === genre
-                ? 'border-accent bg-accent text-app'
+                ? 'border-accent bg-accent text-on-accent'
                 : 'border-edge bg-surface text-ink-muted'
             }`}
           >
@@ -857,7 +857,7 @@ export default function MealPlanPage() {
           aria-pressed={preferHighProtein}
           className={`rounded-sm border px-3 py-2 text-sm font-bold ${
             preferHighProtein
-              ? 'border-accent bg-accent text-app'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-edge bg-surface text-ink-muted'
           }`}
         >
@@ -983,7 +983,7 @@ export default function MealPlanPage() {
         type="button"
         onClick={goShopping}
         disabled={weekRecipeIds.length === 0}
-        className="mt-[var(--space-md)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md disabled:opacity-40"
+        className="mt-[var(--space-md)] flex w-full items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md disabled:opacity-40"
       >
         <ShoppingCart size={20} aria-hidden />
         {ja.mealPlan.goToShopping}

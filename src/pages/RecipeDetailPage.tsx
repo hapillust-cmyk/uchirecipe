@@ -441,7 +441,7 @@ export default function RecipeDetailPage() {
           }
           className={`mt-[var(--space-lg)] flex w-full items-center justify-center gap-2 rounded-md border py-3 font-bold shadow-sm ${
             isInTodayList
-              ? 'border-accent bg-accent text-app'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-edge bg-surface text-accent'
           }`}
         >
@@ -557,7 +557,7 @@ export default function RecipeDetailPage() {
                 type="button"
                 onClick={() => setQuickMode(false)}
                 className={`rounded-sm px-3 py-1 text-sm font-bold ${
-                  !quickMode ? 'bg-accent text-app' : 'text-ink-muted'
+                  !quickMode ? 'bg-accent text-on-accent' : 'text-ink-muted'
                 }`}
               >
                 {normalModeLabel}
@@ -566,7 +566,7 @@ export default function RecipeDetailPage() {
                 type="button"
                 onClick={() => setQuickMode(true)}
                 className={`rounded-sm px-3 py-1 text-sm font-bold ${
-                  quickMode ? 'bg-accent text-app' : 'text-ink-muted'
+                  quickMode ? 'bg-accent text-on-accent' : 'text-ink-muted'
                 }`}
               >
                 {quickModeLabel}
@@ -739,7 +739,7 @@ export default function RecipeDetailPage() {
                           <button
                             type="button"
                             onClick={() => void saveEditingLog()}
-                            className="flex-1 rounded-sm bg-accent py-2 text-sm font-bold text-app shadow-sm"
+                            className="flex-1 rounded-sm bg-accent py-2 text-sm font-bold text-on-accent shadow-sm"
                           >
                             {ja.detail.cookedLogSave}
                           </button>
@@ -832,7 +832,7 @@ export default function RecipeDetailPage() {
               setLogServings(servings)
               setLogOpen(true)
             }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md"
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md"
           >
             <CheckCircle2 size={22} aria-hidden />
             {ja.detail.cooked}

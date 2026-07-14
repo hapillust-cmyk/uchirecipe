@@ -13,7 +13,7 @@ import { ja } from '../i18n/ja'
 
 /** 3段階それぞれの見た目（デザイントークンのみ使用。新しい色相は増やさない） */
 function levelClass(level: PantryLevel): string {
-  if (level === 'have') return 'border-accent bg-accent text-app'
+  if (level === 'have') return 'border-accent bg-accent text-on-accent'
   if (level === 'low') return 'border-accent text-accent bg-app'
   return 'border-edge text-ink-muted bg-surface'
 }
@@ -49,7 +49,7 @@ export default function PantryBoard() {
             type="button"
             onClick={() => setReordering((v) => !v)}
             className={`inline-flex shrink-0 items-center gap-1 rounded-sm border px-3 py-2 text-sm font-bold ${
-              reordering ? 'border-accent bg-accent text-app' : 'border-edge bg-surface text-ink-muted'
+              reordering ? 'border-accent bg-accent text-on-accent' : 'border-edge bg-surface text-ink-muted'
             }`}
           >
             <ArrowUpDown size={14} aria-hidden />

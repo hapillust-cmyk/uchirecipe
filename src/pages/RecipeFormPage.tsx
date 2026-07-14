@@ -590,7 +590,7 @@ function RecipeFormInner() {
             <button
               type="button"
               onClick={restoreDraft}
-              className="flex-1 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+              className="flex-1 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
             >
               {ja.form.draftRestore}
             </button>
@@ -632,7 +632,7 @@ function RecipeFormInner() {
             <button
               type="button"
               onClick={applyPaste}
-              className="flex-1 rounded-md bg-accent py-3 font-bold text-app shadow-sm"
+              className="flex-1 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
             >
               {ja.paste.apply}
             </button>
@@ -736,7 +736,7 @@ function RecipeFormInner() {
             onClick={() => setIconKey(undefined)}
             className={`flex flex-col items-center justify-center gap-1 rounded-md border py-2 text-xs font-bold shadow-sm ${
               iconKey === undefined
-                ? 'border-accent bg-accent text-app'
+                ? 'border-accent bg-accent text-on-accent'
                 : 'border-edge bg-surface text-ink-muted'
             }`}
           >
@@ -753,7 +753,7 @@ function RecipeFormInner() {
                 onClick={() => setIconKey(key)}
                 className={`flex flex-col items-center justify-center gap-1 rounded-md border py-2 text-xs font-bold shadow-sm ${
                   iconKey === key
-                    ? 'border-accent bg-accent text-app'
+                    ? 'border-accent bg-accent text-on-accent'
                     : isAutoPick
                       ? 'border-accent bg-accent/10 text-accent'
                       : 'border-edge bg-surface text-ink-muted'
@@ -844,7 +844,7 @@ function RecipeFormInner() {
               onClick={() => setEffortLevel(level)}
               className={`rounded-md border py-3 font-bold shadow-sm ${
                 effortLevel === level
-                  ? 'border-accent bg-accent text-app'
+                  ? 'border-accent bg-accent text-on-accent'
                   : 'border-edge bg-surface text-ink-muted'
               }`}
             >
@@ -866,7 +866,7 @@ function RecipeFormInner() {
               onClick={() => setSeason((current) => (current === value ? undefined : value))}
               className={`rounded-md border py-3 font-bold shadow-sm ${
                 season === value
-                  ? 'border-accent bg-accent text-app'
+                  ? 'border-accent bg-accent text-on-accent'
                   : 'border-edge bg-surface text-ink-muted'
               }`}
             >
@@ -892,7 +892,7 @@ function RecipeFormInner() {
               }
               className={`rounded-md border py-3 font-bold shadow-sm ${
                 suitableFor.includes(slot)
-                  ? 'border-accent bg-accent text-app'
+                  ? 'border-accent bg-accent text-on-accent'
                   : 'border-edge bg-surface text-ink-muted'
               }`}
             >
@@ -914,7 +914,7 @@ function RecipeFormInner() {
               onClick={() => setDishType((current) => (current === value ? undefined : value))}
               className={`rounded-md border py-3 font-bold shadow-sm ${
                 dishType === value
-                  ? 'border-accent bg-accent text-app'
+                  ? 'border-accent bg-accent text-on-accent'
                   : 'border-edge bg-surface text-ink-muted'
               }`}
             >
@@ -1052,7 +1052,7 @@ function RecipeFormInner() {
               className="rounded-md border border-edge bg-surface p-[var(--space-sm)] shadow-sm"
             >
               <div className="flex gap-[var(--space-sm)]">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-app">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-on-accent">
                   {index + 1}
                 </span>
                 <textarea
@@ -1256,7 +1256,7 @@ function RecipeFormInner() {
           type="button"
           onClick={save}
           disabled={saving}
-          className="flex-1 rounded-md bg-accent py-4 text-lg font-bold text-app shadow-md disabled:opacity-60"
+          className="flex-1 rounded-md bg-accent py-4 text-lg font-bold text-on-accent shadow-md disabled:opacity-60"
         >
           {saving ? ja.form.saving : ja.form.save}
         </button>

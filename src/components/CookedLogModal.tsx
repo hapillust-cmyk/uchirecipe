@@ -173,7 +173,7 @@ export default function CookedLogModal({
           <button
             type="button"
             onClick={onSave}
-            className="flex-1 rounded-md bg-accent py-3 text-lg font-bold text-app shadow-sm"
+            className="flex-1 rounded-md bg-accent py-3 text-lg font-bold text-on-accent shadow-sm"
           >
             {ja.detail.cookedSave}
           </button>
