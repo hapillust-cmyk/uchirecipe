@@ -338,28 +338,33 @@ try {
 
   // --- FOCUS-MEMO-01: 調理中モードの▽折りたたみメモをタップすると詳細画面と同じ小窓(ポップオーバー)で
   // 開く(2026-07-12 Fable裁定: 1手順を大きく見せる調理中モードでメモ全文の常時展開は本文を圧迫するため、
-  // 詳細画面と挙動を統一)。「鶏の照り焼き」手順3の「▽たくさん作るとき」には「・」箇条書きと
+  // 詳細画面と挙動を統一)。「回鍋肉(ホイコーロー)」手順5の「▽たくさん作るとき」には「・」箇条書きと
   // 「｜」改行の両方が入っているため、これらが小窓の中でも効くことまで併せて確認する
-  // (2026-07-13: 元は「蒸しなすの香味だれ」手順2で確認していたが、その▽内容は用語辞書「電子レンジ」への
-  // 集約に伴い削除されたため、同じ構造(・箇条書き+｜改行)を持つ「鶏の照り焼き」に検証対象を差し替えた) ---
+  // (2026-07-13: 元は「蒸しなすの香味だれ」→用語辞書集約で削除→「鶏の照り焼き」に差し替え。
+  //  2026-07-14: 鶏の照り焼きの▽も分割冗長文の横展開削除で｜構造が消えたため、同じ構造(手順範囲指定の
+  //  例外として｜+・箇条書きを保持している)「回鍋肉」手順5に再度差し替えた) ---
   currentCheck = 'FOCUS-MEMO-01'
   await page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(500)
-  await page.getByPlaceholder('料理名・材料・タグで検索').fill('鶏の照り焼き')
+  await page.getByPlaceholder('料理名・材料・タグで検索').fill('回鍋肉')
   await page.waitForTimeout(300)
-  await page.getByText('鶏の照り焼き', { exact: true }).first().click()
+  await page.getByText('回鍋肉(ホイコーロー)', { exact: true }).first().click()
   await page.waitForTimeout(500)
   await page.getByText('調理中モードで見る').click()
   await page.waitForTimeout(500)
   await page.getByRole('button', { name: '次へ' }).click() // 手順2へ
   await page.waitForTimeout(300)
-  await page.getByRole('button', { name: '次へ' }).click() // 手順3(▽を含む手順)へ
+  await page.getByRole('button', { name: '次へ' }).click() // 手順3へ
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: '次へ' }).click() // 手順4へ
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: '次へ' }).click() // 手順5(▽を含む手順)へ
   await page.waitForTimeout(300)
   const focusMemoFoldedText = await page.textContent('body')
   check(
     'FOCUS-MEMO-01 ▽はラベルのみ折りたたみ表示され詳細は隠れている',
     focusMemoFoldedText.includes('たくさん作るとき') &&
-      !focusMemoFoldedText.includes('たれも回数に応じて分けて使う'),
+      !focusMemoFoldedText.includes('一度に炒められるのはフライパン'),
   )
   // 詳細画面の手順リスト(FocusModeの背後にDOM上は残ったまま)にも同じ▽ボタンがあるため、
   // FocusModeの全画面オーバーレイ(.fixed.inset-0.z-50)側だけに絞って押す
@@ -368,18 +373,18 @@ try {
   const focusMemoOpenText = stripZwsp(await page.textContent('body'))
   check(
     'FOCUS-MEMO-01 タップで小窓が開き詳細(1文目)が見える',
-    focusMemoOpenText.includes('焼く→裏返す→たれをからめる'),
+    focusMemoOpenText.includes('一度に炒められるのはフライパン'),
   )
   check(
     'FOCUS-MEMO-01 「｜」改行後の2文目も「・」箇条書きとして見える',
-    focusMemoOpenText.includes('たれも回数に応じて分けて使う'),
+    focusMemoOpenText.includes('人数が多いときは手順3〜5'),
   )
   await page.mouse.click(5, 5) // 小窓の外をタップ
   await page.waitForTimeout(300)
   const focusMemoClosedText = stripZwsp(await page.textContent('body'))
   check(
     'FOCUS-MEMO-01 外タップで小窓が閉じる',
-    !focusMemoClosedText.includes('たれも回数に応じて分けて使う'),
+    !focusMemoClosedText.includes('一度に炒められるのはフライパン'),
   )
   await page.getByRole('button', { name: '閉じる' }).click()
   await page.waitForTimeout(300)
