@@ -181,6 +181,9 @@ for (const target of TARGETS) {
   }
 
   const memoMatch = text.match(/^-\s*レシピmemo:\s*(.+)$/m)
+  // ワンポイント記法(2026-07-15レビュー反映用に新設): 原稿側にonePoint記法が未整備だったため、
+  // 既存の「- レシピmemo:」行と同型で「- ワンポイント:」行を新設した(改行はmemoと同じ「\n」エスケープ)。
+  const onePointMatch = text.match(/^-\s*ワンポイント:\s*(.+)$/m)
 
   recipes.push({
     title: cleanTitle(block.title),
@@ -195,6 +198,7 @@ for (const target of TARGETS) {
     ingredients,
     steps,
     ...(memoMatch ? { memo: unescapeNewlines(memoMatch[1].trim()) } : {}),
+    ...(onePointMatch ? { onePoint: unescapeNewlines(onePointMatch[1].trim()) } : {}),
     isFavorite: false,
     cookedLogs: [],
     searchWords: [],
