@@ -11,6 +11,13 @@
   --text: #43362a;          /* 文字: 焦げ茶 */
   --accent: #d9480f;        /* アクセント: トマトオレンジ（1色のみ） */
   --warning: #c92a2a;       /* 警告: 赤（NG食材アラート等） */
+  /* ページ背景専用トークン(2026-07-14): 既定では--bgと同じ値。
+     text-app(=--color-app=--bg)やbg-app(入力欄背景)はボタン文字・入力欄に使われるため、
+     彩度のあるテーマ(グリーン/ブラウン)で--bg自体を彩色するとボタン文字や入力欄まで
+     色づいてしまう。ページの背景色だけを分離できるよう--pageを導入し、bodyの背景色は
+     --bgではなく--pageを参照する。ライト/ダーク/自動テーマは--pageを上書きしないため、
+     従来どおり--bgと同じ値になり見た目は変わらない */
+  --page: var(--bg);
 
   /* 派生色（上の4色から作る補助トーン。新しい色相は増やさない） */
   --surface: #fffdf8;       /* カードなどの面 */
@@ -100,15 +107,18 @@
   --chip-food-purple: #8a3ea8;
 }
 
-/* ブラウンテーマ: ライトとダークの中間くらいの、暖色でやや落ち着いた見た目 */
+/* ブラウンテーマ: モックアップに合わせ「ページ=モカ茶／カード・入力欄・ボタン文字=クリーム」に
+   分離(2026-07-14 Fable設計確定・第三版)。--pageだけをモカ茶にし、--bg/--surfaceはクリームへ、
+   --accentはモックアップの鮮やかなオレンジへ変更。文字色は従来の濃茶のまま変えない */
 :root[data-theme="brown"] {
-  --bg: #bba583;
+  --page: #bba583;
+  --bg: #f5ecdb;
   --text: #40301f;
-  --accent: #ff8a4c;
+  --accent: #e8710a;
   --warning: #a8351f;
-  --surface: #f5ecdb;
+  --surface: #faf3e6;
   --text-muted: #7d6a4f;
-  --border: #d8c4a0;
+  --border: #e3d6be;
   --shadow-sm: 0 1px 3px rgb(64 48 31 / 0.14);
   --shadow-md: 0 4px 14px rgb(64 48 31 / 0.18);
   --chip-food-meat: #c2255c;
@@ -120,17 +130,19 @@
   --chip-food-purple: #8a3ea8;
 }
 
-/* グリーンテーマ: セージ系の背景＋クリームのカード。アクセントはモックアップに合わせて
-   オレンジ(ライトと同じ#d9480f)にした第一版(2026-07-14 オーナー実機フィードバック)。
+/* グリーンテーマ: モックアップに合わせ「ページ=セージ緑／カード・入力欄・ボタン文字=クリーム」に
+   分離(2026-07-14 Fable設計確定・第三版)。--pageだけをセージ緑にし、--bg/--surfaceはクリームへ、
+   --accentはモックアップの鮮やかなオレンジへ変更。文字色は従来の濃緑のまま変えない。
    ※アイコンや絞り込みの選択中バッジを緑にする2色化は、実機を見て別途判断 */
 :root[data-theme="green"] {
-  --bg: #aec08c;
+  --page: #aec08c;
+  --bg: #f5f3e8;
   --text: #2f3628;
-  --accent: #ff8a4c;
+  --accent: #e8710a;
   --warning: #a8351f;
-  --surface: #f6f5ea;
+  --surface: #fbfaf2;
   --text-muted: #65725a;
-  --border: #c3d0a6;
+  --border: #e3ddcb;
   --chip-food-meat: #c2255c;
   --chip-food-seafood: #1971c2;
   --chip-food-vegetable: #256e35;
@@ -186,7 +198,7 @@
   }
 
   body {
-    background-color: var(--bg);
+    background-color: var(--page);
     color: var(--text);
     /* スマホでタップ時のハイライトを控えめに */
     -webkit-tap-highlight-color: transparent;
