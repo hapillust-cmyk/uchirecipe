@@ -111,14 +111,15 @@
    分離(2026-07-14 Fable設計確定・第三版)。--pageだけをモカ茶にし、--bg/--surfaceはクリームへ、
    --accentはモックアップの鮮やかなオレンジへ変更。文字色は従来の濃茶のまま変えない */
 :root[data-theme="brown"] {
-  --page: #bba583;
-  --bg: #f5ecdb;
-  --text: #40301f;
-  --accent: #e8710a;
+  /* 色はオーナーが実機からスポイトで採取した実測値(2026-07-14) */
+  --page: #bea687;          /* ページ背景: モカ茶 */
+  --bg: #f1efed;            /* クリーム(入力欄・ボタン文字) */
+  --text: #70593c;          /* 文字: 茶 */
+  --accent: #6f5334;        /* アクセント(オーナー指定「オレンジ部分」=濃茶。文字色とほぼ同色) */
   --warning: #a8351f;
-  --surface: #faf3e6;
-  --text-muted: #7d6a4f;
-  --border: #e3d6be;
+  --surface: #f1efed;       /* カード面 */
+  --text-muted: #8f7a58;    /* 補足テキスト */
+  --border: #e6e0d7;
   --shadow-sm: 0 1px 3px rgb(64 48 31 / 0.14);
   --shadow-md: 0 4px 14px rgb(64 48 31 / 0.18);
   --chip-food-meat: #c2255c;
@@ -135,14 +136,15 @@
    --accentはモックアップの鮮やかなオレンジへ変更。文字色は従来の濃緑のまま変えない。
    ※アイコンや絞り込みの選択中バッジを緑にする2色化は、実機を見て別途判断 */
 :root[data-theme="green"] {
-  --page: #aec08c;
-  --bg: #f5f3e8;
-  --text: #2f3628;
-  --accent: #e8710a;
+  /* 色はオーナーが実機からスポイトで採取した実測値(2026-07-14) */
+  --page: #c3ce9b;          /* ページ背景: セージ緑 */
+  --bg: #f8f7e7;            /* クリーム(入力欄・ボタン文字=白っぽく見える) */
+  --text: #2a3b15;          /* 文字: 濃い緑 */
+  --accent: #e6650c;        /* アクセント: 鮮やかオレンジ */
   --warning: #a8351f;
-  --surface: #fbfaf2;
-  --text-muted: #65725a;
-  --border: #e3ddcb;
+  --surface: #f8f7e7;       /* カード面 */
+  --text-muted: #556340;    /* 補足テキスト(濃緑寄りの落ち着いた olive) */
+  --border: #e4e2d2;
   --chip-food-meat: #c2255c;
   --chip-food-seafood: #1971c2;
   --chip-food-vegetable: #256e35;
