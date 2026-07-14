@@ -32,7 +32,9 @@ import { usePhotoUrl } from './usePhotoUrl'
 
 /* 写真がないレシピ（または「アイコン表示」を選んだレシピ）用のプレースホルダー:
    料理名・タグ・材料から選んだ料理アイコン＋タグ（なければ料理名）で決まる色の濃さ。
-   色はアクセント色と背景色の混ぜ合わせだけで作る（トークン外の色は使わない） */
+   色はページ色(--page)とカード面色(--surface)の混ぜ合わせだけで作る（トークン外の色は
+   使わない。2026-07-14: 従来の--accent×--bgから変更。彩度のあるテーマ(グリーン/ブラウン)
+   でもページ色の淡いタイルとしてなじむようにし、アイコン自体の色(text-accent)は変えない） */
 export const iconComponents: Record<IconKey, typeof UtensilsCrossed> = {
   rice: CookingPot,
   noodle: Utensils,
@@ -56,10 +58,12 @@ export const seasonIcons: Record<Exclude<Season, 'all'>, typeof Flower2> = {
   winter: Snowflake,
 }
 
-// 写真なしカードの背景の濃さ(アクセント色の混合比)。タグ由来のハッシュで振り分けて
+// 写真なしカードの背景の濃さ(--page色の混合比)。タグ由来のハッシュで振り分けて
 // 単調さを避ける意匠。最小16%は「色あせて見える」とオーナー指摘(2026-07-12)があり、
-// 濃い段との差が3倍を超えない範囲(26〜52%)へ引き上げた
-const mixRatios = [26, 34, 42, 52] as const
+// 濃い段との差が3倍を超えない範囲(26〜52%)へ引き上げていたが、2026-07-14の配色変更
+// (--accent×--bg → --page×--surface)に伴い、彩度のあるテーマ(グリーン/ブラウン)でも
+// 浮かないよう上限を40%程度に抑えて比率はそのまま縮小した
+const mixRatios = [20, 26, 32, 40] as const
 
 function hashString(text: string): number {
   let hash = 0
@@ -83,7 +87,7 @@ export function RecipePlaceholder({
   return (
     <div
       className="flex h-full w-full items-center justify-center"
-      style={{ background: `color-mix(in oklab, var(--accent) ${ratio}%, var(--bg))` }}
+      style={{ background: `color-mix(in oklab, var(--page) ${ratio}%, var(--surface))` }}
     >
       <Icon size={iconSize} className="text-accent" aria-hidden />
     </div>
