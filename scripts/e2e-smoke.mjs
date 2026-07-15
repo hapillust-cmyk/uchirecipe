@@ -2064,7 +2064,7 @@ try {
   )
   await addNameInput.fill('')
   await addPriceInput.fill('')
-  await addUnitInput.fill('')
+  await addQtyInput.fill('')
   await page.waitForTimeout(200)
 
   // 修正2c: 追加入力欄が一覧より上に表示される(食材名欄のY座標 < 玉ねぎ行のY座標)
