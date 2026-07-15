@@ -1496,8 +1496,9 @@ eq('なすは紫カテゴリ', ingredientColorToken('なす'), '--chip-food-purp
 eq('茄子(漢字・読み辞書変換後)も紫カテゴリ', ingredientColorToken('茄子'), '--chip-food-purple')
 eq('紫キャベツは紫カテゴリ(キャベツの野菜カテゴリより優先)', ingredientColorToken('紫キャベツ'), '--chip-food-purple')
 
-// ---------- pickIconKey: 自動判定アイコンの全品スナップショット(2026-07-12 全面改修時の監査) ----------
-// starters全品(21) + public/sets/data/*.json全品(kintore/review/review2/review8/review16)の
+// ---------- pickIconKey: 自動判定アイコンの全品スナップショット(2026-07-12 全面改修時の監査。
+// 2026-07-15 アイコン分類改訂[docs/28]でpasta/vegetable/tofu新設に伴い19件を再ベースライン) ----------
+// starters全品(51) + public/sets/data/*.json全品(bento/kintore/review2/review8/review16)の
 // title→期待キーを丸ごと並べる。今後の規則調整で意図せず判定が変わったらここで落ちる。
 // (このテストが失敗しても即バグとは限らない。意図した変更ならこの期待表を更新すること)
 const iconKeyExpected = {
@@ -1506,72 +1507,72 @@ const iconKeyExpected = {
   '豆腐とわかめの味噌汁': 'soup',
   '豚の生姜焼き': 'meat',
   'ツナキャベツ丼': 'rice',
-  '野菜炒め': 'default',
+  '野菜炒め': 'vegetable', // 2026-07-15 vegetable新設(defaultだった野菜の副菜の受け皿)
   '親子丼': 'rice',
   'ハンバーグ': 'meat',
   '鶏の唐揚げ': 'chicken',
   '五目炊き込みご飯': 'rice',
-  'ナポリタン': 'noodle',
-  'ペペロンチーノ': 'noodle',
+  'ナポリタン': 'pasta', // 2026-07-15 pasta新設で洋麺をnoodleから切り出し
+  'ペペロンチーノ': 'pasta', // 2026-07-15 pasta新設で洋麺をnoodleから切り出し
   'だし巻き卵': 'egg',
   '豚汁': 'soup',
   '寄せ鍋': 'soup',
   'チャーハン': 'rice',
   'ポテトサラダ': 'salad',
-  'きんぴらごぼう': 'default',
+  'きんぴらごぼう': 'vegetable', // 2026-07-15 vegetable新設
   'さばの味噌煮': 'fish',
   'クリームシチュー': 'soup',
-  'レンジ蒸し鶏（自家製サラダチキン）': 'chicken',
-  '鶏むねのガーリック照り焼き': 'chicken',
-  'ささみとブロッコリーのごま和え': 'salad',
-  'サバ缶とトマトの煮込み': 'fish',
-  '鶏ひき肉の豆腐ハンバーグ': 'chicken',
-  '漬けるだけ味玉': 'egg',
-  'オートミール卵雑炊': 'rice',
-  'エビとブロッコリーの卵炒め': 'fish',
-  '鶏団子スープ': 'soup',
   '牛丼': 'rice',
   'ほうれん草のおひたし': 'salad',
-  '麻婆豆腐': 'meat',
+  '麻婆豆腐': 'tofu', // 2026-07-15 tofu新設(豆腐がmeatより先に取る)
   '鮭の塩焼き': 'fish',
   '肉うどん': 'noodle', // 2026-07-12 Fable裁定: 主食(麺)が料理の類型を決めるので主食優先
-  'ひじきの煮物': 'default',
+  'ひじきの煮物': 'vegetable', // 2026-07-15 vegetable新設
   'もやしのナムル': 'salad',
   '白和え': 'salad',
   'コールスロー': 'salad',
   'ニラ玉': 'egg',
   '中華風卵スープ': 'soup', // 2026-07-12 Fable裁定: 「◯◯スープはsoup」
   '大学芋': 'dessert',
-  'ツナと蒸し大豆の香味サラダ': 'salad',
   'さんまの塩焼き': 'fish',
-  '肉豆腐': 'meat',
+  '肉豆腐': 'tofu', // 2026-07-15 tofu新設(豆腐がmeatより先に取る)
   '鶏そぼろ丼': 'rice',
   '鮭のホイル焼き': 'fish',
   'なめこと豆腐の味噌汁': 'soup',
-  'さつまいもの甘辛煮': 'default',
+  'さつまいもの甘辛煮': 'vegetable', // 2026-07-15 vegetable新設
   'きゅうりとわかめの酢の物': 'salad',
   'オムライス': 'egg',
   'コンソメ野菜スープ': 'soup',
   '春雨サラダ': 'salad',
   '大根とツナのサラダ': 'salad',
   'キャベツの塩昆布あえ': 'salad',
-  '蒸しなすの香味だれ': 'default',
+  '蒸しなすの香味だれ': 'vegetable', // 2026-07-15 vegetable新設
   'バンバンジー': 'chicken',
   '牛乳もち': 'dessert',
   'フレンチトースト': 'bread',
   '家庭で作る杏仁豆腐': 'dessert',
   '鶏の照り焼き': 'chicken',
+  '回鍋肉(ホイコーロー)': 'meat',
   'ミートボールの甘酢あん': 'meat',
-  '卯の花(おからの炒り煮)': 'default',
-  '切り干し大根のハリハリ漬け': 'default',
+  '卯の花(おからの炒り煮)': 'tofu', // 2026-07-15 tofu新設
+  '切り干し大根のハリハリ漬け': 'vegetable', // 2026-07-15 vegetable新設
   '肉巻きおにぎり': 'rice',
-  'れんこんのきんぴら': 'default',
-  '高野豆腐の含め煮': 'default',
+  'れんこんのきんぴら': 'vegetable', // 2026-07-15 vegetable新設
+  '高野豆腐の含め煮': 'tofu', // 2026-07-15 tofu新設
   'ちくわときゅうりの土佐酢あえ': 'salad',
   '甘辛手羽先の照り焼き': 'chicken',
-  'こんにゃくの炒り煮': 'default',
+  'こんにゃくの炒り煮': 'vegetable', // 2026-07-15 vegetable新設
   '手作り鮭フレーク': 'fish',
-  '回鍋肉(ホイコーロー)': 'meat',
+  'レンジ蒸し鶏（自家製サラダチキン）': 'chicken',
+  '鶏むねのガーリック照り焼き': 'chicken',
+  'ささみとブロッコリーのごま和え': 'salad',
+  'サバ缶とトマトの煮込み': 'fish',
+  '鶏ひき肉の豆腐ハンバーグ': 'tofu', // 2026-07-15 tofu新設。オーナー可逆判断(docs/28): chicken希望ならexclude追加で戻せる
+  '漬けるだけ味玉': 'egg',
+  'オートミール卵雑炊': 'rice',
+  'エビとブロッコリーの卵炒め': 'fish',
+  '鶏団子スープ': 'soup',
+  'ツナと蒸し大豆の香味サラダ': 'salad',
   '鶏もも肉のタンドリー風': 'chicken',
   '豚肉のケチャップ炒め': 'meat',
   '鮭のハーブレモン焼き': 'fish',
@@ -1583,24 +1584,24 @@ const iconKeyExpected = {
   '鶏むね肉のレモンペッパー炒め': 'chicken',
   '鮭の西京みそ漬け': 'fish',
   'さわらの西京焼き': 'fish',
-  '豆腐ときのこの和風あんかけ': 'default',
+  '豆腐ときのこの和風あんかけ': 'tofu', // 2026-07-15 tofu新設
   '鶏ささみの梅しそレンジ蒸し': 'chicken',
   'しらたきのチャプチェ風': 'noodle',
   'きのこの和風マリネ': 'salad',
   '白菜と豚しゃぶのレンジ蒸し': 'meat',
-  '豆腐グラタン': 'default',
+  '豆腐グラタン': 'tofu', // 2026-07-15 tofu新設
   'フルーツヨーグルトバーク': 'dessert',
   'たらの香味レンジ蒸し': 'fish',
   'よだれ鶏': 'chicken',
   '豆乳担々スープ': 'soup',
   '冷やし茶碗蒸し': 'egg',
-  '梅しそ冷奴': 'default',
+  '梅しそ冷奴': 'tofu', // 2026-07-15 tofu新設
   'えびと薬味の香味だれそうめん': 'noodle', // 2026-07-12 Fable裁定: 主食(麺)が料理の類型を決めるので主食優先
   '冷しゃぶサラダ': 'salad',
   '冷や汁': 'soup',
   '冷やしトマトの浅漬け': 'salad',
   'オクラと長芋の梅肉あえ': 'salad',
-  'ゴーヤチャンプルー': 'default',
+  'ゴーヤチャンプルー': 'vegetable', // 2026-07-15 vegetable新設
   '梅おろしぶっかけうどん': 'noodle',
   '水ようかん': 'dessert',
   'だしのとり方': 'soup',
@@ -1633,6 +1634,46 @@ const iconKeyExpected = {
   }
   eq('アイコン期待表の品数は全品数と一致', Object.keys(iconKeyExpected).length, iconEntries.length)
   eq('アイコン期待表に無い余剰キーは無い', Object.keys(iconKeyExpected).every((t) => seenTitles.has(t)), true)
+
+  // 2026-07-15 アイコン分類改訂(docs/28): カタログ全品でpickIconKeyがdefaultに
+  // 落ちるものが無いこと(誤爆防止の核=たんぱく源が野菜の調理法語より先に取ること)。
+  const defaultCount = iconEntries.filter(({ recipe }) => pickIconKey(recipe) === 'default').length
+  eq('カタログ全品でpickIconKeyがdefaultになるものは0件', defaultCount, 0)
+}
+
+// ---------- pickIconKey: 将来入力の代表ケース(2026-07-15 アイコン分類改訂・docs/28 §5) ----------
+// タイトルのみ(タグ・材料は空)で判定させ、新優先順位表(rice→pasta→noodle→dessert→drink→
+// fish→soup→egg→salad→tofu→chicken→meat→bread→vegetable)が意図どおり機能するかを確認する。
+// 1つでも外れたら優先順位表の語順・exclude・段の位置をdocs/28と突き合わせて直すこと。
+const futureIconCases = [
+  ['肉野菜炒め', 'meat'],
+  ['野菜炒め', 'vegetable'],
+  ['カレーうどん', 'noodle'],
+  ['マカロニサラダ', 'salad'],
+  ['スパゲッティサラダ', 'salad'],
+  ['杏仁豆腐', 'dessert'],
+  ['茶碗蒸し', 'egg'],
+  ['蒸しパン', 'bread'],
+  ['焼きそば', 'noodle'],
+  ['冷やし中華', 'noodle'],
+  ['そうめん', 'noodle'],
+  ['ナポリタン', 'pasta'],
+  ['ペペロンチーノ', 'pasta'],
+  ['カルボナーラ', 'pasta'],
+  ['麻婆豆腐', 'tofu'],
+  ['豆腐グラタン', 'tofu'],
+  ['冷奴', 'tofu'],
+  ['厚揚げの煮物', 'tofu'],
+  ['ゴーヤチャンプルー', 'vegetable'],
+  ['こんにゃくの炒り煮', 'vegetable'],
+  ['きんぴられんこん', 'vegetable'],
+  ['肉うどん', 'noodle'],
+  ['さばの味噌煮', 'fish'],
+  ['鶏の唐揚げ', 'chicken'],
+  ['肉じゃが', 'meat'],
+]
+for (const [title, expected] of futureIconCases) {
+  eq(`pickIconKey将来入力: ${title}`, pickIconKey({ title, tags: [], ingredients: [] }), expected)
 }
 
 // ---------- 食材価格マスタのフォールバック計算(docs/20 §3・2026-07-12) ----------
