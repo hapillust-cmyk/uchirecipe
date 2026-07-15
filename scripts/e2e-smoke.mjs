@@ -400,7 +400,7 @@ try {
   )
   check(
     'FOCUS-MEMO-01 「｜」改行後の2文目も「・」箇条書きとして見える',
-    focusMemoOpenText.includes('人数が多いときは手順3〜5'),
+    focusMemoOpenText.includes('人数が多いときは手順③〜⑤'),
   )
   await page.mouse.click(5, 5) // 小窓の外をタップ
   await page.waitForTimeout(300)
