@@ -12,11 +12,12 @@ import {
   Beef,
   CakeSlice,
   Sandwich,
-  Coffee,
   Utensils,
   CookingPot,
   Egg,
   Drumstick,
+  Carrot,
+  Bean,
   Flower2,
   Sun,
   Leaf,
@@ -34,18 +35,24 @@ import { usePhotoUrl } from './usePhotoUrl'
    料理名・タグ・材料から選んだ料理アイコンを表示する。背景は--icon-tile(2026-07-14
    オーナー指定)で全レシピ共通の1色に統一する（従来はレシピごとにハッシュで濃淡を
    変えていたが廃止）。アイコン自体の色(text-accent)は変えない */
+/* pasta/vegetable/tofuは2026-07-15新設(docs/28)。Magnific実素材の到着まで暫定lucideを割り当てる:
+   pasta=Utensils(noodleと同じ絵を仮に共有)/vegetable=Carrot/tofu=Bean。
+   drinkは資産を調達しないためdefaultと同じ絵に束ねる */
 export const iconComponents: Record<IconKey, typeof UtensilsCrossed> = {
   rice: CookingPot,
+  pasta: Utensils,
   noodle: Utensils,
   bread: Sandwich,
   soup: Soup,
   salad: Salad,
+  vegetable: Carrot,
+  tofu: Bean,
   fish: Fish,
   egg: Egg,
   chicken: Drumstick,
   meat: Beef,
   dessert: CakeSlice,
-  drink: Coffee,
+  drink: UtensilsCrossed,
   default: UtensilsCrossed,
 }
 

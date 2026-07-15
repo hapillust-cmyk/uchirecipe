@@ -32,10 +32,13 @@ export interface Step {
  */
 export type IconKey =
   | 'rice'
+  | 'pasta'
   | 'noodle'
   | 'bread'
   | 'soup'
   | 'salad'
+  | 'vegetable'
+  | 'tofu'
   | 'fish'
   | 'egg'
   | 'chicken'
