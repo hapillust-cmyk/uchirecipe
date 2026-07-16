@@ -5,9 +5,11 @@ import { resizePhoto } from '../logic/image'
 import { usePhotoUrl } from './usePhotoUrl'
 
 // 記録写真は長辺1280px・JPEG品質0.8に圧縮する（docs/20 §4。レシピ写真本体の
-// resizePhoto既定値・長辺1200px/品質0.85とはあえて別値。記録写真は数が増えやすいため）
-const LOG_PHOTO_MAX_EDGE = 1280
-const LOG_PHOTO_QUALITY = 0.8
+// resizePhoto既定値・長辺1200px/品質0.85とはあえて別値。記録写真は数が増えやすいため）。
+// 既存記録の編集フロー（RecipeDetailPageの記録編集）でも同じ保存形式にするためexportする
+// （2026-07-16 便W-①）
+export const LOG_PHOTO_MAX_EDGE = 1280
+export const LOG_PHOTO_QUALITY = 0.8
 
 type Props = {
   open: boolean
@@ -164,7 +166,7 @@ export default function CookedLogModal({
               onClick={() => onPhotoChange(undefined)}
               className="mt-2 text-sm text-warning underline"
             >
-              {ja.form.photoRemove}
+              {ja.detail.cookedLogPhotoRemove}
             </button>
           )}
           {photoError && <p className="mt-1 text-sm text-warning">{photoError}</p>}

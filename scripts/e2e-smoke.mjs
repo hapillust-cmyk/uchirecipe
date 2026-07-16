@@ -48,6 +48,9 @@
 //         2026-07-12秒刻み対応で±30秒・±10秒の分+秒表示・10秒未満にならない floor も確認) /
 //         LOG-PHOTO-01(「作った！」記録への写真添付。選択→プレビュー→保存→一覧サムネイル→
 //         原寸表示窓、圧縮後Blobと自動記録された表示人数をIndexedDBから直接検証。2026-07-12) /
+//         LOG-EDIT-PHOTO-01(2026-07-16 便W-①: 既存記録の編集フローからも画像の削除・追加
+//         (差し替え)ができること。削除→保存→サムネ消滅、再編集で追加→保存→サムネ再出現・
+//         圧縮後Blobが新規作成時と同じ形式でIndexedDBに保存されることを確認) /
 //         NUT-01(栄養価のめやす: 未解錠でもエネルギー・塩分の概算が閉じた1行から見え、
 //         展開すると「めやす」表記・出典・Pro案内リンクが出る) /
 //         NUT-02(栄養価のめやす: Pro解錠済みで8項目の実パネルが出る(2026-07-13 第2弾で
@@ -117,6 +120,10 @@
 //         今日の週プラン登録(表示帯のみ)が今日の献立へ自動で入ること・非表示帯は取り込まれない
 //         こと・2回開いても重複しないこと(冪等)・取り込まれた品を消して開き直しても同じ日の
 //         うちは再出現しないこと(settings.lastAutoImportDate)をIndexedDB直読みで確認) /
+//         MEALPLAN-06(ランダム週献立の過去日保護・2026-07-16 便W-⑤a・オーナー指示2026-07-16夜:
+//         「前の週」=全日程が過去日の週で、サイコロボタンが1つも出ないこと・「まとめて献立を
+//         立てる」を押しても一切埋まらないこと(未定14件が不変)を確認。MEALPLAN-03/04は実行日の
+//         曜日次第で当週の月曜が過去日になり得るため「次の週」へ進めてから検証するよう追随済み) /
 //         修正1a(献立タブの概算食費リンクの文言「食材と価格を編集する」・遷移先/pricesを
 //         MEALPLAN-01内で確認) /
 //         PRICEUNIT-01(「食材と価格」の単位入力UI改修・2026-07-15オーナー実機フィードバック:
@@ -1210,6 +1217,74 @@ try {
         'LOG-PHOTO-01 記録フォームを開いた時点の表示人数が自動記録される',
         savedLog?.servings === expectedServings,
         `期待=${expectedServings} 実際=${savedLog?.servings}`,
+      )
+
+      // --- LOG-EDIT-PHOTO-01(2026-07-16 便W-①): 既存記録の編集フローからも写真の削除・
+      // 追加(差し替え)ができること(新規作成時のCookedLogModalと同じ保存形式)。直前に
+      // 作った写真付きの記録(index 0)を使い、削除→保存→サムネ消滅、再度編集で追加→保存→
+      // サムネ再出現、の一往復を確認する ---
+      await photoPage.locator('button[aria-label="この記録を編集"]').first().click()
+      await photoPage.waitForTimeout(300)
+      const removePhotoBtn = photoPage.getByRole('button', { name: 'この記録の写真を削除' })
+      check('LOG-EDIT-PHOTO-01 編集を開くと既存の写真の削除ボタンが出る', await removePhotoBtn.isVisible())
+      await removePhotoBtn.click()
+      await photoPage.waitForTimeout(200)
+      check(
+        'LOG-EDIT-PHOTO-01 削除すると削除ボタン自体も消える(未選択状態になる)',
+        !(await removePhotoBtn.isVisible().catch(() => false)),
+      )
+      await photoPage.getByRole('button', { name: '保存する', exact: true }).click()
+      await photoPage.waitForTimeout(400)
+      check(
+        'LOG-EDIT-PHOTO-01 削除して保存すると記録一覧のサムネイルが消える',
+        (await photoPage.locator('button[aria-label="写真を拡大表示"]').count()) === 0,
+      )
+
+      // 再度編集を開き、今度はアルバムから新しい写真を選んで追加(差し替え)する
+      await photoPage.locator('button[aria-label="この記録を編集"]').first().click()
+      await photoPage.waitForTimeout(300)
+      await photoPage
+        .locator('input[type="file"]:not([capture])')
+        .setInputFiles({ name: 'test2.png', mimeType: 'image/png', buffer: tinyPng })
+      // 画像はresizePhoto(canvas圧縮)を経由して非同期にstateへ入るため、固定500msでは
+      // スイート負荷時に間に合わないことがある(単体では動作確認済み)。出現をポーリング待ちにする
+      const reAddRemoveBtn = photoPage.getByRole('button', { name: 'この記録の写真を削除' })
+      await reAddRemoveBtn.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {})
+      check(
+        'LOG-EDIT-PHOTO-01 編集中に写真を選ぶとプレビューが出る',
+        await reAddRemoveBtn.isVisible(),
+      )
+      await photoPage.getByRole('button', { name: '保存する', exact: true }).click()
+      await photoPage.waitForTimeout(400)
+      const reAddedThumb = photoPage.locator('button[aria-label="写真を拡大表示"]').first()
+      check('LOG-EDIT-PHOTO-01 追加して保存すると記録一覧にサムネイルが再び出る', await reAddedThumb.isVisible())
+
+      const reAddedUrl = photoPage.url()
+      const reAddedRecipeId = Number(reAddedUrl.match(/#\/recipes\/(\d+)/)?.[1])
+      const reAddedLog = await photoPage.evaluate(
+        (id) =>
+          new Promise((resolve, reject) => {
+            const req = indexedDB.open('uchi-recipe')
+            req.onsuccess = () => {
+              const idb = req.result
+              const tx = idb.transaction('recipes', 'readonly')
+              const getReq = tx.objectStore('recipes').get(id)
+              getReq.onsuccess = () => {
+                const recipe = getReq.result
+                const log = recipe?.cookedLogs?.[0]
+                resolve(log ? { hasPhoto: log.photo instanceof Blob, photoSize: log.photo?.size ?? 0 } : null)
+              }
+              getReq.onerror = () => reject(getReq.error)
+            }
+            req.onerror = () => reject(req.error)
+          }),
+        reAddedRecipeId,
+      )
+      check(
+        'LOG-EDIT-PHOTO-01 編集で追加した写真も圧縮後Blob(実サイズ>0)としてIndexedDBに保存される' +
+          '(新規作成時と同じ保存形式)',
+        !!reAddedLog?.hasPhoto && reAddedLog.photoSize > 0,
+        `reAddedLog=${JSON.stringify(reAddedLog)}`,
       )
     } finally {
       await photoBrowser.close()
@@ -2669,6 +2744,13 @@ try {
       // 便U-1: 既定タブは「日」になったため、週プランナーの検証は「週」タブへ切り替えてから行う
       await mp3Page.getByRole('button', { name: '週', exact: true }).click()
       await mp3Page.waitForTimeout(300)
+      // 2026-07-16 便W-⑤a: ランダム週献立(サイコロ/まとめて献立)は過去日の枠を対象外にした。
+      // このテストは実行日の曜日次第で「当週の月曜」が過去日になりうる(例: 実行日が木曜なら
+      // 月〜水は過去)ため、サイコロの行インデックス(nth)が曜日で変わってしまう。
+      // 「次の週」へ1回進めば、その週の月曜は実行日が何曜日でも必ず未来日になり、テストが
+      // 決定的になる(過去日保護そのものの検証はMEALPLAN-06で別途行う)
+      await mp3Page.locator('button[aria-label="次の週"]').click()
+      await mp3Page.waitForTimeout(300)
 
       // 各枠は既定で主菜+副菜の2行(未定×2)。既定表示は夕食のみなので7日×2行=14件
       check(
@@ -2800,6 +2882,11 @@ try {
       await mp4Page.waitForTimeout(1800) // 初回シード完了待ち(既定表示は夕食のみ)
       // 便U-1: 既定タブは「日」になったため、「まとめて献立を立てる」がある「週」タブへ切り替える
       await mp4Page.getByRole('button', { name: '週', exact: true }).click()
+      await mp4Page.waitForTimeout(300)
+      // 2026-07-16 便W-⑤a: 過去日はまとめて献立の対象外になったため、実行日の曜日に関係なく
+      // 「7日×主菜+副菜=14件が全部埋まる」を保証するには表示中の週を全日程未来にする必要がある
+      // (MEALPLAN-03と同じ理由。「次の週」に進めば当週の月曜は実行日に関わらず必ず未来日)
+      await mp4Page.locator('button[aria-label="次の週"]').click()
       await mp4Page.waitForTimeout(300)
 
       const dinnerMealPlanIds = () =>
@@ -2988,6 +3075,55 @@ try {
       )
     } finally {
       await mp5Browser.close()
+    }
+  }
+
+  // --- MEALPLAN-06: ランダム週献立の過去日保護(2026-07-16 便W-⑤a・オーナー指示2026-07-16夜)。
+  // 「まとめて献立」「サイコロ」は過去日(今日より前)の枠を対象外にする(上書きも新規埋めもしない)。
+  // 「前の週」は実行日の曜日に関わらず必ず全7日が過去日になる(当週の月曜が実行日以前でも、
+  // 前の週の日曜は必ずそれよりさらに前)ため、実行日に依存しない決定的なテストになる ---
+  currentCheck = 'MEALPLAN-06'
+  {
+    const mp6Browser = await chromium.launch()
+    const mp6Context = await mp6Browser.newContext()
+    const mp6Page = await mp6Context.newPage()
+    mp6Page.on('console', (msg) => {
+      if (msg.type() !== 'error') return
+      const text = msg.text()
+      if (text.includes('cloudflareinsights') || text.includes('ERR_FAILED')) return
+      errors.push(`[console@MEALPLAN-06] ${text}`)
+    })
+    mp6Page.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@MEALPLAN-06] ${err.message}`)
+    })
+    try {
+      await mp6Page.goto(`${BASE}/#/meal-plan`, { waitUntil: 'networkidle' })
+      await mp6Page.waitForTimeout(1800) // 初回シード完了待ち(既定表示は夕食のみ)
+      await mp6Page.getByRole('button', { name: '週', exact: true }).click()
+      await mp6Page.waitForTimeout(300)
+      await mp6Page.locator('button[aria-label="前の週"]').click()
+      await mp6Page.waitForTimeout(300)
+
+      // 前提: 表示中の週は全日程が過去日(既定は夕食のみ表示なので7日×2行=14件の「未定」)
+      check(
+        'MEALPLAN-06 前提: 前の週(全日程過去日)も既定どおり7日×2行(未定×14)が並ぶ',
+        (await mp6Page.getByText('未定', { exact: true }).count()) === 14,
+      )
+      // (a) 過去日にはサイコロ(行の自動提案)ボタン自体が出ない
+      check(
+        'MEALPLAN-06(過去日保護a) 過去週にはサイコロボタンが1つも出ない',
+        (await mp6Page.getByRole('button', { name: 'この行にレシピを自動提案する' }).count()) === 0,
+      )
+      // (a) 「まとめて献立を立てる」を押しても過去週は一切埋まらない(上書きも新規埋めもしない)
+      await mp6Page.getByRole('button', { name: 'まとめて献立を立てる' }).click()
+      await mp6Page.waitForTimeout(600)
+      check(
+        'MEALPLAN-06(過去日保護a) 「まとめて献立を立てる」を押しても過去週は未定のまま(14件不変)',
+        (await mp6Page.getByText('未定', { exact: true }).count()) === 14,
+      )
+    } finally {
+      await mp6Browser.close()
     }
   }
 
