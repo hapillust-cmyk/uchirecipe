@@ -1,5 +1,6 @@
 import type { Ingredient } from '../db/types'
 import { normalizeDigits } from './amount'
+import { toHiragana } from './kana'
 
 /**
  * 概算食費計算: レシピの「材料ごとの価格入力」(Ingredient.price)を優先し、
@@ -18,6 +19,15 @@ export function normalizeIngredientNameForPrice(name: string): string {
 /** マスタ照合用に正規化・整形済みの1件 */
 export interface PriceIndexEntry {
   normalizedName: string
+  /**
+   * 照合専用キー: normalizedName(括弧除去済みの表示名)をさらにtoHiraganaでかな正規化したもの
+   * （カタカナ⇄ひらがな⇄辞書登録済み漢字の表記ゆれを吸収）。
+   * H-2(Fable裁定): db/prices.tsの重複チェック(normalizeForDuplicateCheck)と同一の正規化に
+   * 揃えることで、「たまねぎ」で登録した価格が材料名「玉ねぎ」にも一致するようにする
+   * (登録時はかな正規化で重複ブロックされるのに照合時は一致しない、という袋小路の解消)。
+   * normalizedNameは表示・デバッグ用にかな正規化前のまま保持する。
+   */
+  matchKey: string
   pricePerUnit: number
   unit: string
   /**
@@ -29,33 +39,39 @@ export interface PriceIndexEntry {
 
 /**
  * PriceEntry配列から照合用の索引を作る。
- * 正規化名が長いものを先に並べる（前方一致で複数ヒットしたとき、より具体的な名前を優先するため）。
+ * 照合キー(かな正規化後)が長いものを先に並べる（前方一致で複数ヒットしたとき、より具体的な名前を優先するため）。
  */
 export function buildPriceIndex(
   entries: { name: string; pricePerUnit: number; unit: string; isDefault?: boolean }[],
 ): PriceIndexEntry[] {
   return entries
-    .map((e) => ({
-      normalizedName: normalizeIngredientNameForPrice(e.name),
-      pricePerUnit: e.pricePerUnit,
-      unit: e.unit,
-      isDefault: e.isDefault === true,
-    }))
+    .map((e) => {
+      const normalizedName = normalizeIngredientNameForPrice(e.name)
+      return {
+        normalizedName,
+        matchKey: toHiragana(normalizedName),
+        pricePerUnit: e.pricePerUnit,
+        unit: e.unit,
+        isDefault: e.isDefault === true,
+      }
+    })
     .filter((e) => e.normalizedName && e.pricePerUnit > 0)
-    .sort((a, b) => b.normalizedName.length - a.normalizedName.length)
+    .sort((a, b) => b.matchKey.length - a.matchKey.length)
 }
 
 /**
  * 材料名からマスタの1件を探す。
- * 1) 正規化後の完全一致 → 2) 材料名がマスタ名で始まる前方一致（例:「たまねぎ薄切り」→「たまねぎ」）
- * の順で照合する（表示正規化=括弧除去後の名前で前方一致程度の緩さ）。
+ * 1) かな正規化後の完全一致 → 2) 材料名がマスタ名で始まる前方一致（例:「たまねぎ薄切り」→「たまねぎ」、
+ * 「トウフ」で登録した材料が「とうふ」のマスタに一致 等）の順で照合する（H-2: db/prices.tsの
+ * 重複チェックと同じかな正規化キーで比較する）。
  */
 export function matchPriceEntry(name: string, index: PriceIndexEntry[]): PriceIndexEntry | undefined {
   const normalized = normalizeIngredientNameForPrice(name)
   if (!normalized) return undefined
-  const exact = index.find((e) => e.normalizedName === normalized)
+  const key = toHiragana(normalized)
+  const exact = index.find((e) => e.matchKey === key)
   if (exact) return exact
-  return index.find((e) => normalized.startsWith(e.normalizedName))
+  return index.find((e) => key.startsWith(e.matchKey))
 }
 
 /** "200" "1.5" "1/2" のような数字の分量を数値化する（人数換算不要の素の値） */

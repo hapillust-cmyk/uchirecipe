@@ -499,6 +499,44 @@ eq(
   { name: '紫たまねぎ（薄切り）', amount: '1/2', unit: 'コ分' },
 )
 
+// ---------- H-1(2026-07-16 Fable品質監査再発防止): 見出しなし入力で「材料を〜」始まりの
+// 手順文が材料欄を全滅させない(classifyHeaderのING誤検知ガード) ----------
+{
+  // A1: 実際の回帰報告そのもの(修正前は材料0件・旧は2件だった)
+  const r = parseRecipeText(
+    '肉じゃが\nじゃがいも 3個\n豚こま切れ肉 200g\n材料をすべて鍋に入れて炒める\n水を加えて15分煮る',
+  )
+  eq('H-1(A1): タイトル', r.title, '肉じゃが')
+  eq('H-1(A1): 材料2件(見出し誤検知でpre領域ごと全滅しない・主症状の再発防止)', r.ingredients, [
+    { name: 'じゃがいも', amount: '3', unit: '個' },
+    { name: '豚こま切れ肉', amount: '200', unit: 'g' },
+  ])
+  // 「材料をすべて鍋に入れて炒める」自体は、main loop側の(意図的に触っていない)ING_HEADER.test
+  // に今回も一致し続けるため見出し扱いで読み捨てられ、手順としては残らない(Fable裁定の対処範囲は
+  // classifyHeaderのみで、main loop側のING_HEADER.testは既存挙動のまま=対象外)。
+  // 主症状だった「材料0件」は解消し、手順も0件から1件に回復する
+  eq('H-1(A1): 手順1件(材料欄は全滅しない。手順文自体がING_HEADER誤爆で読み捨てられるのは対象外の既存挙動)', r.steps, [
+    '水を加えて15分煮る',
+  ])
+}
+{
+  // A2: STEP_HEADER側の見出し語(下ごしらえ)で始まる手順文の回帰確認。STEP_HEADERは既に
+  // 「≤15字」の長さガードがあり(Fable裁定でING_HEADERのみ追加ガード対象)、現実的な長さの
+  // 手順文なら既存ガードだけで十分誤検知しないことを確認する(このケース自体は今回の修正対象外)
+  const r = parseRecipeText(
+    'カレー\nじゃがいも 2個\n人参 1本\n下ごしらえした玉ねぎを飴色になるまで炒める\nルーを加えて煮込む',
+  )
+  eq('H-1(A2): タイトル', r.title, 'カレー')
+  eq('H-1(A2): 材料2件', r.ingredients, [
+    { name: 'じゃがいも', amount: '2', unit: '個' },
+    { name: '人参', amount: '1', unit: '本' },
+  ])
+  eq('H-1(A2): 手順2件', r.steps, [
+    '下ごしらえした玉ねぎを飴色になるまで炒める',
+    'ルーを加えて煮込む',
+  ])
+}
+
 // ============================================================================
 // 貼り付け解析 第2弾: 実サイト形式コーパスR1〜R8(docs/29 P7第2弾Fable裁定§7)
 // 実物(オーナー提供の生コピペ)と構造同型・内容は創作。生コピペそのものはコミットしない。
@@ -1056,6 +1094,16 @@ eq(
   '負例F7: 見出し語を含む「#コツ」はハッシュタグ除去せずメモ見出しとして扱う',
   parseRecipeText('作り方\n1. 焼く\n#コツ\n強火で焼く').memo,
   '強火で焼く',
+)
+eq(
+  '負例M-4(2026-07-16 Fable品質監査再発防止): memo領域の「人数に合わせて量を調整してください」は消えず残る',
+  parseRecipeText('作り方\n1. 焼く\nコツ・ポイント\n人数に合わせて量を調整してください').memo,
+  '人数に合わせて量を調整してください',
+)
+eq(
+  '負例M-4: steps領域の「人数に合わせて量を調整してください」は従来どおり除去される',
+  parseRecipeText('作り方\n1. 焼く\n人数に合わせて量を調整してください\n2. 盛り付ける').steps,
+  ['焼く', '盛り付ける'],
 )
 {
   const r = parseRecipeText('作り方\n1. 生地を作る\n2.と3.を合わせる')
@@ -2517,6 +2565,11 @@ const futureIconCases = [
   ['さばの味噌煮', 'fish'],
   ['鶏の唐揚げ', 'chicken'],
   ['肉じゃが', 'meat'],
+  // M-1(2026-07-16 Fable品質監査再発防止): drinkワードを含んでいても煮込み・肉料理は
+  // drinkに誤爆しない(exclude: ['煮','豚','鍋'])
+  ['紅茶豚', 'meat'],
+  ['豚肉の紅茶煮', 'meat'],
+  ['手羽元のオレンジジュース煮', 'chicken'],
 ]
 for (const [title, expected] of futureIconCases) {
   eq(`pickIconKey将来入力: ${title}`, pickIconKey({ title, tags: [], ingredients: [] }), expected)
@@ -2602,6 +2655,32 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
     '由来種別: ユーザーが上書きした価格ならsource=user',
     estimateIngredientYen({ name: 'にんじん', amount: '1', unit: '本' }, sourceIndex),
     { yen: 40, source: 'user' },
+  )
+}
+
+// ---------- H-2(2026-07-16 Fable品質監査再発防止): かな表記ゆれの照合統一 ----------
+// db/prices.tsの重複チェック(normalizeForDuplicateCheck=toHiragana込み)と同じ正規化を
+// matchPriceEntryの照合キーにも使うことで、「たまねぎ」で登録した価格が材料名「玉ねぎ」の
+// レシピにも一致するようにする(逆にトウフ⇄とうふ等も同様)。修正前は登録時はかな正規化で
+// 重複ブロックされるのに照合時は一致しない袋小路だった。
+{
+  const hiraganaIndex = buildPriceIndex([{ name: 'たまねぎ', pricePerUnit: 50, unit: '1個' }])
+  eq(
+    'H-2: ひらがな登録(たまねぎ)が漢字表記(玉ねぎ)の材料に一致する',
+    matchPriceEntry('玉ねぎ', hiraganaIndex)?.pricePerUnit,
+    50,
+  )
+  const katakanaIndex = buildPriceIndex([{ name: 'トウフ', pricePerUnit: 40, unit: '1丁' }])
+  eq(
+    'H-2: カタカナ登録(トウフ)がひらがな表記(とうふ)の材料に一致する',
+    matchPriceEntry('とうふ', katakanaIndex)?.pricePerUnit,
+    40,
+  )
+  const kanjiIndex = buildPriceIndex([{ name: '玉ねぎ', pricePerUnit: 50, unit: '1個' }])
+  eq(
+    'H-2: 漢字登録(玉ねぎ)がひらがな表記(たまねぎ)の材料に一致する(袋小路の解消)',
+    matchPriceEntry('たまねぎ', kanjiIndex)?.pricePerUnit,
+    50,
   )
 }
 
@@ -3140,8 +3219,9 @@ eq('端数は丸める', formatMinutesSecondsLabel(60.4), '1分')
     }
 
     let threw = false
+    let result
     try {
-      await refreshApp()
+      result = await refreshApp()
     } catch {
       threw = true
     }
@@ -3150,10 +3230,55 @@ eq('端数は丸める', formatMinutesSecondsLabel(60.4), '1分')
     eq('SW登録が全て解除される', unregisterCalls.sort(), ['reg1', 'reg2'])
     eq('キャッシュが全て削除される', deleteCalls.sort(), ['cache-a', 'cache-b'])
     eq('reloadが呼ばれる', reloadCalls, 1)
+    eq('オンライン時は\'done\'を返す', result, 'done')
 
     delete globalThis.caches
     delete globalThis.window
     delete globalThis.indexedDB
+    if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator)
+  }
+
+  // ケース3(M-2 2026-07-16 Fable品質監査再発防止): オフライン時はSW一覧取得・キャッシュ削除・
+  // reloadのいずれも実行せず'offline'を返すこと。古いSW/Cacheを消してreloadすると、
+  // オフラインでは新しいファイルを取得できず白画面になってしまうため、呼び出し前の早期returnを
+  // 「削除APIが1回も呼ばれないこと」まで含めて確認する
+  {
+    const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+    let getRegistrationsCalls = 0
+    Object.defineProperty(globalThis, 'navigator', {
+      value: {
+        onLine: false,
+        serviceWorker: {
+          getRegistrations: async () => {
+            getRegistrationsCalls++
+            return []
+          },
+        },
+      },
+      configurable: true,
+    })
+
+    let cachesKeysCalls = 0
+    globalThis.caches = {
+      keys: async () => {
+        cachesKeysCalls++
+        return []
+      },
+      delete: async () => true,
+    }
+
+    let reloadCalls = 0
+    globalThis.window = { location: { reload: () => { reloadCalls++ } } }
+
+    const result = await refreshApp()
+
+    eq("オフライン時は'offline'を返す", result, 'offline')
+    eq('オフライン時はSW一覧取得すら呼ばれない', getRegistrationsCalls, 0)
+    eq('オフライン時はキャッシュ一覧取得すら呼ばれない', cachesKeysCalls, 0)
+    eq('オフライン時はreloadが呼ばれない', reloadCalls, 0)
+
+    delete globalThis.caches
+    delete globalThis.window
     if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator)
   }
 }
