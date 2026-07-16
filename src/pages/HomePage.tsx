@@ -5,11 +5,9 @@ import {
   Dices,
   Heart,
   History,
-  Search,
   Carrot,
   HardDriveDownload,
   Refrigerator,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
   CalendarDays,
@@ -33,6 +31,10 @@ import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import ChipInput from '../components/ChipInput'
 import { ja } from '../i18n/ja'
+
+// バックアップ浮遊バナーの「×で閉じたらセッション中は再表示しない」用キー(2026-07-16 便S)。
+// sessionStorageなのでタブ/アプリを閉じれば消え、次回起動時はまた条件を満たせば出る
+const BACKUP_REMINDER_DISMISSED_KEY = 'uchirecipe:backupReminderDismissed'
 
 type SuggestCondition = 'any' | 'notRecent' | 'favorite' | 'quick'
 
@@ -89,7 +91,10 @@ function SuggestionCard({ recipe }: { recipe: Recipe }) {
   )
 }
 
-/** ホーム: 表示パーツは設定でオン・オフ＆並べ替えできる（検索バーは常時表示） */
+/**
+ * ホーム: 表示パーツは設定でオン・オフ＆並べ替えできる。
+ * 検索窓は2026-07-16 便Sでホームから削除（検索はレシピタブで行う）
+ */
 export default function HomePage() {
   const navigate = useNavigate()
   const allRecipes = useLiveQuery(listRecipes, [])
@@ -101,7 +106,6 @@ export default function HomePage() {
   const [conditionsOpen, setConditionsOpen] = useState(false)
   const [pantryOnly, setPantryOnly] = useState(false)
   const [seed, setSeed] = useState(() => Math.random())
-  const [query, setQuery] = useState('')
   const [ingredients, setIngredients] = useState<string[]>([])
   const pantryItems = usePantryItems()
   const pantryNames = useMemo(() => pantryAvailableNames(pantryItems ?? []), [pantryItems])
@@ -132,6 +136,15 @@ export default function HomePage() {
     settings !== undefined &&
     (allRecipes?.some((r) => !r.isStarter) ?? false) &&
     backupOverdue(settings.lastBackupAt)
+  // 浮遊バナーの×で閉じたら、そのセッション中(タブを閉じるまで)は再表示しない
+  // (2026-07-16 便S: インラインカードから画面上部の浮遊バナーへ変更)
+  const [backupReminderDismissed, setBackupReminderDismissed] = useState(
+    () => sessionStorage.getItem(BACKUP_REMINDER_DISMISSED_KEY) === '1',
+  )
+  const dismissBackupReminder = () => {
+    sessionStorage.setItem(BACKUP_REMINDER_DISMISSED_KEY, '1')
+    setBackupReminderDismissed(true)
+  }
 
   // アプリ内お知らせ: 起動時に同一オリジンで取得し、最新1件だけを未読なら表示する
   const [news, setNews] = useState<NewsItem[]>([])
@@ -182,22 +195,21 @@ export default function HomePage() {
       .slice(0, 5)
   }, [recipes])
 
-  const submitSearch = () => {
-    navigate(query.trim() ? `/recipes?q=${encodeURIComponent(query.trim())}` : '/recipes')
-  }
   const submitIngredients = () => {
     if (ingredients.length === 0) return
     navigate(`/recipes?ing=${encodeURIComponent(ingredients.join(' '))}`)
   }
 
   const widgetSections: Record<HomeWidgetKey, ReactNode> = {
-    mealPlan: (
-      <section className="rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
-        <h2 className="flex items-center gap-2 font-bold">
-          <CalendarDays size={20} className="text-accent" aria-hidden />
-          {ja.home.mealPlanTitle}
-        </h2>
-        {todayListRecipes && todayListRecipes.length > 0 ? (
+    // 登録0品なら非表示(2026-07-16 便S。直近実装の「1行に薄く」表示を置き換え。
+    // 読み込み中(todayListRecipesがundefined)も同様に何も出さない)
+    mealPlan:
+      todayListRecipes && todayListRecipes.length > 0 ? (
+        <section className="rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
+          <h2 className="flex items-center gap-2 font-bold">
+            <CalendarDays size={20} className="text-accent" aria-hidden />
+            {ja.home.mealPlanTitle}
+          </h2>
           <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-app">
             {/* state.from/fromPathで「今日の献立から開いた」ことを詳細画面へ持ち回る。
                 RecipeDetailPageの戻るボタンが、通常の「常に一覧へ」ではなくここ(ホーム)へ
@@ -214,19 +226,8 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
-        ) : (
-          // 空のとき: 従来の中央寄せブロック(見出し+リンク2つ)を1行の薄い表示に縮小
-          // (2026-07-16 UI総点検B-3/B-6オーナー決定: 入口2系統の重複感を緩和。候補カードを主役にする。
-          // 「献立を決める」リンクは削除確定=このウィジェットからは「レシピを探す」だけ残す)
-          <p className="mt-[var(--space-sm)] text-sm text-ink-muted">
-            {ja.home.mealPlanEmpty}
-            <Link to="/recipes" className="ml-2 font-bold text-accent underline">
-              {ja.home.mealPlanGoRecipes}
-            </Link>
-          </p>
-        )}
-      </section>
-    ),
+        </section>
+      ) : null,
     suggestion: (
       <section className="rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
         <h2 className="text-xl font-bold">{ja.home.suggestTitle}</h2>
@@ -355,16 +356,6 @@ export default function HomePage() {
         </div>
       </section>
     ),
-    pantry: (
-      <Link
-        to="/shopping"
-        className="flex items-center gap-2 rounded-md border border-edge bg-surface px-[var(--space-md)] py-3 text-sm shadow-sm"
-      >
-        <Refrigerator size={18} className="shrink-0 text-accent" aria-hidden />
-        <span className="min-w-0 flex-1 font-bold">{ja.home.pantryShortcut}</span>
-        <ChevronRight size={16} className="shrink-0 text-ink-muted" aria-hidden />
-      </Link>
-    ),
     history:
       history.length > 0 ? (
         <section>
@@ -400,6 +391,50 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-md px-[var(--space-md)] pt-[var(--space-lg)] pb-[var(--space-lg)]">
+      {/* バックアップの控えめなリマインド(2026-07-16 便S: インラインカードから画面上部の浮遊
+          バナーへ変更。TimerBarと同じ「fixed inset-x-0 + mx-auto max-w-md」の浮遊パターンを
+          上部に転用。タップで設定のバックアップタブへ(既存遷移流用)・×は行内にネストした
+          role="button"(TimerBarの常駐バーの×ボタンと同じ構成)でタップ伝播を止めて閉じるだけにする。
+          ×で閉じたらセッション中(sessionStorage)は再表示しない。表示条件(showBackupReminder)は
+          従来のまま変更していない */}
+      {showBackupReminder && !backupReminderDismissed && (
+        <div
+          className="fixed inset-x-0 z-10"
+          style={{ top: 'calc(var(--space-sm) + env(safe-area-inset-top))' }}
+        >
+          <div className="mx-auto max-w-md px-[var(--space-md)]">
+            <Link
+              to="/settings?section=backup"
+              className="flex items-center gap-2 rounded-md border border-edge bg-surface px-[var(--space-md)] py-2 text-sm text-ink-muted shadow-md"
+            >
+              <HardDriveDownload size={16} className="shrink-0 text-accent" aria-hidden />
+              <span className="min-w-0 flex-1">{ja.home.backupReminder}</span>
+              <span className="shrink-0 font-bold text-accent">{ja.home.backupReminderLink}</span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  dismissBackupReminder()
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    dismissBackupReminder()
+                  }
+                }}
+                aria-label={ja.common.close}
+                className="-m-2 shrink-0 rounded-full p-2 text-ink-muted"
+              >
+                <X size={16} aria-hidden />
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold">{ja.app.name}</h1>
 
       {/* アプリ内お知らせ（最新1件・未読のときだけ） */}
@@ -427,43 +462,6 @@ export default function HomePage() {
           </button>
         </div>
       )}
-
-      {/* バックアップの控えめなリマインド */}
-      {showBackupReminder && (
-        <Link
-          to="/settings?section=backup"
-          className="mt-[var(--space-sm)] flex items-center gap-2 rounded-md border border-edge bg-surface px-[var(--space-md)] py-2 text-sm text-ink-muted shadow-sm"
-        >
-          <HardDriveDownload size={16} className="shrink-0 text-accent" aria-hidden />
-          <span className="min-w-0 flex-1">{ja.home.backupReminder}</span>
-          <span className="shrink-0 font-bold text-accent">{ja.home.backupReminderLink}</span>
-        </Link>
-      )}
-
-      {/* 検索バー（常時表示）。「検索」テキストボタンは削除確定(2026-07-16 UI総点検B-6)。
-          虫眼鏡アイコン(装飾)とEnter押下での送信(下記onSubmit)は維持する */}
-      <form
-        className="mt-[var(--space-md)] flex gap-[var(--space-sm)]"
-        onSubmit={(e) => {
-          e.preventDefault()
-          submitSearch()
-        }}
-      >
-        <div className="relative min-w-0 flex-1">
-          <Search
-            size={18}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
-            aria-hidden
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={ja.home.searchPlaceholder}
-            className="w-full rounded-md border border-edge bg-surface py-3 pl-10 pr-3 text-base text-ink placeholder:text-ink-muted/60 shadow-sm"
-          />
-        </div>
-      </form>
 
       {/* カスタマイズ可能なパーツ（設定でオン・オフ＆並べ替え） */}
       <div className="mt-[var(--space-md)] space-y-[var(--space-md)]">

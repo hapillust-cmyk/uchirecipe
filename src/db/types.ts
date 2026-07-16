@@ -219,15 +219,20 @@ export interface ShoppingItem {
 /** テーマ設定: 端末に合わせる / ライト固定 / ダーク固定 / ブラウン固定 / グリーン固定 */
 export type ThemeSetting = 'auto' | 'light' | 'dark' | 'brown' | 'green'
 
-/** ホーム画面に置ける表示パーツ */
-export type HomeWidgetKey = 'mealPlan' | 'suggestion' | 'ingredientSearch' | 'pantry' | 'history'
+/**
+ * ホーム画面に置ける表示パーツ。
+ * 2026-07-16 便S: 「在庫ボードを見る・編集する」(旧'pantry')はホームから削除（食材タブへの
+ * 導線はタブナビで足りるため）。'pantry'という値自体は過去にsettings.homeWidgetsへ保存された
+ * ままの端末がありうるため型からは外すが、db/settings.ts の getSettings() で未知キーとして
+ * 安全に無視する（除去はしない＝ユーザーの並び順を書き換えない）
+ */
+export type HomeWidgetKey = 'mealPlan' | 'suggestion' | 'ingredientSearch' | 'history'
 
 /** 標準の表示パーツ構成（すべて表示・この並び順） */
 export const defaultHomeWidgets: HomeWidgetKey[] = [
   'mealPlan',
   'suggestion',
   'ingredientSearch',
-  'pantry',
   'history',
 ]
 
