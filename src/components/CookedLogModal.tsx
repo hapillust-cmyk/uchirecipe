@@ -166,7 +166,7 @@ export default function CookedLogModal({
               onClick={() => onPhotoChange(undefined)}
               className="mt-2 text-sm text-warning underline"
             >
-              {ja.form.photoRemove}
+              {ja.detail.cookedLogPhotoRemove}
             </button>
           )}
           {photoError && <p className="mt-1 text-sm text-warning">{photoError}</p>}
