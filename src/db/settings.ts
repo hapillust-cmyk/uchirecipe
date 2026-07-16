@@ -1,11 +1,22 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
-import { defaultSettings, type MealSlot, type Settings } from './types'
+import { defaultSettings, defaultHomeWidgets, type HomeWidgetKey, type MealSlot, type Settings } from './types'
+
+/**
+ * ホームカスタマイズの既知キー集合。保存済みsettings.homeWidgetsに、旧'pantry'
+ * (2026-07-16 便Sでホームから削除)のような現行の型に無いキーが残っていても、
+ * ここで静かに取り除いて安全に無視する（並び順や他のキーはそのまま保つ）
+ */
+const KNOWN_HOME_WIDGET_KEYS = new Set<string>(defaultHomeWidgets)
+function sanitizeHomeWidgets(widgets: HomeWidgetKey[]): HomeWidgetKey[] {
+  return widgets.filter((key) => KNOWN_HOME_WIDGET_KEYS.has(key))
+}
 
 /** 設定を取得（未保存の項目は初期値で補う） */
 export async function getSettings(): Promise<Settings> {
   const stored = await db.settings.get(1)
-  return { ...defaultSettings, ...stored }
+  const merged = { ...defaultSettings, ...stored }
+  return { ...merged, homeWidgets: sanitizeHomeWidgets(merged.homeWidgets) }
 }
 
 /** 設定の一部だけを更新する（例: updateSettings({ theme: 'dark' })） */

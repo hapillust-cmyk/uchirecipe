@@ -58,7 +58,6 @@ const allHomeWidgets: HomeWidgetKey[] = [
   'mealPlan',
   'suggestion',
   'ingredientSearch',
-  'pantry',
   'history',
 ]
 
@@ -66,7 +65,6 @@ const homeWidgetLabels: Record<HomeWidgetKey, string> = {
   mealPlan: ja.home.mealPlanTitle,
   suggestion: ja.home.suggestTitle,
   ingredientSearch: ja.home.ingShortcutTitle,
-  pantry: ja.pantry.title,
   history: ja.home.historyTitle,
 }
 
