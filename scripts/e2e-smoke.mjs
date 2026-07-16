@@ -1240,10 +1240,13 @@ try {
       await photoPage
         .locator('input[type="file"]:not([capture])')
         .setInputFiles({ name: 'test2.png', mimeType: 'image/png', buffer: tinyPng })
-      await photoPage.waitForTimeout(500)
+      // 画像はresizePhoto(canvas圧縮)を経由して非同期にstateへ入るため、固定500msでは
+      // スイート負荷時に間に合わないことがある(単体では動作確認済み)。出現をポーリング待ちにする
+      const reAddRemoveBtn = photoPage.getByRole('button', { name: 'この記録の写真を削除' })
+      await reAddRemoveBtn.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {})
       check(
         'LOG-EDIT-PHOTO-01 編集中に写真を選ぶとプレビューが出る',
-        await photoPage.getByRole('button', { name: 'この記録の写真を削除' }).isVisible(),
+        await reAddRemoveBtn.isVisible(),
       )
       await photoPage.getByRole('button', { name: '保存する', exact: true }).click()
       await photoPage.waitForTimeout(400)
