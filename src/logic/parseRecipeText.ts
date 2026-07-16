@@ -241,10 +241,22 @@ function parseIngredientLine(rawLine: string): ParsedIngredient | undefined {
 
 type Region = 'pre' | 'ing' | 'steps' | 'memo'
 
+// H-1(Fable裁定・貼り付けパーサー回帰再発防止): 「材料をすべて鍋に入れて炒める」のような
+// 手順文の冒頭がING_HEADERに部分一致し、classifyHeaderが材料見出しと誤認する事故を防ぐガード。
+// STEP_HEADER側は既に「≤15字」の長さ制約があるため対象外(Fable裁定・現状維持)。
+// ING_HEADERは長さ制約が無いので、classifyHeader内でING判定するときだけ次の2条件で除外する:
+// (a) 行が長すぎる(>15字)、(b) 見出し語の直後が助詞(を/は/が/も/に/で)で始まる
+// (見出し語のすぐ後ろに助詞が続くなら、それは見出しではなく文の一部)。
+const ING_HEADER_FOLLOWED_BY_PARTICLE =
+  /^[【\[（(◆■□●○☆★♪#＊*\s]*(?:材料|用意するもの|ざいりょう)[をはがもにで]/
+function isIngHeaderLine(line: string): boolean {
+  return ING_HEADER.test(line) && line.length <= 15 && !ING_HEADER_FOLLOWED_BY_PARTICLE.test(line)
+}
+
 /** 見出し行かどうか(既存のING_HEADER/STEP_HEADER/MEMO_HEADERで判定)。ヘッダー行自身の領域分類には使わない共通ヘルパー */
 function classifyHeader(line: string): Region | null {
   if (!line) return null
-  if (ING_HEADER.test(line)) return 'ing'
+  if (isIngHeaderLine(line)) return 'ing'
   if (STEP_HEADER.test(line) && line.length <= 15) return 'steps'
   if (MEMO_HEADER.test(line)) return 'memo'
   return null
@@ -535,9 +547,15 @@ function isPrefixGomi(line: string): boolean {
   const t = line.trim()
   return PREFIX_GOMI.some((p) => t.startsWith(p))
 }
-function isRegexGomi(line: string): boolean {
+// M-4(Fable裁定・再発防止): SERVING_ADJUST_LINE(「人数に合わせて量を調整してください」型)は
+// memo領域(コツ・ポイント見出し以降)では正当なコツ・メモ文である可能性があるため削除しない。
+// 他のEXACT/PREFIX/REGEXゴミ判定は現状維持(領域を問わず常に有効)。
+function isRegexGomi(line: string, region: Region): boolean {
   const t = line.trim()
-  return REGEX_GOMI.some((re) => re.test(t))
+  return REGEX_GOMI.some((re) => {
+    if (re === SERVING_ADJUST_LINE && region === 'memo') return false
+    return re.test(t)
+  })
 }
 
 // META_LABELS: ラベル+値ペア(次行または同一行)の除去
@@ -636,7 +654,7 @@ function pass1(lines: string[]): string[] {
     }
 
     // 固定ゴミリスト(EXACT/PREFIX)・動的regex(ハッシュタグ・@作者・写真キャプション等)
-    if (isExactGomi(line) || isPrefixGomi(line) || isHashtagGomi(line) || isRegexGomi(line)) {
+    if (isExactGomi(line) || isPrefixGomi(line) || isHashtagGomi(line) || isRegexGomi(line, region)) {
       i++
       continue
     }

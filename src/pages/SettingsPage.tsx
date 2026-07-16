@@ -1190,7 +1190,9 @@ export default function SettingsPage() {
               type="button"
               onClick={() => {
                 if (window.confirm(ja.settings.refreshAppConfirm)) {
-                  void refreshApp()
+                  void refreshApp().then((result) => {
+                    if (result === 'offline') window.alert(ja.settings.refreshAppOffline)
+                  })
                 }
               }}
               className="mt-[var(--space-sm)] flex w-full items-center justify-center gap-2 rounded-md border border-edge bg-surface py-3 font-bold text-accent shadow-sm"
