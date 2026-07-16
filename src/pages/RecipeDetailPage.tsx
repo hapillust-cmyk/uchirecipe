@@ -13,6 +13,7 @@ import {
   Timer as TimerIcon,
   Share2,
   Image as ImageIcon,
+  Camera,
   MessageSquareText,
   Maximize2,
   CalendarPlus,
@@ -44,7 +45,7 @@ import { useTimers } from '../components/TimerProvider'
 import { useWakeLock } from '../components/useWakeLock'
 import BackHeader from '../components/BackHeader'
 import Toast from '../components/Toast'
-import CookedLogModal from '../components/CookedLogModal'
+import CookedLogModal, { LOG_PHOTO_MAX_EDGE, LOG_PHOTO_QUALITY } from '../components/CookedLogModal'
 import CustomTimerModal from '../components/CustomTimerModal'
 import FocusMode from '../components/FocusMode'
 import NutritionTeaser from '../components/NutritionTeaser'
@@ -56,6 +57,7 @@ import { collectUniqueTerms } from '../logic/termSplit'
 import { buildIngredientNames } from '../logic/ingredientSpans'
 import TermPopover, { useTermPopover } from '../components/TermPopover'
 import { todayString } from '../logic/date'
+import { resizePhoto } from '../logic/image'
 import { ja } from '../i18n/ja'
 
 /**
@@ -170,8 +172,14 @@ export default function RecipeDetailPage() {
   const [editingLogIndex, setEditingLogIndex] = useState<number | null>(null)
   const [editingLogDate, setEditingLogDate] = useState('')
   const [editingLogNote, setEditingLogNote] = useState('')
-  // 編集中の記録の写真を削除対象にしたか(置き換えではなく削除のみ。保存時にphoto:undefinedで反映)
-  const [editingLogRemovePhoto, setEditingLogRemovePhoto] = useState(false)
+  // 編集中の記録の写真(2026-07-16 便W-①: 追加・差し替え・削除に対応。既存写真で初期化し、
+  // 新規選択で差し替え・undefinedにすれば削除。保存時は常にこの値をphotoとして書き戻す
+  // (新規作成時=CookedLogModalと同じ保存形式・resizePhotoで圧縮)
+  const [editingLogPhoto, setEditingLogPhoto] = useState<Blob>()
+  const [editingLogPhotoError, setEditingLogPhotoError] = useState('')
+  const editingLogPhotoUrl = usePhotoUrl(editingLogPhoto)
+  const editLogCameraInputRef = useRef<HTMLInputElement>(null)
+  const editLogAlbumInputRef = useRef<HTMLInputElement>(null)
 
   // 記録一覧のサムネイル用object URL。usePhotoUrlは1件用のフックのため、複数件のBlobを
   // ループで扱うこの一覧だけは自前でURLを作って後始末する(Reactのフックはループ内で呼べないため)
@@ -269,11 +277,29 @@ export default function RecipeDetailPage() {
     setMessage(ja.detail.cookedRecordedToast)
   }
 
-  const openEditLog = (index: number, date: string, note: string | undefined) => {
+  const openEditLog = (
+    index: number,
+    date: string,
+    note: string | undefined,
+    photo: Blob | undefined,
+  ) => {
     setEditingLogIndex(index)
     setEditingLogDate(date)
     setEditingLogNote(note ?? '')
-    setEditingLogRemovePhoto(false)
+    setEditingLogPhoto(photo)
+    setEditingLogPhotoError('')
+  }
+
+  // 記録編集中の写真選択(新規追加・差し替え共通)。保存形式は新規記録時と同一
+  // (長辺1280px・JPEG品質0.8に圧縮。CookedLogModalのonPhotoSelectedと同じロジック)
+  const onEditingLogPhotoSelected = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      setEditingLogPhoto(await resizePhoto(file, LOG_PHOTO_MAX_EDGE, LOG_PHOTO_QUALITY))
+      setEditingLogPhotoError('')
+    } catch {
+      setEditingLogPhotoError(ja.form.photoError)
+    }
   }
 
   // じぶんタイマー（入口A: BackHeaderのタイマーアイコン）。詳細画面はFocusModeと違い
@@ -305,10 +331,13 @@ export default function RecipeDetailPage() {
     await updateCookedLog(id, editingLogIndex, {
       date: editingLogDate,
       note: editingLogNote.trim() || undefined,
-      ...(editingLogRemovePhoto ? { photo: undefined } : {}),
+      // 常にeditingLogPhotoを書き戻す(未変更ならもとの写真、選び直せば新しい写真、
+      // 削除ならundefined。新規時と同じ保存形式)
+      photo: editingLogPhoto,
     })
     setEditingLogIndex(null)
-    setEditingLogRemovePhoto(false)
+    setEditingLogPhoto(undefined)
+    setEditingLogPhotoError('')
   }
 
   /** テキスト or 画像カードでシェア（非対応環境ではコピー/保存に切替） */
@@ -813,24 +842,68 @@ export default function RecipeDetailPage() {
                           placeholder={ja.detail.cookedLogNotePlaceholder}
                           className="block w-full rounded-sm border border-edge bg-app px-3 py-2 text-sm text-ink placeholder:text-ink-muted/60"
                         />
-                        {logPhoto && !editingLogRemovePhoto && (
-                          <div className="flex items-center gap-2">
-                            {logPhotoUrls[index] && (
-                              <img
-                                src={logPhotoUrls[index]}
-                                alt=""
-                                className="h-12 w-12 shrink-0 rounded-sm object-cover"
-                              />
-                            )}
+                        {/* 記録編集中の写真: 追加・差し替え・削除に対応(2026-07-16 便W-①。
+                            新規作成時のCookedLogModalと同じ操作・保存形式) */}
+                        <div>
+                          {editingLogPhotoUrl && (
+                            <img
+                              src={editingLogPhotoUrl}
+                              alt=""
+                              className="h-16 w-16 shrink-0 rounded-sm object-cover shadow-sm"
+                            />
+                          )}
+                          <div className="mt-2 flex gap-2">
+                            <input
+                              ref={editLogCameraInputRef}
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                void onEditingLogPhotoSelected(e.target.files?.[0])
+                                e.target.value = ''
+                              }}
+                            />
+                            <input
+                              ref={editLogAlbumInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                void onEditingLogPhotoSelected(e.target.files?.[0])
+                                e.target.value = ''
+                              }}
+                            />
                             <button
                               type="button"
-                              onClick={() => setEditingLogRemovePhoto(true)}
-                              className="text-sm text-warning underline"
+                              onClick={() => editLogCameraInputRef.current?.click()}
+                              className="flex flex-1 items-center justify-center gap-1 rounded-sm border border-edge bg-app py-2 text-sm font-bold shadow-sm"
+                            >
+                              <Camera size={16} className="text-accent" aria-hidden />
+                              {ja.form.photoTake}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => editLogAlbumInputRef.current?.click()}
+                              className="flex flex-1 items-center justify-center gap-1 rounded-sm border border-edge bg-app py-2 text-sm font-bold shadow-sm"
+                            >
+                              <ImageIcon size={16} className="text-accent" aria-hidden />
+                              {ja.form.photoPick}
+                            </button>
+                          </div>
+                          {editingLogPhoto && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingLogPhoto(undefined)}
+                              className="mt-1 text-sm text-warning underline"
                             >
                               {ja.detail.cookedLogPhotoRemove}
                             </button>
-                          </div>
-                        )}
+                          )}
+                          {editingLogPhotoError && (
+                            <p className="mt-1 text-sm text-warning">{editingLogPhotoError}</p>
+                          )}
+                        </div>
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -841,7 +914,11 @@ export default function RecipeDetailPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingLogIndex(null)}
+                            onClick={() => {
+                              setEditingLogIndex(null)
+                              setEditingLogPhoto(undefined)
+                              setEditingLogPhotoError('')
+                            }}
                             className="rounded-sm border border-edge px-3 py-2 text-sm text-ink-muted"
                           >
                             {ja.detail.cookedLogCancel}
@@ -874,7 +951,7 @@ export default function RecipeDetailPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => openEditLog(index, log.date, log.note)}
+                          onClick={() => openEditLog(index, log.date, log.note, log.photo)}
                           aria-label={ja.detail.cookedLogEdit}
                           className="shrink-0 rounded-full p-2 text-ink-muted"
                         >

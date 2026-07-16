@@ -42,6 +42,8 @@ import {
   MEAL_GENRES,
   weekDates,
   shiftWeek,
+  shiftDate,
+  isPastDate,
   monthDates,
   shiftMonth,
   monthLeadingBlanks,
@@ -176,6 +178,15 @@ export default function MealPlanPage() {
   // 表示中の週)からtoday部分を抜き出していたが、週タブで別の週へ移動した状態のまま
   // 日タブを開くと「今日」の分が拾えなくなる結合があった。今日の日付だけを別途取得して解消する）
   const todayEntries = useMealPlanRange(today, today)
+  // 昨日の週プラン(表示中の週:weekStartに関係なく常に「今日の前日」を指す。todayEntriesと同じ設計）。
+  // ランダム週献立(「まとめて献立」「サイコロ」)の候補から「昨日食べた(予定の)レシピ」を除外し、
+  // 直近の繰り返しを防ぐために使う(2026-07-16 便W-⑤b)
+  const yesterday = useMemo(() => shiftDate(today, -1), [today])
+  const yesterdayEntries = useMealPlanRange(yesterday, yesterday)
+  const yesterdayRecipeIds = useMemo(
+    () => Array.from(new Set((yesterdayEntries ?? []).map((e) => e.recipeId))),
+    [yesterdayEntries],
+  )
 
   // 3タブ（日/週/月。月はPro機能・既存ゲート維持）。既定は「日」タブ
   const [viewMode, setViewMode] = useState<MealPlanViewMode>('day')
@@ -430,7 +441,9 @@ export default function MealPlanPage() {
   /**
    * 行の「サイコロ」: その行だけに自動提案を適用する。ただし対象の枠(主菜・副菜とも)が
    * 丸ごと空のときだけは、主菜+副菜のペアで一度に埋める(Fable設計2026-07-13: 「献立を
-   * 決めたい」という主目的に沿わせるため、片方だけでなく両方を1タップで提案する)
+   * 決めたい」という主目的に沿わせるため、片方だけでなく両方を1タップで提案する)。
+   * 過去日(今日より前)の枠は対象外(2026-07-16 便W-⑤a・上書きも新規埋めもしない。
+   * UI側(renderRow)でも過去日はサイコロのボタン自体を出さないが、二重の安全側としてここでも guard する
    */
   const suggestRow = async (
     date: string,
@@ -440,6 +453,7 @@ export default function MealPlanPage() {
     extraLocalId?: string,
   ) => {
     if (!recipes) return
+    if (isPastDate(date, today)) return
     setMessage('')
     const slotEntries = entriesByDateSlot.get(`${date}|${slot}`) ?? []
     const isSlotEmpty = slotEntries.length === 0
@@ -452,6 +466,7 @@ export default function MealPlanPage() {
       slot,
       genre: genreFilter,
       preferHighProtein,
+      yesterdayRecipeIds,
     }
     if (isSlotEmpty && entryId == null) {
       const { main, side } = suggestPairForSlot(visibleRecipes, baseOptions)
@@ -487,17 +502,20 @@ export default function MealPlanPage() {
    * 妥当と判断した(Fable設計2026-07-14)。
    * 表示中の食事帯に含まれない枠(例: 朝食を非表示にしている状態で夕食だけ埋め直す場合の朝食)
    * の既存レシピは、重複を避けるための除外対象として引き続き使う。
+   * 過去日(今日より前)の枠は対象外(2026-07-16 便W-⑤a・上書きも新規埋めもしない＝今日以降だけ埋める)。
+   * 過去日の既存の割り当ては「触らない」バケットに入るため、自動的に重複回避の除外対象にも含まれる
    */
   const fillWeek = async () => {
     if (!recipes) return
     setMessage('')
+    const futureDates = dates.filter((date) => !isPastDate(date, today))
     const touchedKeys = new Set(
-      dates.flatMap((date) => visibleSlots.map((slot) => `${date}|${slot}`)),
+      futureDates.flatMap((date) => visibleSlots.map((slot) => `${date}|${slot}`)),
     )
     const usedRecipeIds = (entries ?? [])
       .filter((e) => !touchedKeys.has(`${e.date}|${e.slot}`))
       .map((e) => e.recipeId)
-    for (const date of dates) {
+    for (const date of futureDates) {
       for (const slot of visibleSlots) {
         const slotEntries = entriesByDateSlot.get(`${date}|${slot}`) ?? []
         for (const entry of slotEntries) {
@@ -511,6 +529,7 @@ export default function MealPlanPage() {
           slot,
           genre: genreFilter,
           preferHighProtein,
+          yesterdayRecipeIds,
         })
         if (main) {
           await addMealEntry(date, slot, main.id!, 'main')
@@ -611,14 +630,18 @@ export default function MealPlanPage() {
             {recipe ? recipe.title : <span className="text-ink-muted">{ja.mealPlan.empty}</span>}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={() => void suggestRow(date, slot, role, entryId, extraLocalId)}
-          aria-label={ja.mealPlan.suggestAria}
-          className="rounded-full p-2 text-accent"
-        >
-          <Dices size={18} aria-hidden />
-        </button>
+        {/* 過去日(今日より前)はサイコロ非表示(2026-07-16 便W-⑤a: ランダム提案の対象外。
+            過去の献立は「作った記録」として振り返る対象であり、上書きも新規埋めもしない) */}
+        {!isPastDate(date, today) && (
+          <button
+            type="button"
+            onClick={() => void suggestRow(date, slot, role, entryId, extraLocalId)}
+            aria-label={ja.mealPlan.suggestAria}
+            className="rounded-full p-2 text-accent"
+          >
+            <Dices size={18} aria-hidden />
+          </button>
+        )}
         {showRemove && (
           <button
             type="button"

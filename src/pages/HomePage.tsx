@@ -25,7 +25,7 @@ import { backupOverdue } from '../logic/backup'
 import { cookedWithinDays } from '../logic/cooked'
 import { currentSeason, preferSeason } from '../logic/season'
 import { toHiragana } from '../logic/kana'
-import type { HomeWidgetKey, Recipe } from '../db/types'
+import type { CookedLog, HomeWidgetKey, Recipe } from '../db/types'
 import { defaultHomeWidgets } from '../db/types'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
@@ -88,6 +88,66 @@ function SuggestionCard({ recipe }: { recipe: Recipe }) {
         </div>
       </div>
     </Link>
+  )
+}
+
+/**
+ * ホーム「今日の献立」ウィジェットの1行（献立タブTodayListRowと同様の小サムネを表示。
+ * 2026-07-16 便W-④）。usePhotoUrlはループ内で直接呼べないため専用コンポーネントに分離
+ */
+function HomeTodayListItem({ recipe }: { recipe: Recipe }) {
+  const photoUrl = usePhotoUrl(recipe.photo)
+  return (
+    <li>
+      {/* state.from/fromPathで「今日の献立から開いた」ことを詳細画面へ持ち回る。
+          RecipeDetailPageの戻るボタンが、通常の「常に一覧へ」ではなくここ(ホーム)へ
+          戻るために参照する（2026-07-12オーナー指示） */}
+      <Link
+        to={`/recipes/${recipe.id}`}
+        state={{ from: 'todayList', fromPath: '/' }}
+        className="flex items-center gap-2 px-[var(--space-md)] py-2"
+      >
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-sm">
+          {photoUrl ? (
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <RecipePlaceholder recipe={recipe} iconSize={20} />
+          )}
+        </div>
+        <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
+      </Link>
+    </li>
+  )
+}
+
+/**
+ * 「最近作ったもの」の1件（2026-07-16 便W-②③）。
+ * ②詳細から戻ったらホームへ戻す(state.from/fromPath)。
+ * ③サムネは記録に添付された写真を優先し、無ければレシピ写真→アイコンにフォールバック。
+ * usePhotoUrlはループ内で直接呼べないため専用コンポーネントに分離
+ */
+function HistoryCard({ recipe, log }: { recipe: Recipe; log: CookedLog }) {
+  const logPhotoUrl = usePhotoUrl(log.photo)
+  const recipePhotoUrl = usePhotoUrl(recipe.photo)
+  const photoUrl = logPhotoUrl ?? recipePhotoUrl
+  return (
+    <li>
+      <Link
+        to={`/recipes/${recipe.id}`}
+        state={{ from: 'home', fromPath: '/' }}
+        className="flex items-center gap-[var(--space-sm)] px-[var(--space-md)] py-3"
+      >
+        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-sm">
+          {photoUrl ? (
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <RecipePlaceholder recipe={recipe} iconSize={20} />
+          )}
+        </div>
+        <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
+        <span className="shrink-0 text-sm text-ink-muted">{log.date.replaceAll('-', '/')}</span>
+      </Link>
+    </li>
   )
 }
 
@@ -215,19 +275,8 @@ export default function HomePage() {
             {ja.home.mealPlanTitle}
           </h2>
           <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-app">
-            {/* state.from/fromPathで「今日の献立から開いた」ことを詳細画面へ持ち回る。
-                RecipeDetailPageの戻るボタンが、通常の「常に一覧へ」ではなくここ(ホーム)へ
-                戻るために参照する（2026-07-12オーナー指示） */}
             {todayListRecipes.map((recipe) => (
-              <li key={recipe.id}>
-                <Link
-                  to={`/recipes/${recipe.id}`}
-                  state={{ from: 'todayList', fromPath: '/' }}
-                  className="flex items-center gap-2 px-[var(--space-md)] py-2"
-                >
-                  <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
-                </Link>
-              </li>
+              <HomeTodayListItem key={recipe.id} recipe={recipe} />
             ))}
           </ul>
         </section>
@@ -376,17 +425,7 @@ export default function HomePage() {
           </div>
           <ul className="mt-[var(--space-sm)] divide-y divide-edge rounded-md border border-edge bg-surface shadow-sm">
             {history.map(({ recipe, log }, index) => (
-              <li key={index}>
-                <Link
-                  to={`/recipes/${recipe.id}`}
-                  className="flex items-center justify-between gap-2 px-[var(--space-md)] py-3"
-                >
-                  <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
-                  <span className="shrink-0 text-sm text-ink-muted">
-                    {log.date.replaceAll('-', '/')}
-                  </span>
-                </Link>
-              </li>
+              <HistoryCard key={index} recipe={recipe} log={log} />
             ))}
           </ul>
         </section>

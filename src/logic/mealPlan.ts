@@ -43,6 +43,39 @@ export function shiftWeek(dateStr: string, weeks: number): string {
   return toDateString(d)
 }
 
+/**
+ * YYYY-MM-DD を days 日分だけ前後にずらす（2026-07-16 便W-⑤: 「昨日」の日付算出、
+ * ランダム週献立の過去日判定に使う）
+ */
+export function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return toDateString(d)
+}
+
+/**
+ * 対象日が今日より前(過去日)か。YYYY-MM-DD文字列同士は辞書式比較=日付比較として成立する
+ * （2026-07-16 便W-⑤a・オーナー指示: ランダム週献立の「まとめて献立」「サイコロ」は
+ * 過去日の枠を対象外にする＝上書きも新規埋めもしない）
+ */
+export function isPastDate(date: string, today: string): boolean {
+  return date < today
+}
+
+/**
+ * 候補から「昨日の週プランに入っていたレシピ」を除外する（2026-07-16 便W-⑤b・
+ * 直近の繰り返し防止）。除外した結果0件になる場合は除外前のpoolをそのまま返す
+ * （オーナー指示: 空振りより重複のほうがマシ）。yesterdayRecipeIdsが空なら素通し
+ */
+export function excludeYesterdayPlanRecipes<T extends { id?: number }>(
+  pool: T[],
+  yesterdayRecipeIds: number[],
+): T[] {
+  if (yesterdayRecipeIds.length === 0) return pool
+  const filtered = pool.filter((r) => r.id == null || !yesterdayRecipeIds.includes(r.id))
+  return filtered.length > 0 ? filtered : pool
+}
+
 /** 引数の日付を含む月の全日付（1日〜月末）をYYYY-MM-DDの配列で返す */
 export function monthDates(reference: Date): string[] {
   const year = reference.getFullYear()
@@ -89,6 +122,12 @@ export interface SuggestOptions {
   genre?: MealGenre
   /** 「高たんぱく」タグの品を優先するか（任意・無ければ他も許可） */
   preferHighProtein?: boolean
+  /**
+   * 「昨日の週プランに入っていたレシピ」のID（任意・2026-07-16 便W-⑤b）。指定があれば
+   * 候補から除外し、直近の繰り返し（一昨日食べたものが翌日また出る）を防ぐ。
+   * 除外すると候補が尽きる場合は除外を解く（excludeYesterdayPlanRecipes参照）
+   */
+  yesterdayRecipeIds?: number[]
 }
 
 /**
@@ -148,8 +187,9 @@ function recipeGenre(r: Recipe): MealGenre | undefined {
  * 絞り込んだ後、「向いている時間帯」が一致するものを優先（未設定のレシピは制限なし
  * として扱う）。続けて「主菜/副菜の役割」「ジャンル」「高たんぱく優先」の順で
  * 優先度を絞り込み（いずれも該当が無ければ絞り込み前に戻す＝0件にはしない）、
- * その中で「最近作ってない」「週内で重複しない」の順にも絞り込む。候補が無くなったら
- * 段階的に条件を緩めて必ず何か返す（季節外しか無い場合を除き0件にはしない）。
+ * 続けて「昨日の週プランに入っていたレシピを除外」（2026-07-16 便W-⑤b・こちらも
+ * 除外して尽きれば解除）、その中で「最近作ってない」「週内で重複しない」の順にも絞り込む。
+ * 候補が無くなったら段階的に条件を緩めて必ず何か返す（季節外しか無い場合を除き0件にはしない）。
  */
 export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Recipe | undefined {
   const season = options.season ?? currentSeason()
@@ -199,7 +239,13 @@ export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Reci
     if (matched.length > 0) proteinPool = matched
   }
 
-  const notUsedThisWeek = proteinPool.filter((r) => !options.usedRecipeIds.includes(r.id!))
+  // 「昨日の週プランに入っていたレシピ」を除外（2026-07-16 便W-⑤b。直近の繰り返し防止。
+  // 除外して候補が尽きる場合はexcludeYesterdayPlanRecipes内部で自動的に解除される）
+  const yesterdayFiltered = options.yesterdayRecipeIds
+    ? excludeYesterdayPlanRecipes(proteinPool, options.yesterdayRecipeIds)
+    : proteinPool
+
+  const notUsedThisWeek = yesterdayFiltered.filter((r) => !options.usedRecipeIds.includes(r.id!))
   const freshAndUnused = notUsedThisWeek.filter((r) => !cookedWithinDays(r, 14))
 
   const pool =
@@ -207,7 +253,7 @@ export function suggestForSlot(recipes: Recipe[], options: SuggestOptions): Reci
       ? freshAndUnused
       : notUsedThisWeek.length > 0
         ? notUsedThisWeek
-        : proteinPool
+        : yesterdayFiltered
   return pool[Math.floor(Math.random() * pool.length)]
 }
 

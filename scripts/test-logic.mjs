@@ -31,7 +31,13 @@ import {
 import { isAtFreeLimit, isNearFreeLimit } from '../src/logic/freeLimit.ts'
 import { parseAmountNumber } from '../src/logic/nutrition.ts'
 import { isNewsSuppressed } from '../src/logic/news.ts'
-import { suggestForSlot, suggestPairForSlot } from '../src/logic/mealPlan.ts'
+import {
+  suggestForSlot,
+  suggestPairForSlot,
+  isPastDate,
+  shiftDate,
+  excludeYesterdayPlanRecipes,
+} from '../src/logic/mealPlan.ts'
 import { buildShoppingCandidates } from '../src/logic/shopping.ts'
 import { hasLaterHandsOnStep, classifyStep, buildCookTimeline } from '../src/logic/cookNavi.ts'
 import {
@@ -1470,6 +1476,56 @@ eq('news: 未記録(起動直後の一瞬)は抑制', isNewsSuppressed(undefined
     const results = Array.from({ length: 10 }, () => suggestPairForSlot(recipes, opts({ genre: '洋食' })))
     eq('ペア提案: ジャンル指定時は主菜も指定ジャンルが優先される', results.every((r) => r.main?.id === 2), true)
     eq('ペア提案: ジャンル指定時は副菜も指定ジャンルが優先される', results.every((r) => r.side?.id === 4), true)
+  }
+
+  // ---- ランダム週献立の保護2点(2026-07-16 便W-⑤・オーナー指示2026-07-16夜) ----
+
+  // (a) 過去日不変: isPastDateは今日より前の日付だけtrueを返す(MealPlanPage側のfillWeek/
+  // suggestRowはこれで過去日の枠を素通りする＝upsertしない。ここでは判定の純ロジックだけを検証)
+  eq('過去日判定: 今日より前はtrue', isPastDate('2026-07-15', '2026-07-16'), true)
+  eq('過去日判定: 今日はfalse(対象に含める)', isPastDate('2026-07-16', '2026-07-16'), false)
+  eq('過去日判定: 今日より後はfalse', isPastDate('2026-07-17', '2026-07-16'), false)
+  eq('shiftDate: 1日前(月またぎ)を正しく計算', shiftDate('2026-08-01', -1), '2026-07-31')
+  eq('shiftDate: 1日後(年またぎ)を正しく計算', shiftDate('2025-12-31', 1), '2026-01-01')
+
+  // (b) 昨日除外: 候補から昨日の週プランに入っていたレシピを除外する
+  {
+    const recipes = [mkRecipe(1, { tags: ['和食'] }), mkRecipe(2, { tags: ['和食'] })]
+    const picks = Array.from({ length: 10 }, () =>
+      suggestForSlot(recipes, opts({ yesterdayRecipeIds: [1] }))?.id,
+    )
+    eq('昨日除外: 昨日食べたレシピは候補から外れる', picks.every((id) => id === 2), true)
+  }
+  // 尽きたら解除: 除外すると候補が0件になる場合は除外を解いて提案する(空振りより重複がマシ)
+  eq(
+    '昨日除外: 候補が尽きる場合は除外を解除して提案する',
+    suggestForSlot([mkRecipe(1, { tags: ['和食'] })], opts({ yesterdayRecipeIds: [1] }))?.id,
+    1,
+  )
+  // yesterdayRecipeIds未指定(従来呼び出し)は何も除外しない(後方互換)
+  eq(
+    '昨日除外: yesterdayRecipeIds省略時は従来どおり除外しない',
+    suggestForSlot([mkRecipe(1, { tags: ['和食'] })], opts())?.id,
+    1,
+  )
+  // excludeYesterdayPlanRecipes単体: 除外0件時はpoolをそのまま返す・id未設定要素は素通し
+  {
+    const pool = [{ id: 1 }, { id: 2 }, { id: 3 }]
+    eq(
+      'excludeYesterdayPlanRecipes: 該当を除外する',
+      excludeYesterdayPlanRecipes(pool, [2]).map((r) => r.id),
+      [1, 3],
+    )
+    eq(
+      'excludeYesterdayPlanRecipes: 全滅する場合はpoolをそのまま返す',
+      excludeYesterdayPlanRecipes(pool, [1, 2, 3]).map((r) => r.id),
+      [1, 2, 3],
+    )
+    eq(
+      'excludeYesterdayPlanRecipes: yesterdayRecipeIdsが空なら素通し',
+      excludeYesterdayPlanRecipes(pool, []).map((r) => r.id),
+      [1, 2, 3],
+    )
   }
 }
 
