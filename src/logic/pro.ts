@@ -56,7 +56,6 @@ export function hasPaidRecipeAccess(settings: Pick<Settings, 'proCode' | 'recipe
 }
 
 /**
-<<<<<<< HEAD
  * オーナーの下見(レビュー)専用セットか(2026-07-17)。
  * 下見セット(review2/8/16等)はテーマ名バッジ・テーマごと削除のためにsetIdを持つが、
  * 販売物ではなく公開リンクも無いため課金ゲートの対象外とする
@@ -64,7 +63,9 @@ export function hasPaidRecipeAccess(settings: Pick<Settings, 'proCode' | 'recipe
  */
 export function isPreviewSetId(setId: string): boolean {
   return setId.startsWith('review')
-=======
+}
+
+/**
  * 入力コードがPro用(UR-)か追加レシピパック用(UP-)かを判定する（純ロジック。
  * 2026-07-17設定ゼロベース裁定#7）。「購入と解錠」1画面統合で、入力欄1つに入れたコードを
  * どちらの解錠フローへ回すか自動判定するために使う。既存の相互判定ヒント
@@ -97,5 +98,4 @@ export function maskUnlockCode(code: string): string {
   const visible = rest.slice(-4)
   const hidden = '*'.repeat(rest.length - 4)
   return `${prefix}-${hidden}${visible}`
->>>>>>> p5wave/phase1
 }
