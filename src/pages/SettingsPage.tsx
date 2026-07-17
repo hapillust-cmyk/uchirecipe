@@ -351,7 +351,17 @@ export default function SettingsPage() {
       await updateSettings({ lastBackupAt: Date.now() })
       setSavedHandleExists(true)
     } catch (err) {
-      if (!isAbortError(err)) setMessage(ja.settings.backupSaveError)
+      // ユーザーのキャンセル(AbortError)は何もしない。それ以外(権限拒否・headless等で
+      // ピッカー自体が使えない環境)は、エラーで終わらせず従来の自動ダウンロードへ
+      // フォールバックする(バックアップが取れないままになるのが最悪のため)
+      if (!isAbortError(err)) {
+        try {
+          await downloadBackup(includeCookedPhotos)
+          await updateSettings({ lastBackupAt: Date.now() })
+        } catch {
+          setMessage(ja.settings.backupSaveError)
+        }
+      }
     } finally {
       setExportBusy(false)
     }
