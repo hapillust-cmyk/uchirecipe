@@ -49,7 +49,7 @@ import {
   normalizeProCode,
   isValidPackCode,
   normalizePackCode,
-  hasPaidRecipeAccess,, isPreviewSetId } from '../logic/pro'
+  hasPaidRecipeAccess, isPreviewSetId } from '../logic/pro'
 import { fetchThemeManifest, type ThemeManifestEntry } from '../logic/themeManifest'
 import type { HomeWidgetKey, ThemeSetting } from '../db/types'
 import { ja } from '../i18n/ja'
