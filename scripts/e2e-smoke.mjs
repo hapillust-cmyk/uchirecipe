@@ -4498,8 +4498,10 @@ try {
         })
         idb.close()
       })
-      await fsPage.goto(`${BASE}/#/settings`, { waitUntil: 'networkidle' })
-      await fsPage.waitForTimeout(500)
+      // 既に#/settingsに居るためgotoではハッシュ同一=再マウントされない(Dexie/React側は
+      // 初回マウント時の判定のまま)。本物のreloadで再マウントさせる(便Zと同じ既知の落とし穴)
+      await fsPage.reload({ waitUntil: 'networkidle' })
+      await fsPage.waitForTimeout(800)
       await fsPage.getByRole('button', { name: 'バックアップ', exact: true }).click()
       await fsPage.waitForTimeout(300)
       check(
