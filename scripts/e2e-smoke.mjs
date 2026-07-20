@@ -5802,7 +5802,11 @@ try {
   currentCheck = 'URLIMPORT-01'
   {
     const MOCK_ENDPOINT = 'https://recipe-import.example.invalid/api'
-    execSync('npx vite build', {
+    // メインのdist/を上書きしない: 専用outDirへビルドする。以前は素のvite buildで
+    // dist/をダミー値入りビルドで置き換えてしまい、後続実行のURLIMPORT-00(未設定なら
+    // ボタンが出ない)が汚染distを見て落ちる順序依存フレークになっていた(2026-07-20発覚)
+    const URLIMPORT_OUT_DIR = 'dist-urlimport-e2e'
+    execSync(`npx vite build --outDir ${URLIMPORT_OUT_DIR} --emptyOutDir`, {
       cwd: appRoot,
       stdio: 'inherit',
       env: { ...process.env, VITE_RECIPE_IMPORT_ENDPOINT: MOCK_ENDPOINT },
@@ -5812,7 +5816,7 @@ try {
     const URLIMPORT_PREVIEW_BASE = `http://localhost:${URLIMPORT_PREVIEW_PORT}`
     const urlImportPreviewProc = spawn(
       'npx',
-      ['vite', 'preview', '--port', String(URLIMPORT_PREVIEW_PORT), '--strictPort'],
+      ['vite', 'preview', '--port', String(URLIMPORT_PREVIEW_PORT), '--strictPort', '--outDir', URLIMPORT_OUT_DIR],
       { cwd: appRoot, stdio: ['ignore', 'pipe', 'pipe'] },
     )
     let uiPreviewReady = false
@@ -5976,6 +5980,8 @@ try {
       }
     } finally {
       urlImportPreviewProc.kill()
+      // 専用ビルドの後片付け(メインdistは最初から触っていない)
+      try { execSync(`rm -rf ${URLIMPORT_OUT_DIR}`, { cwd: appRoot }) } catch { /* 掃除失敗は無害 */ }
     }
   }
 } catch (err) {

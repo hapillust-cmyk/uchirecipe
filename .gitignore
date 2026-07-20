@@ -35,3 +35,4 @@ public/sets/data/review.json
 workers/recipe-import/.wrangler
 workers/recipe-import/.dev.vars*
 .wrangler
+dist-urlimport-e2e
