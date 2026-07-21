@@ -86,8 +86,12 @@ const KNOWN_WORDS = [
   'もみ込んで',
 ]
 
+// BudouXの素分割に句読点・中黒・既知語の補正をかけた「細かい文節境界」列。wrapJaPhrases はこれを
+// canMergeSegs で結合して表示ユニットにするが、行組み(lineCompose)の借用パスは結合前のこの
+// 細分節を「良い切れ目までの借用」の単位として使う(2026-07-21 便AZ・要件F-2。exportを足すだけで
+// 結合ロジックは不変)。
 /** BudouXの素分割に、句読点・中黒・既知語の補正をかけたセグメント列を返す */
-function normalizedSegments(text: string): string[] {
+export function normalizedSegments(text: string): string[] {
   // 1) 境界オフセット集合を作る
   const raw = parser.parse(text)
   const boundaries = new Set<number>()

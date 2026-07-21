@@ -19,7 +19,7 @@
 //   4. ・列挙(「・みりん」等)は句内部充填時に wrapJaPhrases のユニットのまま扱う。
 // タイマーボタン(直前後の結合文節ごと箱にする)や用語スパンは分割不能な atom として扱い、
 // 箱の中身・結合規則(splitAroundTimeToken 等)には一切手を入れない。行への割り付けだけを決める。
-import { wrapJaPhrases, ZWSP } from './jaWrap'
+import { wrapJaPhrases, normalizedSegments, ZWSP } from './jaWrap'
 
 /** 行組みエンジンを使うか。false にすると呼び出し側は従来の ZWSP 描画にフォールバックする */
 export const LINE_COMPOSE_ENABLED = true
@@ -216,6 +216,10 @@ function groupChars(group: Unit[]): number {
 // これで終わる行末は自然で、それ以外(活用形「〜った/〜て/〜く」・名詞裸など)は
 // 連体修飾や語幹の泣き別れになりやすいので罰則を科す(要件F)。
 const GOOD_BREAK_END = /[をにへとやでのがはも、。」』）)]$/
+// うち「強い切れ目」= 目的語/主題の助詞(を/は/も)・句読点・閉じ括弧。文の大きな区切りで、
+// 借用パス(F-2)はまずこの強い切れ目までの借用を優先する(を=強 と の/に=弱 を区別。
+// 「下にして」を「下に|して」で割らず「鮭の皮目を|下にして焼く。」で止めるための序列)。
+const STRONG_BREAK_END = /[をはも、。」』）)]$/
 // 罰則DPの重み(単体テスト A/F と、こんにゃく非退行で調整・便AZ 2026-07-21)。
 // ・BREAK_PENALTY=49: 悪い切れ目 ≈ 7字分の slack² 相当。良い切れ目を優先させるが、
 //   末尾切れ端(RUNT)や複数ユニットの溢れよりは軽い。
@@ -302,17 +306,86 @@ function penaltyGroups(units: Unit[], maxWidth: number, startUsed: number): Unit
   return groups
 }
 
+/** 行(=ユニット群)の合計幅 */
+function groupWidth(group: Unit[]): number {
+  return group.reduce((s, u) => s + u.width, 0)
+}
+/** 行末の文字(良い切れ目判定用)。空ユニットを飛ばして最後の実文字を返す */
+function groupTrailingChar(group: Unit[]): string {
+  for (let k = group.length - 1; k >= 0; k--) {
+    const t = unitText(group[k])
+    if (t.length > 0) return t[t.length - 1]
+  }
+  return ''
+}
+/** ユニットが全て text 片(箱=タイマー/用語を含まない)か。借用元にできるのは text ユニットだけ */
+function isTextUnit(u: Unit): boolean {
+  return u.parts.every((p) => p.kind === 'text')
+}
+
+/**
+ * 「良い切れ目までの借用」パス(2026-07-21 便AZ・要件F-2)。充填結果(貪欲/DP)の各改行位置で、
+ * 行末が悪い切れ目(良い切れ目リストの外)のとき、次行先頭の text ユニットの細分節
+ * (normalizedSegments)を先頭から借りて現在行末を良い切れ目に直す。
+ *  条件: (a)借用後も行幅≤maxWidth (b)借りた最後の細分節が良い切れ目で終わる
+ *        (c)借用後の次行(残り細分節+次行の残りユニット)が4字以下の切れ端にならない
+ *  満たすkのうち最大のkを採用。箱ユニットからは借用しない・先頭ユニットは空にしない(leftover必須)。
+ * jaWrap の結合ロジックは触らず、結合前の細分節境界を行組み側で使うだけ(F-2の裁定範囲)。
+ */
+function borrowPass(groups: Unit[][], maxWidth: number, measure: MeasureText, eps: number): Unit[][] {
+  for (let i = 0; i < groups.length - 1; i++) {
+    const cur = groups[i]
+    const next = groups[i + 1]
+    if (cur.length === 0 || next.length === 0) continue
+    const trail = groupTrailingChar(cur)
+    if (trail === '' || GOOD_BREAK_END.test(trail)) continue // 既に良い切れ目 → 借用不要
+    const head = next[0]
+    if (!isTextUnit(head)) continue // 箱(タイマー/用語)からは借用しない
+    // 次行先頭が「・」列挙(しょうゆ・みりん・砂糖…の続き)なら借用しない。jaWrapは列挙の「・」を
+    // 行頭に置く設計で、行末が名詞(みりん等)で終わるのは列挙の自然な切れ目=悪い切れ目ではない。
+    // 借用すると「・」が行頭から中へ移り列挙の見た目が崩れる(基準2の非退行)。
+    if (/^・/.test(unitText(head))) continue
+    const segs = normalizedSegments(unitText(head))
+    if (segs.length < 2) continue // これ以上分割できない
+    const curW = groupWidth(cur)
+    const restNextChars = next.slice(1).reduce((s, u) => s + unitChars(u), 0)
+    // 強い切れ目まで借りられるならそれを最優先(その中では最大k)。無ければ弱い良い切れ目の最大k。
+    // (弱い切れ目まで貪欲に借りると「下に|して」のように句を割るので、強弱の二段で止める)
+    let strong = null as { borrow: string; leftover: string } | null
+    let weak = null as { borrow: string; leftover: string } | null
+    // k は先頭ユニットを空にしない範囲(1..segs.length-1)。幅は k で単調増なので (a) 超過で打ち切り
+    for (let k = 1; k < segs.length; k++) {
+      const borrow = segs.slice(0, k).join('')
+      const borrowW = measure(borrow)
+      if (curW + borrowW > maxWidth + eps) break // (a)
+      if (!GOOD_BREAK_END.test(segs[k - 1])) continue // (b) 良い切れ目で終わる
+      const leftover = segs.slice(k).join('')
+      if ([...leftover].length + restNextChars <= RUNT_MAX) continue // (c) 新たな切れ端を作らない
+      weak = { borrow, leftover } // 良い切れ目の中では最大kが残る
+      if (STRONG_BREAK_END.test(segs[k - 1])) strong = { borrow, leftover } // 強い切れ目の中でも最大k
+    }
+    const pick = strong ?? weak
+    if (pick) {
+      cur.push({ parts: [{ kind: 'text', text: pick.borrow }], width: measure(pick.borrow) })
+      next[0] = { parts: [{ kind: 'text', text: pick.leftover }], width: measure(pick.leftover) }
+    }
+  }
+  return groups
+}
+
 /**
  * 1行にも入らない長句を充填する行群を返す。原則グリーディ(オーナー確認済みの見た目を保つ)だが、
  * グリーディが末尾に4字以下の切れ端行を作るときだけ、文法採点付きDPに差し替える(要件A/F)。
+ * 最後に「良い切れ目までの借用」パス(要件F-2)で悪い切れ目を可能な範囲で解消する。
  */
-function fillLongClause(units: Unit[], maxWidth: number, startUsed: number, eps: number): Unit[][] {
+function fillLongClause(units: Unit[], maxWidth: number, startUsed: number, eps: number, measure: MeasureText): Unit[][] {
   const greedy = greedyGroups(units, maxWidth, startUsed, eps)
   const last = greedy[greedy.length - 1]
-  if (greedy.length >= 2 && last && groupChars(last) <= RUNT_MAX) {
-    return penaltyGroups(units, maxWidth, startUsed)
-  }
-  return greedy
+  const chosen =
+    greedy.length >= 2 && last && groupChars(last) <= RUNT_MAX
+      ? penaltyGroups(units, maxWidth, startUsed)
+      : greedy
+  return borrowPass(chosen, maxWidth, measure, eps)
 }
 
 /**
@@ -380,7 +453,7 @@ export function composeLines(
         newLine()
       }
       const startUsed = cur // B/残り不足で改行した場合は 0
-      const groups = fillLongClause(units, maxWidth, startUsed, eps)
+      const groups = fillLongClause(units, maxWidth, startUsed, eps, measure)
       groups.forEach((group, gi) => {
         if (gi > 0) newLine()
         for (const u of group) push(u)
