@@ -21,8 +21,7 @@ import { buildIngredientNames } from '../logic/ingredientSpans'
 import { toSpeechText } from '../logic/toSpeechText'
 import { renderJaUnits } from './jaUnits'
 import StepBadge from './StepBadge'
-import TimeText from './TimeText'
-import TermText from './TermText'
+import ComposedStepText from './ComposedStepText'
 import TermPopover, { useTermPopover } from './TermPopover'
 import TimerAdjustModal from './TimerAdjustModal'
 import CustomTimerModal from './CustomTimerModal'
@@ -401,16 +400,11 @@ export default function FocusMode({ recipe, recipeId, initialStep, onClose, onCo
       >
         <StepBadge number={stepNumber} size={56} />
         <p className="ja-phrase w-full text-2xl font-bold leading-relaxed">
-          <TermText
+          <ComposedStepText
             text={step.text}
+            ingredientNames={ingredientNames}
             onOpenTerm={openTerm}
-            renderPlain={(t) => (
-              <TimeText
-                text={t}
-                ingredientNames={ingredientNames}
-                onStart={(_tokenText, seconds) => startStepTimer(seconds)}
-              />
-            )}
+            onStartTimer={(_tokenText, seconds) => startStepTimer(seconds)}
           />
         </p>
         {/* 表示順(2026-07-12オーナー実機フィードバック): 本文→単独タイマー→メモ→用語説明の順。
