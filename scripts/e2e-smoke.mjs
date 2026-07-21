@@ -6039,12 +6039,18 @@ try {
 
         // --- 写真の自動取り込み(2026-07-21): imageUrlがあるレシピを取り込むと、
         // Worker側の画像プロキシ(/image?url=)経由で写真も自動セットされる。取得は非同期(ベストエフォート)
-        // なので、取り込み結果メッセージが出た後にプレビュー<img>が現れるまで少し待つ ---
+        // なので、取り込み結果メッセージが出た後にプレビュー<img>が現れるまで少し待つ。
+        // 「写真も取り込む」チェックボックスは既定ONなので、このケースはON前提のまま検証する
+        // (2026-07-21 チェックボックス追加。ON時の既存挙動が変わっていないことの確認) ---
         currentCheck = 'URLIMPORT-05'
         await uiPage.reload({ waitUntil: 'networkidle' })
         await uiPage.waitForTimeout(500)
         await uiPage.getByText('URLから取り込む').click()
         await uiPage.waitForTimeout(300)
+        const fetchPhotoCheckbox = uiPage
+          .locator('label', { hasText: '写真も取り込む' })
+          .locator('input[type="checkbox"]')
+        check('URLIMPORT-05 「写真も取り込む」チェックボックスは既定でON', await fetchPhotoCheckbox.isChecked())
         await uiPage.locator('input[type="url"]').first().fill('https://example.com/photo-marker-recipe')
         await uiPage.getByRole('button', { name: '読み込む' }).click()
         await uiPage.waitForTimeout(500)
@@ -6060,6 +6066,39 @@ try {
         check(
           'URLIMPORT-05 取り込んだ写真がフォームのプレビューに表示される(アイコンでなくimg)',
           await uiPage.locator('img[alt="E2Eモック鍋"]').isVisible(),
+        )
+
+        // --- 「写真も取り込む」チェックOFF(2026-07-21 オーナー指示のスイッチ): OFFにしてから
+        // imageUrlありのレシピを取り込んでも、レシピ本体は取り込まれるが写真は一切セットされない
+        // (fetchImportedPhoto系を呼ばない設計)ことを確認する ---
+        currentCheck = 'URLIMPORT-06'
+        await uiPage.reload({ waitUntil: 'networkidle' })
+        await uiPage.waitForTimeout(500)
+        await uiPage.getByText('URLから取り込む').click()
+        await uiPage.waitForTimeout(300)
+        const fetchPhotoCheckboxOff = uiPage
+          .locator('label', { hasText: '写真も取り込む' })
+          .locator('input[type="checkbox"]')
+        await fetchPhotoCheckboxOff.uncheck()
+        check('URLIMPORT-06 チェックを外すとOFFになる', !(await fetchPhotoCheckboxOff.isChecked()))
+        await uiPage.locator('input[type="url"]').first().fill('https://example.com/photo-marker-recipe')
+        await uiPage.getByRole('button', { name: '読み込む' }).click()
+        await uiPage.waitForTimeout(500)
+        check(
+          'URLIMPORT-06 チェックOFFでもレシピ本体の取り込み結果メッセージは出る',
+          (await uiPage.textContent('body')).includes('材料2件・手順2件を読み込みました'),
+        )
+        await uiPage.waitForTimeout(1000)
+        check(
+          'URLIMPORT-06 チェックOFFなら「写真も取り込みました」の追記メッセージは出ない',
+          !(await uiPage.textContent('body')).includes('写真も取り込みました'),
+        )
+        check(
+          'URLIMPORT-06 チェックOFFなら写真はセットされない(imgが出ずアイコン表示のまま)',
+          !(await uiPage
+            .locator('img[alt="E2Eモック鍋"]')
+            .isVisible()
+            .catch(() => false)),
         )
       } finally {
         await uiBrowser.close()
