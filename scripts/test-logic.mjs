@@ -4558,6 +4558,87 @@ eq('isImageContentType: nullはfalse', isImageContentType(null), false)
 eq('isImageContentType: undefinedはfalse', isImageContentType(undefined), false)
 eq('isImageContentType: 空文字はfalse', isImageContentType(''), false)
 
+// ---------- lineCompose: 読点優先・幅実測の行組みエンジン(2026-07-21 p9/line-compose) ----------
+// composeLines へ「1文字=1幅」の偽測定関数と、実アトム列(TermText+TimeText 相当の分解結果)を
+// 渡し、オーナー3例を幅12/14/17/28 で組んだ期待行を固定する。期待値はアルゴリズムから導出し、
+// 受け入れ基準1(こんにゃく文)・基準2(しょうゆ・みりん文)・基準3(PC幅でも詰め込まない)を満たす。
+{
+  const { composeLines, lineToText } = await import('../src/logic/lineCompose.ts')
+  const { ZWSP } = await import('../src/logic/jaWrap.ts')
+  const measure = (t) => [...t.replace(new RegExp(ZWSP, 'g'), '')].length
+  const box = (id, text) => ({ kind: 'atom', id, text, width: measure(text) })
+  const txt = (text) => ({ kind: 'text', text })
+  const compose = (atoms, w) => composeLines(atoms, w, measure, { eps: 0 }).map(lineToText)
+
+  // 受け入れ基準1: 「鍋にたっぷりの湯を沸かし、こんにゃくを2分ほど下茹でしてざるにあげ、水気を切る。」
+  // アトム列: 地文 + [2分ほど](タイマー箱) + [下茹で](用語箱・辞書語) + 地文。
+  // splitByTerms が 下茹で を用語として切るため、地文が「…こんにゃくを」「してざる…」に割れる。
+  // composeLines は句の全文に wrapJaPhrases をかけ直して文節境界を取るので「下茹でして」が保たれる。
+  const ex1 = () => [
+    txt('鍋にたっぷりの湯を沸かし、こんにゃくを'),
+    box('m0', '2分ほど'),
+    box('t0', '下茹で'),
+    txt('してざるにあげ、水気を切る。'),
+  ]
+  eq('lineCompose 基準1 幅12', compose(ex1(), 12), [
+    '鍋にたっぷりの',
+    '湯を沸かし、',
+    'こんにゃくを2分ほど',
+    '下茹でしてざるにあげ、',
+    '水気を切る。',
+  ])
+  eq('lineCompose 基準1 幅14', compose(ex1(), 14), [
+    '鍋にたっぷりの湯を沸かし、',
+    'こんにゃくを2分ほど',
+    '下茹でしてざるにあげ、',
+    '水気を切る。',
+  ])
+  // 幅17: オーナー期待の3行「鍋に…沸かし、/ こんにゃくを2分ほど下茹でして / ざるにあげ、水気を切る。」
+  eq('lineCompose 基準1 幅17(オーナー期待の3行)', compose(ex1(), 17), [
+    '鍋にたっぷりの湯を沸かし、',
+    'こんにゃくを2分ほど下茹でして',
+    'ざるにあげ、水気を切る。',
+  ])
+  // 幅28(PC相当): まだ入るのに詰め込まず、最初の読点で行を終える(基準3の思想)
+  eq('lineCompose 基準3 幅28(読点で行を終える)', compose(ex1(), 28), [
+    '鍋にたっぷりの湯を沸かし、',
+    'こんにゃくを2分ほど下茹でしてざるにあげ、水気を切る。',
+  ])
+
+  // 受け入れ基準2: 「しょうゆ・みりん・砂糖を加えて炒り煮にする。」用語[炒り煮]は2行目先頭側
+  const ex2 = () => [txt('しょうゆ・みりん・砂糖を加えて'), box('t0', '炒り煮'), txt('にする。')]
+  eq('lineCompose 基準2 幅12', compose(ex2(), 12), ['しょうゆ・みりん', '・砂糖を加えて', '炒り煮にする。'])
+  eq('lineCompose 基準2 幅14', compose(ex2(), 14), ['しょうゆ・みりん', '・砂糖を加えて炒り煮にする。'])
+  // 幅17: オーナー期待の2行「しょうゆ・みりん・砂糖を加えて / 炒り煮にする。」
+  eq('lineCompose 基準2 幅17(オーナー期待の2行)', compose(ex2(), 17), [
+    'しょうゆ・みりん・砂糖を加えて',
+    '炒り煮にする。',
+  ])
+  eq('lineCompose 基準2 幅28(1行に収まる)', compose(ex2(), 28), ['しょうゆ・みりん・砂糖を加えて炒り煮にする。'])
+
+  // 整合性: どの幅でも、行を連結すると元テキスト(ZWSP除去)に一致する(文字の欠落・重複なし)
+  const joinAll = (atoms) => atoms.map((a) => a.text).join('')
+  for (const w of [12, 14, 17, 28, 40]) {
+    eq(`lineCompose 整合性 基準1 幅${w}`, compose(ex1(), w).join(''), joinAll(ex1()))
+    eq(`lineCompose 整合性 基準2 幅${w}`, compose(ex2(), w).join(''), joinAll(ex2()))
+  }
+  // 禁則: 行頭に「、」「。」が来ない(読点・句点は必ず行末側)
+  for (const w of [10, 12, 14, 17, 20, 28]) {
+    const heads = [...compose(ex1(), w), ...compose(ex2(), w)].map((l) => l[0])
+    eq(`lineCompose 行頭禁則 幅${w}`, heads.some((c) => c === '、' || c === '。'), false)
+  }
+
+  // 一般ケース(テキストのみ・箱なし)
+  const c = (text, w) => composeLines([txt(text)], w, measure, { eps: 0 }).map(lineToText)
+  eq('lineCompose 短文は1行', c('混ぜる', 20), ['混ぜる'])
+  // 各句が丸ごとは入るが2句一緒には入らない幅 → 句ごとに改行(詰め込まない)
+  eq('lineCompose 句ごとに改行', c('あいう、えお、かき。', 5), ['あいう、', 'えお、', 'かき。'])
+  // 残り幅に入る句は同じ行に足す(1行に複数句)
+  eq('lineCompose 複数句を1行に', c('あいう、えお、かき。', 8), ['あいう、えお、', 'かき。'])
+  // 改行\nは強制改行
+  eq('lineCompose 改行\\nは強制改行', c('あい\nうえ', 20), ['あい', 'うえ'])
+}
+
 // ---------- 結果 ----------
 console.log(`合格: ${passed}件 / 失敗: ${failures.length}件`)
 for (const f of failures) console.log(`  NG ${f}`)

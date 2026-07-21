@@ -59,8 +59,7 @@ import NutritionTeaser from '../components/NutritionTeaser'
 import PriceEditModal, { type PriceEditTarget } from '../components/PriceEditModal'
 import { RecipePlaceholder, seasonIcons } from '../components/RecipeCard'
 import StepBadge from '../components/StepBadge'
-import TimeText from '../components/TimeText'
-import TermText from '../components/TermText'
+import ComposedStepText from '../components/ComposedStepText'
 import { collectUniqueTerms } from '../logic/termSplit'
 import { buildIngredientNames } from '../logic/ingredientSpans'
 import TermPopover, { useTermPopover } from '../components/TermPopover'
@@ -839,27 +838,23 @@ export default function RecipeDetailPage() {
                 >
                   <StepBadge number={stepNumber} />
                   <div className="min-w-0 flex-1">
-                    {/* 文中の「10分」などはタップでタイマー開始、辞書語はタップで説明 */}
+                    {/* 文中の「10分」などはタップでタイマー開始、辞書語はタップで説明。
+                        行組みは読点優先・幅実測の自前エンジン(ComposedStepText)が決める(2026-07-21) */}
                     <p className="ja-phrase">
-                      <TermText
+                      <ComposedStepText
                         text={step.text}
+                        ingredientNames={ingredientNames}
                         onOpenTerm={openTerm}
-                        renderPlain={(t) => (
-                          <TimeText
-                            text={t}
-                            ingredientNames={ingredientNames}
-                            onStart={(_tokenText, seconds) =>
-                              startTimer({
-                                key: `${id}-${index}-${seconds}`,
-                                label: recipe.title,
-                                doneLabel: deriveDoneLabel(step.text),
-                                seconds,
-                                recipeId: id,
-                                stepNumber,
-                              })
-                            }
-                          />
-                        )}
+                        onStartTimer={(_tokenText, seconds) =>
+                          startTimer({
+                            key: `${id}-${index}-${seconds}`,
+                            label: recipe.title,
+                            doneLabel: deriveDoneLabel(step.text),
+                            seconds,
+                            recipeId: id,
+                            stepNumber,
+                          })
+                        }
                       />
                     </p>
                     {step.memo && (
