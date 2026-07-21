@@ -120,9 +120,9 @@
   "starter:鶏の唐揚げ": {
     "servings": 2,
     "perServing": {
-      "kcal": 407,
+      "kcal": 434,
       "proteinG": 34.9,
-      "fatG": 28.4,
+      "fatG": 31.4,
       "carbG": 2.9,
       "saltG": 3,
       "fiberG": 0.3,
@@ -130,7 +130,6 @@
       "calciumMg": 16
     },
     "excluded": [
-      "揚げ油(amount)",
       "片栗粉(amount)"
     ]
   },
@@ -470,9 +469,9 @@
   "starter:大学芋": {
     "servings": 2,
     "perServing": {
-      "kcal": 167,
+      "kcal": 194,
       "proteinG": 1.2,
-      "fatG": 0.2,
+      "fatG": 3.2,
       "carbG": 42.2,
       "saltG": 0.2,
       "fiberG": 2,
@@ -480,7 +479,6 @@
       "calciumMg": 33
     },
     "excluded": [
-      "揚げ油(amount)",
       "黒いりごま(amount)"
     ]
   },
@@ -1352,7 +1350,7 @@
       "calciumMg": 131
     },
     "excluded": [
-      "グラノーラ(food)",
+      "グラノーラ(amount)",
       "ブルーベリー(amount)"
     ]
   },
@@ -1460,18 +1458,16 @@
   "review16:牛肉のプルコギ風": {
     "servings": 2,
     "perServing": {
-      "kcal": 364,
-      "proteinG": 22.5,
+      "kcal": 371,
+      "proteinG": 22.7,
       "fatG": 29.8,
-      "carbG": 6.5,
-      "saltG": 2.2,
+      "carbG": 8,
+      "saltG": 2.4,
       "fiberG": 0.1,
       "ironMg": 2.9,
       "calciumMg": 10
     },
-    "excluded": [
-      "コチュジャン(food)"
-    ]
+    "excluded": []
   },
   "review16:鶏もも肉のガーリックハーブ焼き": {
     "servings": 2,
