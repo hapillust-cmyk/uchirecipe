@@ -34,7 +34,14 @@ import {
 function htmlResponse(body: string, status: number, extraHeaders?: Record<string, string>): Response {
   return new Response(body, {
     status,
-    headers: { 'Content-Type': 'text/html; charset=utf-8', ...extraHeaders },
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      // 解錠コードを表示するページなので、共有キャッシュ・ブラウザ履歴経由の残留と
+      // 外部リンク遷移時のsession_id漏れを防ぐ(docs/50 SEC-6・2026-07-22)
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer',
+      ...extraHeaders,
+    },
   })
 }
 

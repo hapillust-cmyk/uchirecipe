@@ -31,7 +31,10 @@ let skippedSold = 0
 for (const rawLine of text.split(/\r?\n/)) {
   const line = rawLine.trim()
   if (!line || line.startsWith('#')) continue
-  if (line.includes('済')) {
+  // 「済」=販売済みに加え、「予約」「テスト」「無効」の注記がある行も販売プールから
+  // 除外する。原本103行目「UR-96QS-2VSZ テスト予約(販売には使わない)」が旧条件では
+  // 混入し、公開リポジトリのe2eに載っている同コードが有料顧客へ渡りえた(docs/50 SEC-1)
+  if (/済|予約|テスト|無効/.test(line)) {
     skippedSold++
     continue
   }
