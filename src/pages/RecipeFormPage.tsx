@@ -233,6 +233,10 @@ function RecipeFormInner() {
   const [urlImportValue, setUrlImportValue] = useState('')
   const [urlImportMessage, setUrlImportMessage] = useState('')
   const [urlImportLoading, setUrlImportLoading] = useState(false)
+  // 「写真も取り込む」チェック(2026-07-21 オーナー指示)。ページローカルのその場限りの状態で、
+  // 保存も設定への永続化もしない(このフォームを開くたび毎回既定ON)。OFFならapplyUrlImportが
+  // importPhotoFromUrl(Worker画像プロキシ経由のfetchImportedPhoto)を呼ばない
+  const [urlImportFetchPhoto, setUrlImportFetchPhoto] = useState(true)
 
   // テキスト貼り付けで自動入力
   const [pasteOpen, setPasteOpen] = useState(false)
@@ -453,6 +457,8 @@ function RecipeFormInner() {
    * 失敗してもレシピ本体の取り込みは成功のままにするため、ここでの失敗はエラー表示せず静かに諦める
    * (写真だけ無し=従来どおりアイコン表示)。applyUrlImportからはawaitせずに呼ぶ想定
    * (取り込み結果メッセージは先に確定させ、写真は後から差し込まれてもよい)。
+   * 呼び出し元(applyUrlImport)で「写真も取り込む」チェックがONのときだけ呼ばれる
+   * (2026-07-21 オーナー指示のスイッチ。OFFならこの関数自体を呼ばない)。
    */
   const importPhotoFromUrl = async (imageUrl: string) => {
     const blob = await fetchImportedPhoto(IMPORT_ENDPOINT, imageUrl)
@@ -510,8 +516,9 @@ function RecipeFormInner() {
           .replace('{s}', String(result.steps.length)),
       )
       // 写真はベストエフォート(Worker経由の取得・変換は非同期で後から差し込まれてもよい)。
-      // await しない: 材料・手順の取り込み結果メッセージをここで即座に確定させるため
-      if (result.imageUrl) {
+      // await しない: 材料・手順の取り込み結果メッセージをここで即座に確定させるため。
+      // 「写真も取り込む」チェックがOFFのときは取得自体を行わない(2026-07-21 オーナー指示のスイッチ)
+      if (result.imageUrl && urlImportFetchPhoto) {
         void importPhotoFromUrl(result.imageUrl)
       }
     } catch (e) {
@@ -975,6 +982,18 @@ function RecipeFormInner() {
                 placeholder={ja.urlImport.placeholder}
                 className="mt-[var(--space-sm)] block w-full rounded-sm border border-edge bg-app px-3 py-2 text-base text-ink placeholder:text-ink-muted/60"
               />
+              <label className="mt-[var(--space-sm)] flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={urlImportFetchPhoto}
+                  onChange={(e) => setUrlImportFetchPhoto(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
+                />
+                <span>
+                  {ja.urlImport.fetchPhoto}
+                  <span className="mt-0.5 block text-xs text-ink-muted">{ja.urlImport.fetchPhotoNote}</span>
+                </span>
+              </label>
               {urlImportMessage && (
                 <p className="mt-[var(--space-sm)] text-sm font-bold text-accent">{urlImportMessage}</p>
               )}
