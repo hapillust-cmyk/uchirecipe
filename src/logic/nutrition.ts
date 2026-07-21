@@ -255,22 +255,35 @@ function addScaled(target: NutrientTotals, per100g: NutritionPer100g, grams: num
 
 // 「少々」「適量」の仮の目安量(1食あたりg・概算)。
 // 塩系はmemoの「約◯g」表記があればそれを優先。お好みで表記は食べるか不明なため対象外のまま。
-const OIL_NAMES = /(サラダ油|ごま油|オリーブオイル|オリーブ油|^油$)/
+//
+// 判定はnormalizeName済みの表記(toHiragana適用後)で行う(2026-07-21・オーナー実機報告
+// 「対象外13件」調査で発見・修正)。旧実装は生の文字列(name)をそのまま比較しており、
+// 「黒胡椒」のような漢字・「コショウ」のようなカタカナ表記だとmatchNutritionFoodでは
+// 食品が見つかっているのに少々の仮定だけ効かない、という表記ゆれバグがあった。
+// OIL_NAMESもnormalizeName後の文字列と比較するため、カタカナ由来の語はひらがな化した形
+// (「サラダ」→「さらだ」「オリーブ」→「おりーぶ」)で書く。「ごま油」「胡麻油」「揚げ油」は
+// ingredientReadings辞書で丸ごと「ごまあぶら」「あげあぶら」に変換されるため、その変換後の
+// 形も含める(「あげあぶら」を含めたことで、便AL(docs/47)が「適量でも仮定計算されない
+// 既知の欠落」として報告していた揚げ油のケースも合わせて解消した)。
+const OIL_NAMES = /(さらだ油|ごま油|ごまあぶら|あげあぶら|おりーぶおいる|おりーぶ油|^油$)/
 function matchAssumed(ing: Ingredient): { gramsPerServing: number; note: string } | null {
   const name = ing.name
   const amount = ing.amount ?? ''
+  const normalizedName = normalizeName(name)
   if (/お好みで/.test(name) || /お好みで/.test(amount)) return null
   if (/少々/.test(amount)) {
-    if (name.includes('塩')) {
+    // normalizeName適用後は「塩」は辞書(ingredientReadings)で必ず「しお」に変換されるため、
+    // 判定は「しお」のみで足りる(「塩」がそのまま残るケースは無い)
+    if (normalizedName.includes('しお')) {
       const m = (ing.memo ?? '').match(/約([\d.]+)g/)
       const g = m ? Number(m[1]) : 0.5
       return { gramsPerServing: g, note: `少々 → 約${g}g/食` }
     }
-    if (name.includes('こしょう')) {
+    if (normalizedName.includes('こしょう')) {
       return { gramsPerServing: 0.3, note: '少々 → 約0.3g/食' }
     }
   }
-  if (/適量/.test(amount) && OIL_NAMES.test(name)) {
+  if (/適量/.test(amount) && OIL_NAMES.test(normalizedName)) {
     return { gramsPerServing: 3, note: '適量 → 約3g/食(大さじ1/2を2食で使う想定)' }
   }
   return null

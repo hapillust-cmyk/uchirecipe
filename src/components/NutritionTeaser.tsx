@@ -136,6 +136,8 @@ function LockedBody({ nutrition, isPro }: { nutrition: Nutrition; isPro: boolean
       <p className="text-xs text-ink-muted">
         {ja.nutrition.sourcePrefix}
         {nutritionSourceName()}
+        {'　'}
+        {ja.nutrition.sourceCommercialNote}
       </p>
       {/* 解錠済みユーザーには「Pro特典として開発中・公開時に自動で使える」ことを明示する
           (「解錠したのに残りが見えない」という誤解を防ぐ。2026-07-09ペルソナ第2波を踏襲) */}
@@ -233,6 +235,8 @@ function UnlockedBody({ nutrition, servings }: { nutrition: Nutrition; servings?
       <p className="text-xs text-ink-muted">
         {ja.nutrition.sourcePrefix}
         {nutritionSourceName()}
+        {'　'}
+        {ja.nutrition.sourceCommercialNote}
       </p>
     </div>
   )
