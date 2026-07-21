@@ -136,15 +136,29 @@ export type NormalizedUnit =
   | { dim: 'volume'; base: number }
   | { dim: 'count'; unit: string; base: number }
 
-/** 質量: 基準はg（Fable設計確定表） */
+/**
+ * 質量: 基準はg。kg=1000g・mg=0.001gはSI(国際単位系)の接頭辞(キロ=10^3・ミリ=10^-3)そのもので、
+ * 「調べて決める値」ではなく単位の定義から一意に決まる値（根拠調査の対象外）。
+ */
 const MASS_UNIT_FACTORS: Record<string, number> = {
   g: 1,
   kg: 1000,
   mg: 0.001,
 }
 
-/** 体積: 基準はml（Fable設計確定表。大さじ=15ml・小さじ=5ml・カップ=200ml） */
-const VOLUME_UNIT_FACTORS: Record<string, number> = {
+/**
+ * 体積: 基準はml。
+ * - ml/cc/l/L/リットルはSI(国際単位系)の定義そのもの（1cc=1ml、1L=1000ml。根拠調査の対象外）。
+ * - 大さじ=15ml・小さじ=5ml・カップ=200mlは、1948年制定のJIS S 2052「家庭用計量スプーン」
+ *   （大さじ15ml±0.5ml・小さじ5ml±0.2ml）で正式に統一された日本の家庭料理の標準値。
+ *   計量カップ200mlも同JIS由来で、大手レシピサイト・文部科学省「日本食品標準成分表」の
+ *   目安量表でも共通してこの値が使われる（米を量る「合(180ml)」や欧米の1カップ(約237ml)とは
+ *   別物なので注意）。2026-07-21 単位換算監査(docs/48)でオーナー指定値と突き合わせ済み。
+ * nutrition.ts の SPOON_ML（栄養価側のg換算に使う大さじ/小さじ/カップ）もこの値を使う
+ * （数値を2箇所に手書きで重複させると片方だけ変更されて食い違う事故が起きるため、
+ * VOLUME_UNIT_FACTORSをexportしてnutrition.ts側から参照する一本化構成にしている）。
+ */
+export const VOLUME_UNIT_FACTORS: Record<string, number> = {
   ml: 1,
   cc: 1,
   l: 1000,
@@ -155,7 +169,12 @@ const VOLUME_UNIT_FACTORS: Record<string, number> = {
   カップ: 200,
 }
 
-/** 個数: 単位名ごとに別物として扱う（「1個」と「1本」は換算不可。Fable設計確定表） */
+/**
+ * 個数: 単位名ごとに別物として扱う（「1個」と「1本」は同じ「1」でも重さが違うため換算不可。
+ * 数値換算表ではなく、按分に使ってよい単位名の許可リストという性質のもの）。
+ * ここに列挙した名前はunitForm.ts(食材と価格の単位入力UI)のKNOWN_UNITSと対応する
+ * レシピ側の助数詞表記を拾うための一覧で、値の大小を調べる根拠は不要（単位名の一致判定のみに使う）。
+ */
 const COUNT_UNIT_NAMES = new Set([
   '個', '本', '枚', '玉', '束', 'パック', 'かけ', '片', '株', '尾', '切れ', '丁', '袋', '缶', '房', '節',
 ])
