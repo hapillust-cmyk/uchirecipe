@@ -10,8 +10,12 @@ import { findIngredientMatches, type IngredientMatch } from '../logic/ingredient
 const UNDERLINE_CLASS =
   'underline decoration-solid decoration-2 underline-offset-2 decoration-ink-muted/50'
 
-// 開き括弧を含む短い単位はnowrapスパンで守る(WebKitがkeep-all下でも括弧直後で折るため)。
-const needsSpan = (u: string) => /[（(]/.test(u) && u.length <= 12
+// 開き括弧を含む短い単位と「・」で始まる短い単位はnowrapスパンで守る。
+// 括弧: WebKitがkeep-all下でも括弧直後で折るため(2026-07-12)。
+// 「・」: WebKitはkeep-all下でも「・」の直後を改行可能として扱うため、ZWSPを「・」の
+// 前に置く設計(列挙の・は次項目の先頭に付ける)だけでは「しょうゆ・みりん・/砂糖を…」の
+// ように行末に「・」が残る割れ方をする(2026-07-21オーナー実機・こんにゃくの炒り煮)。
+const needsSpan = (u: string) => (/[（(]/.test(u) || u.startsWith('・')) && u.length <= 12
 
 /**
  * ZWSP区切り済み文字列(wrapJaPhrasesの出力)を描画ノードにする。
@@ -90,10 +94,11 @@ export function renderWrapped(wrapped: string, names?: readonly string[]): React
   wrapped.split(ZWSP).forEach((u, i) => {
     if (i > 0) nodes.push(ZWSP)
     if (needsSpan(u)) {
-      // 括弧nowrap単位はそのまま守る(材料名は括弧除去済みなので通常ここには重ならない)
+      // nowrap単位の中でも材料下線は付ける(「・みりん」のような列挙単位は材料名そのもの。
+      // 下線spanはdisplay:inlineなのでnowrapの折返し抑制を壊さない)
       nodes.push(
         <span key={`nw-${i}`} className="whitespace-nowrap">
-          {u}
+          {underlineRange(u, matches, offset, `u${i}`)}
         </span>,
       )
     } else {
