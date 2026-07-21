@@ -2,6 +2,7 @@ import { toHiragana } from './kana'
 import { NUTRITION_DATA, type NutritionFood, type NutritionPer100g } from './nutritionData'
 import type { Ingredient, Recipe } from '../db/types'
 import { normalizeDigits } from './amount'
+import { VOLUME_UNIT_FACTORS } from './priceEstimate'
 
 /**
  * 栄養価の自動概算（M6-1・Pro機能）の純ロジック。
@@ -212,7 +213,18 @@ export function parseAmountNumber(amount: string): number | null {
   return value
 }
 
-const SPOON_ML: Record<string, number> = { 大さじ: 15, 小さじ: 5, カップ: 200 }
+/**
+ * 大さじ/小さじ/カップのml換算。priceEstimate.tsのVOLUME_UNIT_FACTORSと同一の値を使う
+ * （1948年制定のJIS S 2052「家庭用計量スプーン」に由来する日本の調理計量の標準値。
+ * 大さじ15ml・小さじ5ml・カップ200ml。2026-07-21 単位換算監査(docs/48)で確認）。
+ * 数値を2箇所に手書きすると片方だけ変更されて食い違う事故が起きるため、
+ * ここでは書き写さずpriceEstimate.tsから直接参照して一本化している。
+ */
+const SPOON_ML: Record<string, number> = {
+  大さじ: VOLUME_UNIT_FACTORS.大さじ,
+  小さじ: VOLUME_UNIT_FACTORS.小さじ,
+  カップ: VOLUME_UNIT_FACTORS.カップ,
+}
 
 /**
  * 分量×単位をグラムに換算する。換算できないときは null。
