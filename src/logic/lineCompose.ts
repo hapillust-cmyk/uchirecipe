@@ -59,7 +59,9 @@ type Clause = { pieces: Piece[]; hardBreakBefore: boolean }
 // (例: 「こんにゃく+[2分ほど]」や「[下茹で]+して」が1ユニットになりうる)。
 // bunchBreakBefore: 指摘1(便BB)の「連続格助詞『を』の過結合を解した」境界で始まるユニット。
 // このユニットの直前は、句が1行に収まらず折り返すときは必ず改行する(「白菜と豚肉を / 切り口を…」)。
-type Unit = { parts: LinePiece[]; width: number; bunchBreakBefore?: boolean }
+// woCramUnbroken: 昇格ガードで分割しなかった「を」過結合ユニット(句内の「を」を含む=「を目安に」等)。
+// このユニットで行を終えるときは、借用パスが次の良い切れ目まで伸ばして束縛句を割らない(春雨サラダ)。
+type Unit = { parts: LinePiece[]; width: number; bunchBreakBefore?: boolean; woCramUnbroken?: boolean }
 
 /** 括弧の中身の長さ(閉じ括弧までの文字数。閉じ括弧が無ければ文末まで)。要件Dの長短判定に使う */
 const LONG_PAREN_CONTENT = 12
@@ -227,8 +229,8 @@ function clauseUnits(clause: Clause, measure: MeasureText): Unit[] {
   // ときに必ず改行する(「白菜と豚肉を」の直後で切る)。自然に隣り合っただけの2つの「を」句
   // (「しょうがを」|「混ぜ合わせてたれを」=間に動詞。過結合ではない)には印を付けない=巻き添えを防ぐ。
   const woSplitOffsets = new Set<number>()
+  const fineEnds: { start: number; end: number; isWo: boolean }[] = []
   {
-    const fineEnds: { start: number; end: number; isWo: boolean }[] = []
     let fo = 0
     for (const s of normalizedSegments(full)) {
       const start = fo
@@ -243,7 +245,17 @@ function clauseUnits(clause: Clause, measure: MeasureText): Unit[] {
       if (atomRanges.some((r) => r.start < b && r.end > a)) continue
       const woInUnit = fineEnds.filter((f) => f.start >= a && f.end <= b && f.isWo)
       if (woInUnit.length < 2) continue
-      for (const f of woInUnit) if (f.end < b) { boundaries.add(f.end); woSplitOffsets.add(f.end) } // 末尾以外の「を」境界を昇格
+      // 昇格ガード(便BB追補・司令部裁定): 昇格で新しい行末になる左側(このユニット先頭〜昇格境界=
+      // 折り返し時にその論理行へ載る文節の合計)が MIN_BUNCH_LEFT 字未満なら昇格しない。短い格助詞
+      // 単独行(「春雨を」3字)を作らない=元の詰め込みに戻す。「白菜と豚肉を」(6字)・「耐熱皿に鶏肉を」(7字)は維持。
+      let prev = a
+      for (const f of woInUnit) {
+        if (f.end >= b) continue // ユニット末尾は昇格しない
+        if ([...full.slice(prev, f.end)].length < MIN_BUNCH_LEFT) continue // 左が短すぎる→昇格せず詰め込みに戻す
+        boundaries.add(f.end)
+        woSplitOffsets.add(f.end)
+        prev = f.end
+      }
     }
   }
 
@@ -269,8 +281,14 @@ function clauseUnits(clause: Clause, measure: MeasureText): Unit[] {
         width += measure(txt)
       }
     }
-    // 「を」バンチ分割で昇格した境界 a で始まるユニットは、折り返し時に必ずその手前で改行する(指摘1)
-    if (parts.length > 0) units.push({ parts, width, bunchBreakBefore: woSplitOffsets.has(a) })
+    // 「を」バンチ分割で昇格した境界 a で始まるユニットは、折り返し時に必ずその手前で改行する(指摘1)。
+    // woCramUnbroken: 昇格ガードで分割しなかった「を」過結合ユニット(「春雨を袋の表示時間を」=「を」止まり
+    // 細分節が2つ以上残る)。この「を」は文末目的語ではなく句内の「を」(「を目安に」等)なので、行末にすると
+    // 束縛句を割る。借用パスがこのユニットで終わる行を、次の良い切れ目(動詞の手前)まで伸ばして束縛句を保つ。
+    if (parts.length > 0) {
+      const woCount = fineEnds.filter((f) => f.start >= a && f.end <= b && f.isWo).length
+      units.push({ parts, width, bunchBreakBefore: woSplitOffsets.has(a), woCramUnbroken: woCount >= 2 })
+    }
   }
   return units
 }
@@ -321,6 +339,9 @@ const BREAK_PENALTY = 49
 const RUNT_MAX = 4
 const RUNT_PENALTY = 10000
 const OVERFLOW_MULT = 4
+// 指摘1の「を」バンチ昇格ガード(便BB追補・司令部裁定): 昇格で新しい行末になる左側が
+// この字数未満なら昇格しない(短い格助詞単独行「春雨を」3字を作らない)。「白菜と豚肉を」6字は昇格維持。
+const MIN_BUNCH_LEFT = 5
 
 /**
  * グリーディ充填。現在行が startUsed だけ使用済みの状態から、ユニットを順に詰める。
@@ -483,7 +504,11 @@ function borrowPass(groups: Unit[][], maxWidth: number, measure: MeasureText, ep
     const cur = groups[i]
     const next = groups[i + 1]
     if (cur.length === 0 || next.length === 0) continue
-    if (groupBreakGood(cur, next)) continue // 既に良い切れ目(語尾語彙・タイマー箱終わり含む) → 借用不要
+    // 通常は良い切れ目なら借用しない。例外(便BB追補・春雨サラダ): 昇格ガードで分割しなかった「を」過結合
+    // ユニット(woCramUnbroken)で行が終わるときは、その「を」が句内の「を」(「表示時間を目安に」の を)で、
+    // 行末にすると束縛句を割る。次の良い切れ目(動詞の手前=目安に)まで伸ばすため良い切れ目でも借用へ進む。
+    const curCram = groupLastUnit(cur)?.woCramUnbroken === true
+    if (groupBreakGood(cur, next) && !curCram) continue // 既に良い切れ目(語尾語彙・タイマー箱終わり含む) → 借用不要
     const head = next[0]
     if (!isTextUnit(head)) continue // 箱(タイマー/用語)からは借用しない
     // 次行先頭が「・」列挙(しょうゆ・みりん・砂糖…の続き)なら借用しない。jaWrapは列挙の「・」を
