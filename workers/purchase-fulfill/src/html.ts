@@ -5,7 +5,7 @@
  */
 
 const APP_URL = 'https://uchirecipe.com/'
-const CONTACT_EMAIL = 'hapillust@gmail.com'
+const CONTACT_EMAIL = 'uchiapplication@gmail.com'
 const UNLOCK_GUIDE_URL = 'https://uchirecipe.com/about/unlock.html'
 
 function escapeHtml(text: string): string {
