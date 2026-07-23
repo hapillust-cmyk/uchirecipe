@@ -18,10 +18,16 @@ import {
   Route,
   RotateCcw,
   Trash2,
+  Plus,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { listRecipes } from '../db/recipes'
 import { useSettings, updateSettings } from '../db/settings'
 import { usePriceEntries } from '../db/prices'
+import { usePantryItems } from '../db/pantry'
+import { pantryAvailableNames } from '../logic/pantry'
+import { searchRecipes, type TimeFilter, type EffortFilter, type TagFilter } from '../logic/search'
+import { sortResults, type RecipeSortOption } from '../logic/recipeSort'
 import {
   useMealPlanRange,
   addMealEntry,
@@ -33,6 +39,7 @@ import {
 import Toast from '../components/Toast'
 import {
   useTodayList,
+  addToTodayList,
   removeFromTodayList,
   markTodayListCooked,
   markAllTodayListCooked,
@@ -58,11 +65,18 @@ import {
   recipeGenre,
   detectGenreMix,
   proteinSourceOf,
+  cookedPlanEntryIds,
+  mealOccasionCount,
 } from '../logic/mealPlan'
 import type { MealGenre, ProteinSource } from '../logic/mealPlan'
 import { todayString } from '../logic/date'
 import { hasNgIngredient } from '../logic/ng'
-import { buildPriceIndex, estimateRecipeCost, sumMealPlanEntriesCost } from '../logic/priceEstimate'
+import {
+  buildPriceIndex,
+  estimateRecipeCost,
+  sumMealPlanEntriesCost,
+  sumCookedRecipesCost,
+} from '../logic/priceEstimate'
 import { RecipePlaceholder } from '../components/RecipeCard'
 import { usePhotoUrl } from '../components/usePhotoUrl'
 import type { CookedLog, MealPlanEntry, MealRole, MealSlot, Recipe } from '../db/types'
@@ -70,6 +84,36 @@ import { ja } from '../i18n/ja'
 
 /** 献立タブの3タブ構成（2026-07-16 便U-1: 現行の「今日セクション+週/月切替」をタブへ再構成） */
 type MealPlanViewMode = 'day' | 'week' | 'month'
+
+/** レシピ選択ピッカーの絞り込み・並び替え（2026-07-24 便BH-3・タスク6: 一覧画面の機構を流用）。
+ * 栄養並び替え（Pro機能）は複雑なのでピッカーには出さず、基本の並び替えだけを提供する */
+const PICKER_SORT_OPTIONS: { value: RecipeSortOption; label: string }[] = [
+  { value: 'updated', label: ja.search.sortUpdated },
+  { value: 'kana', label: ja.search.sortKana },
+  { value: 'cooked', label: ja.search.sortCooked },
+  { value: 'pantryMatch', label: ja.search.sortPantryMatch },
+]
+const PICKER_TIME_OPTIONS: { value: TimeFilter; label: string }[] = [
+  { value: 'all', label: ja.search.timeAll },
+  { value: 'under10', label: ja.search.timeUnder10 },
+  { value: 'under30', label: ja.search.timeUnder30 },
+  { value: 'over30', label: ja.search.timeOver30 },
+]
+const PICKER_EFFORT_OPTIONS: { value: EffortFilter; label: string }[] = [
+  { value: 'all', label: ja.search.effortAll },
+  { value: 'easy', label: ja.effort.easy },
+  { value: 'normal', label: ja.effort.normal },
+  { value: 'fancy', label: ja.effort.fancy },
+]
+const PICKER_TAG_OPTIONS: { value: TagFilter; label: string }[] = [
+  { value: 'all', label: ja.search.tagAll },
+  { value: '作り置き', label: '作り置き' },
+  { value: 'お弁当', label: 'お弁当' },
+]
+const pickerChipCls = (active: boolean) =>
+  `rounded-sm border px-3 py-1.5 text-sm font-bold ${
+    active ? 'border-accent bg-accent text-on-accent' : 'border-edge bg-surface text-ink-muted'
+  }`
 
 /** 今日の献立の1行（小サムネ＋名前＋作った/×） */
 function TodayListRow({
@@ -217,11 +261,40 @@ export default function MealPlanPage() {
   // 食材価格マスタ（未入力の材料だけ目安価格で補うフォールバック。docs/20 §3）
   const priceEntries = usePriceEntries()
   const priceIndex = useMemo(() => buildPriceIndex(priceEntries ?? []), [priceEntries])
+  // レシピ選択ピッカーの並び替え「在庫一致順」用の在庫食材名（2026-07-24 便BH-3・タスク6・
+  // 一覧画面の並び替え機構を流用）
+  const pantryItems = usePantryItems()
+  const pantryNames = useMemo(() => pantryAvailableNames(pantryItems ?? []), [pantryItems])
   const today = useMemo(todayString, [])
   const [weekStart, setWeekStart] = useState(() => weekDates(new Date())[0])
-  const dates = useMemo(() => weekDates(new Date(`${weekStart}T00:00:00`)), [weekStart])
-  // 今、当週を見ているか(Fix1: 中央チップの「今週へ戻る」ラベル/アイコンは当週以外のときだけ出す)
-  const isAtCurrentWeek = dates[0] === weekDates(new Date())[0]
+  // 週タブの表示起点(2026-07-24 便BH-3・タスク3): 従来の週区切り(月曜始まり)⇄今日を先頭に7日間。
+  // 既定は従来(週区切り)・選択は設定に記憶。ローリング表示はweekStartを起点に7日連続で並べる
+  const rollingWeek = settings?.weekStartsToday === true
+  const dates = useMemo(
+    () =>
+      rollingWeek
+        ? Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i))
+        : weekDates(new Date(`${weekStart}T00:00:00`)),
+    [weekStart, rollingWeek],
+  )
+  // 「今日を先頭に7日間」表示が設定されている端末では、初回ロード時にweekStartを今日へ合わせる
+  // (weekStartの初期値は従来表示前提の月曜始まりのため。ここで1回だけ今日起点へ寄せる)
+  const weekModeInitRef = useRef(false)
+  useEffect(() => {
+    if (weekModeInitRef.current) return
+    if (settings === undefined) return
+    weekModeInitRef.current = true
+    if (settings.weekStartsToday) setWeekStart(today)
+  }, [settings, today])
+  // 週タブの表示起点を切り替える(選択を設定に記憶し、weekStartを各モードの「現在」に合わせ直す)
+  const setWeekLayout = (rolling: boolean) => {
+    void updateSettings({ weekStartsToday: rolling })
+    setWeekStart(rolling ? today : weekDates(new Date())[0])
+  }
+  // 今、当週(=各モードの「現在」)を見ているか(Fix1: 中央チップの「戻る」ラベル/アイコンは
+  // 現在以外のときだけ出す)。従来表示=当週の月曜、今日起点表示=今日、が「現在」の起点
+  const currentWeekAnchor = rollingWeek ? today : weekDates(new Date())[0]
+  const isAtCurrentWeek = dates[0] === currentWeekAnchor
 
   const entries = useMealPlanRange(dates[0], dates[6])
   // 「今日」の週プラン登録は、週タブで表示中の週(weekStart)に依存させない
@@ -277,6 +350,29 @@ export default function MealPlanPage() {
     })
     return map
   }, [recipes])
+  // 週ビューの「作った見た目」対応付け(2026-07-24 便BH-3・タスク2): 表示中の週の各エントリのうち、
+  // その日の「作った記録」に対応する枠のidを集合で持つ(cookedPlanEntryIdsで日ごとに先着消費。
+  // 同名複数の枠は記録件数の分だけ・非破壊=表示のみ)。日タブで「作った!」を押して記録が付くと、
+  // 週側の該当枠がここに入り、renderRowで作った見た目に変わる
+  const cookedWeekEntryIds = useMemo(() => {
+    const result = new Set<number>()
+    const byDate = new Map<string, MealPlanEntry[]>()
+    ;(entries ?? []).forEach((e) => {
+      const list = byDate.get(e.date)
+      if (list) list.push(e)
+      else byDate.set(e.date, [e])
+    })
+    byDate.forEach((dayEntries, date) => {
+      const logs = cookedLogsByDate.get(date)
+      if (!logs || logs.length === 0) return
+      const counts = new Map<number, number>()
+      logs.forEach(({ recipe }) => {
+        if (recipe.id != null) counts.set(recipe.id, (counts.get(recipe.id) ?? 0) + 1)
+      })
+      cookedPlanEntryIds(dayEntries, counts).forEach((id) => result.add(id))
+    })
+    return result
+  }, [entries, cookedLogsByDate])
   // 月タブ: 「記録あり」小マーク(✓)を出す日の集合(便Z-2。表示中の月の分だけ)
   const monthDaysWithLog = useMemo(() => {
     const prefix = monthAnchor.slice(0, 7)
@@ -398,6 +494,24 @@ export default function MealPlanPage() {
   )
   const rangeDays = rangeStart != null && rangeEnd != null ? rangeDayCount(rangeStart, rangeEnd) : 0
   const rangeAverageCost = rangeDays > 0 ? Math.round(rangeCostEstimate.total / rangeDays) : 0
+  // 期間の食費(予定ベース)の食数(=食事の回数。主菜+副菜が並ぶ枠も1食。2026-07-24 便BH-3・タスク9)
+  const rangePlanMealCount = useMemo(() => mealOccasionCount(rangeCostEntries), [rangeCostEntries])
+  // 期間の食費(実績ベース・2026-07-24 便BH-3・タスク9): 期間内の「作った記録」から実績原価と食数を出す。
+  // 予定(mealPlansエントリ)ではなく実際に作った記録が基準。記録件数=食数、合計÷食数で「1食あたり」を出す
+  const rangeCookedRecipes = useMemo(() => {
+    if (rangeStart == null || rangeEnd == null) return []
+    const out: Recipe[] = []
+    cookedLogsByDate.forEach((list, date) => {
+      if (date >= rangeStart && date <= rangeEnd) list.forEach(({ recipe }) => out.push(recipe))
+    })
+    return out
+  }, [cookedLogsByDate, rangeStart, rangeEnd])
+  const rangeActualCost = useMemo(
+    () => sumCookedRecipesCost(rangeCookedRecipes, priceIndex),
+    [rangeCookedRecipes, priceIndex],
+  )
+  const rangeActualPerMeal =
+    rangeActualCost.count > 0 ? Math.round(rangeActualCost.total / rangeActualCost.count) : 0
 
   // 今日の献立（週間プランナーとは別の「今日これ作る」リスト）
   const todayList = useTodayList()
@@ -513,12 +627,53 @@ export default function MealPlanPage() {
     entryId?: number
     extraLocalId?: string
   } | null>(null)
+  // 「今日の献立を選ぶ」ピッカー(2026-07-24 便BH-3・タスク1)。週の枠(pickerTarget)とは別に、
+  // 今日の献立(todayList)へタップで追加/解除するモード。同じピッカーUIを流用する
+  const [todayPickerOpen, setTodayPickerOpen] = useState(false)
+  const pickerOpen = pickerTarget != null || todayPickerOpen
   const [pickerQuery, setPickerQuery] = useState('')
-  const filteredRecipes = useMemo(() => {
-    const q = pickerQuery.trim()
-    if (!q) return visibleRecipes
-    return visibleRecipes.filter((r) => r.title.includes(q))
-  }, [visibleRecipes, pickerQuery])
+  // ピッカーの絞り込み・並び替え(2026-07-24 便BH-3・タスク6・一覧画面の機構を流用)。
+  // 開閉は既定閉。パネル外の検索窓(pickerQuery)と合わせてsearchRecipes/sortResultsに渡す
+  const [pickerControlsOpen, setPickerControlsOpen] = useState(false)
+  const [pickerSort, setPickerSort] = useState<RecipeSortOption>('updated')
+  const [pickerTime, setPickerTime] = useState<TimeFilter>('all')
+  const [pickerEffort, setPickerEffort] = useState<EffortFilter>('all')
+  const [pickerTag, setPickerTag] = useState<TagFilter>('all')
+  const [pickerFavoriteOnly, setPickerFavoriteOnly] = useState(false)
+  // 絞り込み+並び替えを適用した候補（一覧画面と同じsearchRecipes→sortResults。栄養並び替えは
+  // Pro機能なのでピッカーには出さない＝基本の並び替えのみ）
+  const pickerResults = useMemo(() => {
+    const found = searchRecipes(visibleRecipes, {
+      query: pickerQuery,
+      ingredients: '',
+      time: pickerTime,
+      effort: pickerEffort,
+      tag: pickerTag,
+      favoriteOnly: pickerFavoriteOnly,
+      excludeNg: false,
+      quickOnly: false,
+      ngIngredients: settings?.ngIngredients ?? [],
+    })
+    return sortResults(found, pickerSort, pantryNames)
+  }, [
+    visibleRecipes,
+    pickerQuery,
+    pickerTime,
+    pickerEffort,
+    pickerTag,
+    pickerFavoriteOnly,
+    pickerSort,
+    pantryNames,
+    settings?.ngIngredients,
+  ])
+  const filteredRecipes = useMemo(() => pickerResults.map((r) => r.recipe), [pickerResults])
+  const pickerFilterActive =
+    pickerTime !== 'all' || pickerEffort !== 'all' || pickerTag !== 'all' || pickerFavoriteOnly
+  // 今日の献立ピッカーで「追加済み」を出すためのID集合(タスク1)
+  const todayListIdSet = useMemo(
+    () => new Set(todayList?.map((item) => item.recipeId) ?? []),
+    [todayList],
+  )
   // 今開いている行に現在割り当て済みのレシピID(Fix4: 埋まった行を開いても他の候補と
   // 同じ見た目で無確認上書きしてしまう問題の対策で、先頭固定＋選択中バッジに使う)
   const currentPickerRecipeId = useMemo(() => {
@@ -535,6 +690,11 @@ export default function MealPlanPage() {
     return [current, ...filteredRecipes.slice(0, idx), ...filteredRecipes.slice(idx + 1)]
   }, [filteredRecipes, currentPickerRecipeId])
 
+  const closePicker = () => {
+    setPickerTarget(null)
+    setTodayPickerOpen(false)
+  }
+
   const openPicker = (
     date: string,
     slot: MealSlot,
@@ -542,11 +702,25 @@ export default function MealPlanPage() {
     entryId?: number,
     extraLocalId?: string,
   ) => {
+    setTodayPickerOpen(false)
     setPickerTarget({ date, slot, role, entryId, extraLocalId })
     setPickerQuery('')
   }
 
+  // 「今日の献立を選ぶ」を開く(タスク1)。今日の献立へ直接足すモード
+  const openTodayPicker = () => {
+    setPickerTarget(null)
+    setTodayPickerOpen(true)
+    setPickerQuery('')
+  }
+
   const pickRecipe = async (recipeId: number) => {
+    // 今日の献立ピッカー: タップで追加/解除。複数選べるようピッカーは閉じない(×で閉じる)
+    if (todayPickerOpen) {
+      if (todayListIdSet.has(recipeId)) await removeFromTodayList(recipeId)
+      else await addToTodayList(recipeId)
+      return
+    }
     if (!pickerTarget) return
     const { date, slot, role, entryId, extraLocalId } = pickerTarget
     if (entryId != null) {
@@ -556,6 +730,31 @@ export default function MealPlanPage() {
       if (extraLocalId) removeExtraRowState(date, slot, extraLocalId)
     }
     setPickerTarget(null)
+  }
+
+  // 「おまかせで提案」(タスク1): 主菜+副菜のペアを提案して今日の献立へ入れる。
+  // 提案元の枠は「表示中の食事帯に夕食があれば夕食、無ければ先頭の帯」を使う
+  const suggestTodayList = async () => {
+    if (!recipes) return
+    setMessage('')
+    const slot: MealSlot = visibleSlots.includes('dinner') ? 'dinner' : visibleSlots[0] ?? 'dinner'
+    const { main, side } = suggestPairForSlot(visibleRecipes, {
+      quickOnly,
+      excludeNg: true,
+      ngIngredients: settings?.ngIngredients ?? [],
+      usedRecipeIds: [],
+      slot,
+      genre: genreFilter,
+      preferHighProtein,
+      yesterdayRecipeIds,
+    })
+    const ids = [main?.id, side?.id].filter((x): x is number => x != null)
+    if (ids.length === 0) {
+      setMessage(ja.mealPlan.noSuggestion)
+      return
+    }
+    await importRecipeIdsToTodayList(ids)
+    setMessage(ja.mealPlan.todaySuggestDone.replace('{n}', String(ids.length)))
   }
 
   /** 行の「×」: 既存の割り当てなら削除、追加しただけの未割り当て行ならUI上から取り消す */
@@ -739,7 +938,18 @@ export default function MealPlanPage() {
       messages.push(ja.mealPlan.fillWeekTodayNotice)
     }
     if (messages.length > 0) setMessage(messages.join(' '))
+
+    // まとめて献立の直後、今日の枠へ自動スクロール(2026-07-24 便BH-3・タスク7: 埋まったのが
+    // 画面外で無反応に見える問題への対応)。今日が表示中の週に含まれるとき(refがある)だけ動く。
+    // liveQueryの再描画・レイアウト確定を2フレーム待ってからスクロールする
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        todaySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }),
+    )
   }
+  // 週タブの「今日」のカード(feature 7のスクロール先)。今日が表示中の週に無ければnullのまま
+  const todaySectionRef = useRef<HTMLElement | null>(null)
 
   // 週タブ「この帯の今週分を空にする」(便U-4 Fable設計: 「朝のみ削除したい」への回答)。
   // 帯を1つ選び、確認ダイアログを経てから、表示中の週(dates[0]〜dates[6]。週タブで
@@ -761,6 +971,11 @@ export default function MealPlanPage() {
     [entries, recipeById, priceIndex],
   )
   const weekCost = weekCostEstimate.total
+  // 概算食費の食数(=食事の回数。主菜+副菜が並ぶ枠も1食。2026-07-24 便BH-3・タスク8「◯食分」併記)
+  const weekMealCount = useMemo(() => mealOccasionCount(entries ?? []), [entries])
+  // 概算食費の折りたたみ(2026-07-24 便BH-3・タスク4: 「まとめて献立」直後にいきなり金額が出る
+  // 違和感への対応。既定閉・配置も7日分カードの下=邪魔にならない位置へ移動)
+  const [weekCostOpen, setWeekCostOpen] = useState(false)
 
   const weeklyBudget = settings?.weeklyBudget
   const budgetDiff = weeklyBudget != null ? weeklyBudget - weekCost : undefined
@@ -798,28 +1013,50 @@ export default function MealPlanPage() {
     const entryId = row.kind === 'entry' ? row.entry.id : undefined
     const extraLocalId = row.kind === 'empty' ? row.extraLocalId : undefined
     const showRemove = row.kind === 'entry' || row.removable
+    const isEmpty = !recipe
+    // 「作った見た目」対応付け(タスク2): この枠が「作った記録」に対応していれば作った見た目に変える
+    const isCooked = entryId != null && cookedWeekEntryIds.has(entryId)
     return (
       <div key={key} className="flex items-center gap-2">
         <span className="w-10 shrink-0 text-xs font-bold text-ink-muted">{ja.mealPlan.role[role]}</span>
         <button
           type="button"
           onClick={() => openPicker(date, slot, role, entryId, extraLocalId)}
-          className="flex min-w-0 flex-1 items-center gap-1 truncate rounded-sm border border-edge bg-app px-2 py-2 text-left text-sm"
+          className={`flex min-w-0 flex-1 items-center gap-1 truncate rounded-sm border px-2 py-2 text-left text-sm ${
+            isEmpty
+              ? // タスク5: 空き枠は「＋ レシピを選ぶ」のボタン然とした見た目に(押せると分かるよう
+                // アクセント色＋Plusアイコン。従来は淡色「未定」で押せると分からない指摘への対応)
+                'border-dashed border-accent/50 bg-surface font-bold text-accent'
+              : isCooked
+                ? // タスク2: 作った見た目(記録カードに合わせて淡い表示＋✓)
+                  'border-edge bg-app/60 text-ink-muted opacity-80'
+                : 'border-edge bg-app'
+          }`}
         >
-          {recipe && hasNgIngredient(recipe, settings?.ngIngredients ?? []) && (
-            <TriangleAlert
-              size={14}
-              className="shrink-0 text-warning"
-              aria-label={ja.detail.ngWarning}
-            />
+          {isEmpty ? (
+            <>
+              <Plus size={16} className="shrink-0" aria-hidden />
+              <span className="min-w-0 flex-1 truncate">{ja.mealPlan.emptyAssign}</span>
+            </>
+          ) : (
+            <>
+              {isCooked && (
+                <CheckCircle2 size={14} className="shrink-0 text-accent" aria-hidden />
+              )}
+              {recipe && hasNgIngredient(recipe, settings?.ngIngredients ?? []) && (
+                <TriangleAlert
+                  size={14}
+                  className="shrink-0 text-warning"
+                  aria-label={ja.detail.ngWarning}
+                />
+              )}
+              <span className="min-w-0 flex-1 truncate">{recipe!.title}</span>
+            </>
           )}
-          <span className="min-w-0 flex-1 truncate">
-            {recipe ? recipe.title : <span className="text-ink-muted">{ja.mealPlan.empty}</span>}
-          </span>
         </button>
-        {/* 過去日(今日より前)はサイコロ非表示(2026-07-16 便W-⑤a: ランダム提案の対象外。
-            過去の献立は「作った記録」として振り返る対象であり、上書きも新規埋めもしない) */}
-        {!isPastDate(date, today) && (
+        {/* 過去日(今日より前)・作った記録のある枠はサイコロ非表示(2026-07-16 便W-⑤a: ランダム提案の
+            対象外。過去/作った献立は振り返る対象であり、上書きも新規埋めもしない) */}
+        {!isPastDate(date, today) && !isCooked && (
           <button
             type="button"
             onClick={() => void suggestRow(date, slot, role, entryId, extraLocalId)}
@@ -1021,17 +1258,37 @@ export default function MealPlanPage() {
                 )}
               </>
             ) : (
+              // 空状態の案内+ボタン(2026-07-24 便BH-3・タスク1: 何をすべきか分かるように)
               <div className="mt-[var(--space-sm)]">
                 <p className="text-sm text-ink-muted">{ja.mealPlan.todayEmpty}</p>
-                {todayFromPlanIds.length > 0 && (
+                <p className="mt-1 text-xs text-ink-muted">{ja.mealPlan.todayEmptyGuide}</p>
+                <div className="mt-[var(--space-sm)] flex flex-col gap-[var(--space-sm)]">
                   <button
                     type="button"
-                    onClick={() => void importRecipeIdsToTodayList(todayFromPlanIds)}
-                    className="mt-[var(--space-sm)] w-full rounded-sm border border-edge bg-surface py-2 text-sm font-bold text-accent shadow-sm"
+                    onClick={openTodayPicker}
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3 font-bold text-on-accent shadow-sm"
                   >
-                    {ja.mealPlan.todayImport.replace('{n}', String(todayFromPlanIds.length))}
+                    <Plus size={18} aria-hidden />
+                    {ja.mealPlan.todayChooseButton}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => void suggestTodayList()}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-edge bg-surface py-3 font-bold text-accent shadow-sm"
+                  >
+                    <Dices size={18} aria-hidden />
+                    {ja.mealPlan.todaySuggestButton}
+                  </button>
+                  {todayFromPlanIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void importRecipeIdsToTodayList(todayFromPlanIds)}
+                      className="w-full rounded-sm border border-edge bg-surface py-2 text-sm font-bold text-accent shadow-sm"
+                    >
+                      {ja.mealPlan.todayImport.replace('{n}', String(todayFromPlanIds.length))}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </section>
@@ -1154,7 +1411,9 @@ export default function MealPlanPage() {
             </div>
 
             {/* 期間の食費の結果カード(便AB): 開始日・終了日の両方が選ばれたら表示。
-                期間の献立原価合計・1日あたり平均・日数を出す(段階1・登録人数基準) */}
+                2026-07-24 便BH-3・タスク9で基準を明示: 「予定ベース(登録した献立)」と
+                「実績ベース(作った記録)」を分けて出す。予定ベースは従来どおり登録人数基準の
+                原価合計・1日あたり平均・食数。実績ベースは期間内の記録から実績原価・食数・1食あたりを出す */}
             {costMode && rangeStart != null && rangeEnd != null && (
               <div className="mt-[var(--space-sm)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
                 <h2 className="font-bold">{ja.mealPlan.rangeCostResultTitle}</h2>
@@ -1166,13 +1425,37 @@ export default function MealPlanPage() {
                     .replace('{ed}', String(Number(rangeEnd.slice(8, 10))))
                     .replace('{n}', String(rangeDays))}
                 </p>
-                <p className="mt-1 text-2xl font-bold text-accent">
+
+                {/* 予定ベース */}
+                <p className="mt-[var(--space-sm)] text-sm font-bold text-ink-muted">
+                  {ja.mealPlan.rangeCostPlanLabel}
+                </p>
+                <p className="mt-0.5 text-2xl font-bold text-accent">
                   約{rangeCostEstimate.total.toLocaleString()}円
+                  <span className="ml-2 text-sm font-bold text-ink-muted">
+                    （{ja.mealPlan.rangeCostMealCount.replace('{n}', String(rangePlanMealCount))}）
+                  </span>
                 </p>
                 <p className="mt-1 text-sm text-ink-muted">
                   {ja.mealPlan.rangeCostResultAverage.replace('{n}', rangeAverageCost.toLocaleString())}
                 </p>
-                <p className="mt-1 text-xs text-ink-muted">{ja.mealPlan.weekCostNote}</p>
+
+                {/* 実績ベース(作った記録) */}
+                <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">
+                  {ja.mealPlan.rangeCostActualLabel}
+                </p>
+                {rangeActualCost.count > 0 ? (
+                  <p className="mt-0.5 text-lg font-bold text-accent">
+                    {ja.mealPlan.rangeCostActualResult
+                      .replace('{yen}', rangeActualCost.total.toLocaleString())
+                      .replace('{n}', String(rangeActualCost.count))
+                      .replace('{per}', rangeActualPerMeal.toLocaleString())}
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-sm text-ink-muted">{ja.mealPlan.rangeCostActualEmpty}</p>
+                )}
+
+                <p className="mt-[var(--space-sm)] text-xs text-ink-muted">{ja.mealPlan.weekCostNote}</p>
                 <Link
                   to="/prices"
                   className="mt-1 inline-block text-xs font-bold text-accent underline"
@@ -1198,6 +1481,35 @@ export default function MealPlanPage() {
 
       {viewMode === 'week' && (
       <>
+      {/* 週の表示起点の切替(2026-07-24 便BH-3・タスク3): 従来の週区切り⇄今日を先頭に7日間。
+          既定は週区切り・選択は記憶する */}
+      <div className="mt-[var(--space-md)] flex gap-[var(--space-sm)]">
+        <button
+          type="button"
+          onClick={() => setWeekLayout(false)}
+          aria-pressed={!rollingWeek}
+          className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+            !rollingWeek
+              ? 'border-accent bg-accent text-on-accent'
+              : 'border-edge bg-surface text-ink-muted'
+          }`}
+        >
+          {ja.mealPlan.weekLayoutCalendar}
+        </button>
+        <button
+          type="button"
+          onClick={() => setWeekLayout(true)}
+          aria-pressed={rollingWeek}
+          className={`rounded-sm border px-3 py-2 text-sm font-bold ${
+            rollingWeek
+              ? 'border-accent bg-accent text-on-accent'
+              : 'border-edge bg-surface text-ink-muted'
+          }`}
+        >
+          {ja.mealPlan.weekLayoutRolling}
+        </button>
+      </div>
+
       {/* 週の移動 */}
       <div className="mt-[var(--space-md)] flex items-center justify-between gap-2">
         <button
@@ -1210,8 +1522,10 @@ export default function MealPlanPage() {
         </button>
         <button
           type="button"
-          onClick={() => setWeekStart(weekDates(new Date())[0])}
-          aria-label={isAtCurrentWeek ? undefined : ja.mealPlan.thisWeek}
+          onClick={() => setWeekStart(currentWeekAnchor)}
+          aria-label={
+            isAtCurrentWeek ? undefined : rollingWeek ? ja.mealPlan.thisWeekRolling : ja.mealPlan.thisWeek
+          }
           className="flex items-center gap-1 rounded-sm border border-edge bg-surface px-3 py-2 text-sm font-bold text-ink-muted shadow-sm"
         >
           {!isAtCurrentWeek && <RotateCcw size={14} className="text-accent" aria-hidden />}
@@ -1342,35 +1656,13 @@ export default function MealPlanPage() {
         </button>
       </div>
 
-      {/* 週の概算食費（材料に価格を1件も入力していない場合、または何も割り当てていない
-          場合(weekCost===0)はセクションごと非表示。マスタ初期値由来の「約0円」ノイズを消す。
-          第4波ペルソナPDCA Fix3） */}
-      {hasPricedRecipe && weekCost > 0 && (
-        <section className="mt-[var(--space-md)] rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
-          <h2 className="font-bold">{ja.mealPlan.weekCostTitle}</h2>
-          <p className="mt-1 text-2xl font-bold text-accent">約{weekCost.toLocaleString()}円</p>
-          <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
-          <Link to="/prices" className="mt-1 inline-block text-sm font-bold text-accent underline">
-            {ja.mealPlan.weekCostNoteLink}
-          </Link>
-          {weeklyBudget != null && budgetDiff != null ? (
-            <p className="mt-1 text-sm font-bold text-ink-muted">
-              {budgetDiff >= 0
-                ? ja.mealPlan.budgetCompareUnder.replace('{n}', String(budgetDiff.toLocaleString()))
-                : ja.mealPlan.budgetCompareOver.replace('{n}', String(Math.abs(budgetDiff).toLocaleString()))}
-            </p>
-          ) : (
-            <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.budgetNotSet}</p>
-          )}
-        </section>
-      )}
-
       {/* 7日分のカード */}
       <div className="mt-[var(--space-md)] space-y-[var(--space-sm)]">
         {dates.map((date, dayIndex) => (
           <section
             key={date}
-            className={`rounded-md border p-[var(--space-md)] shadow-sm ${
+            ref={date === today ? todaySectionRef : undefined}
+            className={`scroll-mt-[var(--space-md)] rounded-md border p-[var(--space-md)] shadow-sm ${
               date === today ? 'border-accent bg-surface' : 'border-edge bg-surface'
             }`}
           >
@@ -1482,6 +1774,51 @@ export default function MealPlanPage() {
         ))}
       </div>
 
+      {/* 週の概算食費（2026-07-24 便BH-3・タスク4: 「まとめて献立」直後にいきなり金額が出る違和感を
+          解消するため、7日分カードの下=邪魔にならない位置へ移動し、小さな折りたたみ(既定閉)にした。
+          価格情報が1件も無い/何も割り当てていない(weekCost===0)ときはセクションごと非表示のまま。
+          タスク8: 展開時に「◯食分」も併記する） */}
+      {hasPricedRecipe && weekCost > 0 && (
+        <section className="mt-[var(--space-md)] rounded-md border border-edge bg-surface shadow-sm">
+          <button
+            type="button"
+            onClick={() => setWeekCostOpen((v) => !v)}
+            aria-expanded={weekCostOpen}
+            className="flex w-full items-center justify-between gap-2 p-[var(--space-md)] text-left"
+          >
+            <span className="font-bold">{ja.mealPlan.weekCostTitle}</span>
+            {weekCostOpen ? (
+              <ChevronUp size={18} className="shrink-0 text-accent" aria-hidden />
+            ) : (
+              <ChevronDown size={18} className="shrink-0 text-accent" aria-hidden />
+            )}
+          </button>
+          {weekCostOpen && (
+            <div className="px-[var(--space-md)] pb-[var(--space-md)]">
+              <p className="text-2xl font-bold text-accent">
+                約{weekCost.toLocaleString()}円
+                <span className="ml-2 text-sm font-bold text-ink-muted">
+                  （{ja.mealPlan.weekCostMealCount.replace('{n}', String(weekMealCount))}）
+                </span>
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.weekCostNote}</p>
+              <Link to="/prices" className="mt-1 inline-block text-sm font-bold text-accent underline">
+                {ja.mealPlan.weekCostNoteLink}
+              </Link>
+              {weeklyBudget != null && budgetDiff != null ? (
+                <p className="mt-1 text-sm font-bold text-ink-muted">
+                  {budgetDiff >= 0
+                    ? ja.mealPlan.budgetCompareUnder.replace('{n}', String(budgetDiff.toLocaleString()))
+                    : ja.mealPlan.budgetCompareOver.replace('{n}', String(Math.abs(budgetDiff).toLocaleString()))}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-ink-muted">{ja.mealPlan.budgetNotSet}</p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* この週の買い物リストを作る */}
       <button
         type="button"
@@ -1505,36 +1842,129 @@ export default function MealPlanPage() {
       </>
       )}
 
-      {/* レシピ選択ピッカー */}
-      {pickerTarget && (
+      {/* レシピ選択ピッカー(週の枠に入れる/今日の献立に足す の2モードで共用) */}
+      {pickerOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-app">
           <div className="flex items-center justify-between px-[var(--space-md)] py-[var(--space-sm)]">
-            <h2 className="text-lg font-bold">{ja.mealPlan.pickTitle}</h2>
+            <h2 className="text-lg font-bold">
+              {todayPickerOpen ? ja.mealPlan.todayPickTitle : ja.mealPlan.pickTitle}
+            </h2>
             <button
               type="button"
-              onClick={() => setPickerTarget(null)}
+              onClick={closePicker}
               aria-label={ja.focus.close}
               className="rounded-full p-2 text-ink-muted"
             >
               <X size={22} aria-hidden />
             </button>
           </div>
+          {todayPickerOpen && (
+            <p className="px-[var(--space-md)] pb-[var(--space-sm)] text-xs text-ink-muted">
+              {ja.mealPlan.todayPickHint}
+            </p>
+          )}
           <div className="px-[var(--space-md)]">
-            <div className="relative">
-              <Search
-                size={18}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
-                aria-hidden
-              />
-              <input
-                type="search"
-                value={pickerQuery}
-                onChange={(e) => setPickerQuery(e.target.value)}
-                placeholder={ja.mealPlan.pickSearchPlaceholder}
-                className="w-full rounded-md border border-edge bg-surface py-3 pl-10 pr-3 text-base text-ink placeholder:text-ink-muted/60 shadow-sm"
-              />
+            <div className="flex gap-[var(--space-sm)]">
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  size={18}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
+                  aria-hidden
+                />
+                <input
+                  type="search"
+                  value={pickerQuery}
+                  onChange={(e) => setPickerQuery(e.target.value)}
+                  placeholder={ja.mealPlan.pickSearchPlaceholder}
+                  className="w-full rounded-md border border-edge bg-surface py-3 pl-10 pr-3 text-base text-ink placeholder:text-ink-muted/60 shadow-sm"
+                />
+              </div>
+              {/* 絞り込み・並び替え(タスク6・一覧画面の機構を流用)。既定閉 */}
+              <button
+                type="button"
+                onClick={() => setPickerControlsOpen((v) => !v)}
+                aria-expanded={pickerControlsOpen}
+                aria-label={ja.search.filterToggle}
+                className={`flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-md border bg-surface shadow-sm ${
+                  pickerControlsOpen || pickerFilterActive || pickerSort !== 'updated'
+                    ? 'border-accent text-accent'
+                    : 'border-edge text-ink-muted'
+                }`}
+              >
+                <SlidersHorizontal size={22} aria-hidden />
+              </button>
             </div>
           </div>
+          {pickerControlsOpen && (
+            <div className="mt-[var(--space-sm)] max-h-[40vh] overflow-y-auto px-[var(--space-md)]">
+              <div className="rounded-md border border-edge bg-surface p-[var(--space-md)] shadow-sm">
+                <p className="text-sm font-bold text-ink-muted">{ja.search.sortTitle}</p>
+                <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+                  {PICKER_SORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setPickerSort(o.value)}
+                      aria-pressed={pickerSort === o.value}
+                      className={pickerChipCls(pickerSort === o.value)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">{ja.search.timeTitle}</p>
+                <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+                  {PICKER_TIME_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setPickerTime(o.value)}
+                      aria-pressed={pickerTime === o.value}
+                      className={pickerChipCls(pickerTime === o.value)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">{ja.search.effortTitle}</p>
+                <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+                  {PICKER_EFFORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setPickerEffort(o.value)}
+                      aria-pressed={pickerEffort === o.value}
+                      className={pickerChipCls(pickerEffort === o.value)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-[var(--space-md)] text-sm font-bold text-ink-muted">{ja.search.tagTitle}</p>
+                <div className="mt-1 flex flex-wrap gap-[var(--space-sm)]">
+                  {PICKER_TAG_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setPickerTag(o.value)}
+                      aria-pressed={pickerTag === o.value}
+                      className={pickerChipCls(pickerTag === o.value)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setPickerFavoriteOnly((v) => !v)}
+                    aria-pressed={pickerFavoriteOnly}
+                    className={pickerChipCls(pickerFavoriteOnly)}
+                  >
+                    {ja.search.favoriteOnly}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="mt-[var(--space-sm)] flex-1 overflow-y-auto px-[var(--space-md)]">
             {filteredRecipes.length === 0 ? (
               <p className="mt-[var(--space-md)] text-center text-ink-muted">
@@ -1543,14 +1973,19 @@ export default function MealPlanPage() {
             ) : (
               <ul className="divide-y divide-edge rounded-md border border-edge bg-surface shadow-sm">
                 {displayedRecipes.map((recipe) => {
-                  const isCurrentPick = recipe.id === currentPickerRecipeId
+                  const isTodaySelected = todayPickerOpen && todayListIdSet.has(recipe.id!)
+                  const isCurrentPick = !todayPickerOpen && recipe.id === currentPickerRecipeId
+                  const isSelected = isTodaySelected || isCurrentPick
                   return (
-                  <li key={recipe.id} className={isCurrentPick ? 'bg-accent/10' : undefined}>
+                  <li key={recipe.id} className={isSelected ? 'bg-accent/10' : undefined}>
                     <button
                       type="button"
                       onClick={() => void pickRecipe(recipe.id!)}
                       className="flex w-full items-center gap-2 px-[var(--space-md)] py-3 text-left"
                     >
+                      {isTodaySelected && (
+                        <CheckCircle2 size={16} className="shrink-0 text-accent" aria-hidden />
+                      )}
                       {hasNgIngredient(recipe, settings?.ngIngredients ?? []) && (
                         <TriangleAlert
                           size={16}
@@ -1559,9 +1994,9 @@ export default function MealPlanPage() {
                         />
                       )}
                       <span className="min-w-0 flex-1 truncate font-bold">{recipe.title}</span>
-                      {isCurrentPick && (
+                      {isSelected && (
                         <span className="shrink-0 rounded-sm border border-accent px-1.5 py-0.5 text-xs font-bold text-accent">
-                          {ja.mealPlan.pickCurrentBadge}
+                          {todayPickerOpen ? ja.mealPlan.todayPickAddedBadge : ja.mealPlan.pickCurrentBadge}
                         </span>
                       )}
                       <span className="flex shrink-0 items-center gap-2 text-xs text-ink-muted">

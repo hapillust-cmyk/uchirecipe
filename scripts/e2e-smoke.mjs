@@ -2985,8 +2985,9 @@ try {
         (await weekCenterBtn.getAttribute('aria-label')) === null,
       )
 
-      // Fix4+Fix3: 空き枠に「肉じゃが」を割り当てる(ピッカー経由)
-      await mpPage.getByText('未定', { exact: true }).first().click()
+      // Fix4+Fix3: 空き枠に「肉じゃが」を割り当てる(ピッカー経由)。
+      // 2026-07-24 便BH-3・タスク5: 空き枠は「未定」テキストから「レシピを選ぶ」ボタンに変わった
+      await mpPage.getByRole('button', { name: 'レシピを選ぶ', exact: true }).first().click()
       await mpPage.waitForTimeout(400)
       check('MEALPLAN-01(Fix4) ピッカーが開く', (await mpPage.textContent('body')).includes('レシピを選ぶ'))
       await mpPage.getByPlaceholder('レシピ名で絞り込み').fill('肉じゃが')
@@ -2994,17 +2995,27 @@ try {
       await mpPage.getByText('肉じゃが', { exact: true }).first().click()
       await mpPage.waitForTimeout(400)
       const mpAssignedText = await mpPage.textContent('body')
+      // 2026-07-24 便BH-3・タスク4: 概算食費は小さな折りたたみ(既定閉)になった。見出し(トグル)は
+      // 割り当て後に出るが、金額・リンクは展開して初めて出る
       check('MEALPLAN-01(Fix3) 割り当てると概算食費セクションが出る', mpAssignedText.includes('今週の概算食費'))
-      const costMatch = mpAssignedText.match(/約([\d,]+)円/)
+      // タスク4: 折りたたみを展開してから金額・食数・リンクを確認する
+      await mpPage.getByRole('button', { name: '今週の概算食費' }).click()
+      await mpPage.waitForTimeout(300)
+      const mpCostText = await mpPage.textContent('body')
+      const costMatch = mpCostText.match(/約([\d,]+)円/)
       check(
         'MEALPLAN-01(Fix3) 表示された概算食費は0円ではない',
         !!costMatch && Number(costMatch[1].replace(/,/g, '')) > 0,
         `costMatch=${costMatch?.[0]}`,
       )
       check(
+        'MEALPLAN-01(便BH-3・タスク8) 概算食費に「◯食分」が併記される',
+        /\d+食分/.test(mpCostText),
+      )
+      check(
         'MEALPLAN-01(Fix3) 概算食費セクションにマスタ由来の注記は出ない' +
           '(2026-07-13 オーナー実機フィードバックで詳細に続き週の献立側も削除)',
-        !mpAssignedText.includes('一部は目安価格から計算しています'),
+        !mpCostText.includes('一部は目安価格から計算しています'),
       )
 
       // 2026-07-14: 概算食費欄のリンク文言を「食材と価格を編集する」に変更し、
@@ -3300,7 +3311,7 @@ try {
       // 各枠は既定で主菜+副菜の2行(未定×2)。既定表示は夕食のみなので7日×2行=14件
       check(
         'MEALPLAN-03 各枠は既定で主菜+副菜の2行(未定×2)が並ぶ',
-        (await mp3Page.getByText('未定', { exact: true }).count()) === 14,
+        (await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()) === 14,
       )
       check(
         'MEALPLAN-03 行に「主菜」「副菜」のラベルが付く(7日分ずつ)',
@@ -3344,7 +3355,7 @@ try {
       )
 
       // 先頭の日(月曜)・夕食の主菜行(先頭の「未定」)に「肉じゃが」をピッカーで割り当てる
-      await mp3Page.getByText('未定', { exact: true }).first().click()
+      await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).first().click()
       await mp3Page.waitForTimeout(400)
       await mp3Page.getByPlaceholder('レシピ名で絞り込み').fill('肉じゃが')
       await mp3Page.waitForTimeout(300)
@@ -3356,7 +3367,7 @@ try {
       )
       check(
         'MEALPLAN-03 割り当て後は「未定」が1件減る(14→13)',
-        (await mp3Page.getByText('未定', { exact: true }).count()) === 13,
+        (await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()) === 13,
       )
 
       // 行単位のサイコロ: 月曜の副菜行(2番目のサイコロ。主菜が埋まっているので枠は
@@ -3368,7 +3379,7 @@ try {
         'MEALPLAN-03(行単位のサイコロ) 副菜だけ自動提案しても主菜(肉じゃが)は変わらない',
         await mp3Page.getByRole('button', { name: '肉じゃが' }).first().isVisible(),
       )
-      const afterRowDiceEmptyCount = await mp3Page.getByText('未定', { exact: true }).count()
+      const afterRowDiceEmptyCount = await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()
       check(
         'MEALPLAN-03(行単位のサイコロ) 副菜行が埋まり「未定」がさらに1件減る(13→12)',
         afterRowDiceEmptyCount === 12,
@@ -3381,7 +3392,7 @@ try {
       // どちらでも主菜は必ず1件埋まる(=最低1件は未定が減る)ことを確認する
       await diceButtons.nth(2).click()
       await mp3Page.waitForTimeout(400)
-      const afterPairEmptyCount = await mp3Page.getByText('未定', { exact: true }).count()
+      const afterPairEmptyCount = await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()
       const pairDelta = afterRowDiceEmptyCount - afterPairEmptyCount
       check(
         'MEALPLAN-03(空き枠のペア提案) サイコロ1回で主菜(+副菜)が埋まる(一品ものなら副菜は空く)',
@@ -3398,7 +3409,7 @@ try {
       await mp3Page.waitForTimeout(300)
       check(
         'MEALPLAN-03(＋枠を追加) 行を追加すると「未定」が1件増える',
-        (await mp3Page.getByText('未定', { exact: true }).count()) === afterPairEmptyCount + 1,
+        (await mp3Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()) === afterPairEmptyCount + 1,
       )
     } finally {
       await mp3Browser.close()
@@ -3694,7 +3705,7 @@ try {
       // 前提: 表示中の週は全日程が過去日(既定は夕食のみ表示なので7日×2行=14件の「未定」)
       check(
         'MEALPLAN-06 前提: 前の週(全日程過去日)も既定どおり7日×2行(未定×14)が並ぶ',
-        (await mp6Page.getByText('未定', { exact: true }).count()) === 14,
+        (await mp6Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()) === 14,
       )
       // (a) 過去日にはサイコロ(行の自動提案)ボタン自体が出ない
       check(
@@ -3706,7 +3717,7 @@ try {
       await mp6Page.waitForTimeout(600)
       check(
         'MEALPLAN-06(過去日保護a) 「まとめて献立を立てる」を押しても過去週は未定のまま(14件不変)',
-        (await mp6Page.getByText('未定', { exact: true }).count()) === 14,
+        (await mp6Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).count()) === 14,
       )
     } finally {
       await mp6Browser.close()
@@ -3767,7 +3778,7 @@ try {
       await mp8Page.waitForTimeout(300)
 
       // 月曜・夕食の主菜行(先頭の「未定」)に肉じゃがを手動で割り当てる
-      await mp8Page.getByText('未定', { exact: true }).first().click()
+      await mp8Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).first().click()
       await mp8Page.waitForTimeout(400)
       await mp8Page.getByPlaceholder('レシピ名で絞り込み').fill('肉じゃが')
       await mp8Page.waitForTimeout(300)
@@ -3849,7 +3860,7 @@ try {
     try {
       // 「先頭の未定」の行にレシピを手動割り当てするヘルパー(ピッカーで検索して選ぶ)
       const assign = async (title) => {
-        await mp9Page.getByText('未定', { exact: true }).first().click()
+        await mp9Page.getByRole('button', { name: 'レシピを選ぶ', exact: true }).first().click()
         await mp9Page.waitForTimeout(400)
         await mp9Page.getByPlaceholder('レシピ名で絞り込み').fill(title)
         await mp9Page.waitForTimeout(300)
@@ -4403,6 +4414,69 @@ try {
         rcSwappedTotal === rcTotal,
         `rcSwappedTotal=${rcSwappedTotal} rcTotal=${rcTotal}`,
       )
+
+      // 2026-07-24 便BH-3・タスク9: 基準を明示(予定ベース/実績ベース)。ここまでの範囲(3〜8日)には
+      // 「作った記録」が無いので実績ベースは「まだ記録がありません」。予定ベースのラベルが出ること・
+      // 実績ベースが空案内であることを確認する
+      check('MEALPLAN-07(タスク9) 予定ベースのラベルが出る', rcSwappedText.includes('予定ベース'))
+      check('MEALPLAN-07(タスク9) 実績ベースのラベルが出る', rcSwappedText.includes('実績ベース'))
+      check(
+        'MEALPLAN-07(タスク9) 記録が無い期間の実績ベースは「まだ記録がありません」',
+        rcSwappedText.includes('この期間にはまだ「作った記録」がありません'),
+      )
+      check('MEALPLAN-07(タスク9) 予定ベースに「◯食分」が併記される', /\d+食分/.test(rcSwappedText))
+
+      // 期間内(5日)に肉じゃがの「作った記録」を1件注入→再選択で実績ベースが出る。
+      // 記録1件=1食、実績原価=肉じゃが単品概算食費、1食あたり=同額(count=1)になる
+      await rcPage.evaluate(
+        ({ recipeId, date }) =>
+          new Promise((resolve, reject) => {
+            const req = indexedDB.open('uchi-recipe')
+            req.onsuccess = () => {
+              const tx = req.result.transaction('recipes', 'readwrite')
+              const store = tx.objectStore('recipes')
+              const g = store.get(recipeId)
+              g.onsuccess = () => {
+                const r = g.result
+                r.cookedLogs = [{ date }, ...(r.cookedLogs ?? [])]
+                store.put(r)
+              }
+              tx.oncomplete = () => resolve(undefined)
+              tx.onerror = () => reject(tx.error)
+            }
+            req.onerror = () => reject(req.error)
+          }),
+        { recipeId: rcRecipeId, date: `${rcPrefix}-05` },
+      )
+      await rcPage.reload({ waitUntil: 'networkidle' })
+      await rcPage.waitForTimeout(800)
+      await rcPage.getByRole('button', { name: '月', exact: true }).click()
+      await rcPage.waitForTimeout(400)
+      await rcPage.getByRole('button', { name: '期間の食費', exact: true }).click()
+      await rcPage.waitForTimeout(300)
+      const rcMonthGrid2 = rcPage.locator('div.grid.grid-cols-7').last()
+      const rcDay2 = (n) => rcMonthGrid2.locator('button').filter({ hasText: new RegExp(`^${n}$`) })
+      await rcDay2('3').click()
+      await rcPage.waitForTimeout(300)
+      await rcDay2('8').click()
+      await rcPage.waitForTimeout(300)
+      const rcActualText = (await rcPage.textContent('body')) ?? ''
+      const rcActualMatch = rcActualText.match(/実績ベース（作った記録）\s*約([\d,]+)円（(\d+)食分・1食あたり 約([\d,]+)円）/)
+      check(
+        'MEALPLAN-07(タスク9) 記録注入後、実績ベースに「約◯円（◯食分・1食あたり 約◯円）」が出る',
+        !!rcActualMatch,
+        `actualText含む=${rcActualText.includes('実績ベース')} match=${rcActualMatch?.[0]}`,
+      )
+      if (rcActualMatch) {
+        const actualTotal = Number(rcActualMatch[1].replace(/,/g, ''))
+        const actualCount = Number(rcActualMatch[2])
+        const actualPer = Number(rcActualMatch[3].replace(/,/g, ''))
+        check(
+          'MEALPLAN-07(タスク9) 実績原価=肉じゃが単品概算食費・食数1・1食あたり=同額',
+          actualTotal === rcSingleCost && actualCount === 1 && actualPer === rcSingleCost,
+          `total=${actualTotal} count=${actualCount} per=${actualPer} single=${rcSingleCost}`,
+        )
+      }
     } finally {
       await rcBrowser.close()
     }

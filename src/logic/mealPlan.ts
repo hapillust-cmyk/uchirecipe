@@ -546,3 +546,47 @@ export function todayPlanMismatch(todayListIds: number[], todayPlanRecipeIds: nu
   if (todayPlanRecipeIds.length === 0) return []
   return todayListIds.filter((id) => !todayPlanRecipeIds.includes(id))
 }
+
+/**
+ * 週ビューの「作った見た目」対応付け（2026-07-24 便BH-3・タスク2）。
+ * ある日付の献立エントリ群を、その日の「作った記録」の件数だけ「作った枠」に対応付ける
+ * （表示専用・非破壊。エントリ自体は消さない）。同名（同一レシピ）が複数枠にあるとき、
+ * 記録の件数ぶんだけ枠順（朝→昼→夕・主菜→副菜・id昇順）に先着で消費する
+ * （1回だけ作った品が2枠に予定されていても、片方だけを作った見た目にする＝「同名複数に注意」）。
+ * @param dayEntries その日の全エントリ
+ * @param cookedCounts recipeId → その日の「作った記録」件数
+ * @returns 作った見た目にするエントリidの集合
+ */
+export function cookedPlanEntryIds(
+  dayEntries: Pick<MealPlanEntry, 'id' | 'slot' | 'role' | 'recipeId'>[],
+  cookedCounts: Map<number, number>,
+): Set<number> {
+  const remaining = new Map(cookedCounts)
+  const slotRank = (slot: MealSlot) => MEAL_SLOTS.indexOf(slot)
+  const roleRank = (role: MealRole | undefined) => ((role ?? 'main') === 'main' ? 0 : 1)
+  const ordered = [...dayEntries].sort(
+    (a, b) =>
+      slotRank(a.slot) - slotRank(b.slot) ||
+      roleRank(a.role) - roleRank(b.role) ||
+      (a.id ?? 0) - (b.id ?? 0),
+  )
+  const cooked = new Set<number>()
+  for (const e of ordered) {
+    if (e.id == null) continue
+    const left = remaining.get(e.recipeId) ?? 0
+    if (left > 0) {
+      cooked.add(e.id)
+      remaining.set(e.recipeId, left - 1)
+    }
+  }
+  return cooked
+}
+
+/**
+ * 献立エントリ群がカバーする「食事の回数」（=食数。2026-07-24 便BH-3・タスク8/9）。
+ * 同じ日×枠は主菜+副菜が並んでも1食として数える（1回の食事＝1食分）。概算食費・期間の食費に
+ * 「◯食分」を併記するのに使う。
+ */
+export function mealOccasionCount(entries: Pick<MealPlanEntry, 'date' | 'slot'>[]): number {
+  return new Set(entries.map((e) => `${e.date}|${e.slot}`)).size
+}

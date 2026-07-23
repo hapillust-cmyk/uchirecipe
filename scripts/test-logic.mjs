@@ -46,6 +46,8 @@ import {
   detectGenreMix,
   isMainDish,
   recipeGenre,
+  cookedPlanEntryIds,
+  mealOccasionCount,
 } from '../src/logic/mealPlan.ts'
 import { guessDishType } from '../src/logic/dishTypeGuess.ts'
 import { PRICE_DEFAULTS } from '../src/data/priceDefaults.ts'
@@ -86,6 +88,7 @@ import {
   estimateRecipeCost,
   estimateIngredientRowCost,
   sumMealPlanEntriesCost,
+  sumCookedRecipesCost,
   normalizeIngredientNameForPrice,
   normalizeUnit,
   parseUnitQuantity,
@@ -1882,6 +1885,87 @@ eq('rangeDayCount: 月をまたぐ計算も正しい', rangeDayCount('2026-06-28
   }
 }
 
+// ---------- cookedPlanEntryIds(週ビューの「作った見た目」対応付け・2026-07-24 便BH-3・タスク2) ----------
+// 記録の食数だけ枠順(朝→昼→夕・主菜→副菜・id昇順)に先着で消費する。同名複数の枠は記録件数の分だけ・
+// 非破壊(エントリは消さない=表示のみ)。「同名複数に注意」の中核。
+{
+  const mk = (id, slot, role, recipeId) => ({ id, slot, role, recipeId })
+  const sortedSet = (set) => Array.from(set).sort((a, b) => a - b)
+
+  // (1) 記録0件なら何も作った見た目にしない
+  eq(
+    'cookedPlanEntryIds: 記録0件なら空集合',
+    sortedSet(cookedPlanEntryIds([mk(1, 'dinner', 'main', 10)], new Map())),
+    [],
+  )
+  // (2) 記録のあるレシピの枠が作った見た目になる
+  eq(
+    'cookedPlanEntryIds: 記録のあるレシピの枠が対象',
+    sortedSet(
+      cookedPlanEntryIds(
+        [mk(1, 'dinner', 'main', 10), mk(2, 'dinner', 'side', 20)],
+        new Map([[10, 1]]),
+      ),
+    ),
+    [1],
+  )
+  // (3) 同名(同一レシピ)が2枠あり記録1件 → 枠順(朝→昼→夕)で先着の1枠だけ
+  eq(
+    'cookedPlanEntryIds: 同名2枠・記録1件は枠順で先着の1枠だけ',
+    sortedSet(
+      cookedPlanEntryIds(
+        [mk(1, 'dinner', 'main', 10), mk(2, 'lunch', 'main', 10)],
+        new Map([[10, 1]]),
+      ),
+    ),
+    [2], // 昼(lunch)が夕(dinner)より前=先着
+  )
+  // (4) 同名2枠・記録2件 → 両方
+  eq(
+    'cookedPlanEntryIds: 同名2枠・記録2件は両方',
+    sortedSet(
+      cookedPlanEntryIds(
+        [mk(1, 'dinner', 'main', 10), mk(2, 'lunch', 'main', 10)],
+        new Map([[10, 2]]),
+      ),
+    ),
+    [1, 2],
+  )
+  // (5) 同枠内は主菜→副菜→id順で先着(同一レシピが主菜と副菜に入る変則ケースでも決定的)
+  eq(
+    'cookedPlanEntryIds: 同枠内は主菜が副菜より先着',
+    sortedSet(
+      cookedPlanEntryIds(
+        [mk(5, 'dinner', 'side', 10), mk(3, 'dinner', 'main', 10)],
+        new Map([[10, 1]]),
+      ),
+    ),
+    [3], // 主菜(id=3)が副菜(id=5)より先着
+  )
+}
+
+// ---------- mealOccasionCount(概算食費・期間の食費の「◯食分」・2026-07-24 便BH-3・タスク8/9) ----------
+{
+  eq('mealOccasionCount: 0件は0食', mealOccasionCount([]), 0)
+  eq(
+    'mealOccasionCount: 同じ日×枠に主菜+副菜が並んでも1食',
+    mealOccasionCount([
+      { date: '2026-07-24', slot: 'dinner' },
+      { date: '2026-07-24', slot: 'dinner' },
+    ]),
+    1,
+  )
+  eq(
+    'mealOccasionCount: 別の枠・別の日はそれぞれ1食',
+    mealOccasionCount([
+      { date: '2026-07-24', slot: 'dinner' },
+      { date: '2026-07-24', slot: 'lunch' },
+      { date: '2026-07-25', slot: 'dinner' },
+    ]),
+    3,
+  )
+}
+
 // ---------- buildShoppingCandidates(「水」がチェック済みで入る・2026-07-09ペルソナ第2波) ----------
 {
   const recipes = [
@@ -3637,6 +3721,37 @@ eq('normalizeIngredientNameForPrice 前後空白除去', normalizeIngredientName
       total: 0,
       fromMasterCount: 0,
     })
+
+    // sumCookedRecipesCost(2026-07-24 便BH-3・タスク9「期間の食費・実績ベース」): 作った記録群の
+    // 実績原価合計と食数(記録1件=1食)。同じレシピを2回作った記録は同じレシピが2件並ぶ想定
+    eq(
+      'sumCookedRecipesCost: 記録2件(玉ねぎ50+鶏260)を合算・食数2',
+      sumCookedRecipesCost(
+        [
+          { ingredients: [{ name: '玉ねぎ', amount: '1', unit: '個' }] },
+          { ingredients: [{ name: '鶏もも肉', amount: '200', unit: 'g' }] },
+        ],
+        index,
+      ),
+      { total: 50 + 260, count: 2 },
+    )
+    eq(
+      'sumCookedRecipesCost: 同じレシピ2回(玉ねぎ)は食数2・合計100',
+      sumCookedRecipesCost(
+        [
+          { ingredients: [{ name: '玉ねぎ', amount: '1', unit: '個' }] },
+          { ingredients: [{ name: '玉ねぎ', amount: '1', unit: '個' }] },
+        ],
+        index,
+      ),
+      { total: 100, count: 2 },
+    )
+    eq(
+      'sumCookedRecipesCost: 価格情報の無いレシピも食数には数える(1食あたりの分母)',
+      sumCookedRecipesCost([{ ingredients: [{ name: '謎の食材', amount: '1', unit: '個' }] }], index),
+      { total: 0, count: 1 },
+    )
+    eq('sumCookedRecipesCost: 0件は0円・食数0', sumCookedRecipesCost([], index), { total: 0, count: 0 })
   }
 
   // 由来種別(default/user)の出し分け(2026-07-13 UIペルソナQA: 詳細の価格注記「目安」表記の分岐に使う)
