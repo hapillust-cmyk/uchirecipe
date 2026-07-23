@@ -278,6 +278,12 @@ export interface Settings {
   weeklyBudget?: number
   /** 献立タブに表示する食事帯（任意・未指定は朝昼夜すべて表示） */
   visibleMealSlots?: MealSlot[]
+  /**
+   * 週タブの表示起点（任意・2026-07-24 便BH-3・タスク3）。true=「今日を先頭に7日間」（今日起点の
+   * ローリング表示）、未設定/false=従来の週区切り（月曜始まりのカレンダー週）。既定は従来表示。
+   * 任意項目なのでスキーマ変更・マイグレーション不要（既存ユーザーは従来どおりの週区切り）。
+   */
+  weekStartsToday?: boolean
   /** ホーム画面に表示するパーツと並び順（配列に無いものは非表示） */
   homeWidgets: HomeWidgetKey[]
   /**

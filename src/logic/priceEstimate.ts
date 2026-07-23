@@ -371,3 +371,28 @@ export function sumMealPlanEntriesCost<E extends { recipeId: number }>(
     { total: 0, fromMasterCount: 0 },
   )
 }
+
+/** 「作った記録」群の実績原価合計と食数（記録1件=1食）。2026-07-24 便BH-3・タスク9 */
+export interface CookedLogsCostSum {
+  /** 実績原価の合計（各記録のレシピを登録人数基準のestimateRecipeCostで見積もって合算） */
+  total: number
+  /** 食数（=渡した記録の件数。1回の「作った!」を1食として数える） */
+  count: number
+}
+
+/**
+ * 「作った記録」（cookedLogs）群の実績ベースの概算食費合計と食数を出す（2026-07-24 便BH-3・タスク9・
+ * 期間の食費の「実績ベース」表示用）。渡す配列は「記録1件につきそのレシピ1件」（同じレシピを2回
+ * 作った記録があれば同じレシピが2件並ぶ）を想定する。予定ベースのsumMealPlanEntriesCostと同じく
+ * 登録人数基準で見積もる。countは食数（記録件数）で、呼び出し側は total÷count で「1食あたり」を出す。
+ */
+export function sumCookedRecipesCost(
+  recipesForLogs: { ingredients: Pick<Ingredient, 'name' | 'amount' | 'unit' | 'price'>[] }[],
+  index: PriceIndexEntry[],
+): CookedLogsCostSum {
+  let total = 0
+  for (const r of recipesForLogs) {
+    total += estimateRecipeCost(r.ingredients, index).total
+  }
+  return { total, count: recipesForLogs.length }
+}

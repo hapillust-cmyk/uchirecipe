@@ -107,6 +107,16 @@ export const ja = {
     title: '献立',
     todayTitle: '今日の献立',
     todayEmpty: 'まだ今日つくるものが決まっていません',
+    // 日タブが空のときの案内+2ボタン(2026-07-24 便BH-3・タスク1: 空状態で何をすべきか分かるように)
+    todayEmptyGuide: '下のボタンから選ぶか、おまかせで提案できます',
+    todayChooseButton: '今日の献立を選ぶ',
+    todaySuggestButton: 'おまかせで提案',
+    todaySuggestDone: 'おまかせで{n}品を今日の献立に入れました',
+    // 「今日の献立を選ぶ」ピッカー(タスク1)。週の枠に入れるピッカー(pickTitle)とは別に、
+    // 今日の献立(todayList)へ直接足す。タップで追加/解除でき、複数選んで×で閉じる
+    todayPickTitle: '今日の献立を選ぶ',
+    todayPickHint: 'タップで追加/解除できます。選び終えたら右上の×で閉じてください',
+    todayPickAddedBadge: '追加済み',
     todayMarkCooked: '作った',
     todayRemove: 'この献立から外す',
     todayMarkAllCooked: '全て作った！',
@@ -115,6 +125,11 @@ export const ja = {
     prevWeek: '前の週',
     nextWeek: '次の週',
     thisWeek: '今週へ戻る',
+    // 週タブの表示起点切替(2026-07-24 便BH-3・タスク3): 従来の週区切り⇄今日を先頭に7日間。
+    // 既定は従来(週区切り)・選択は設定に記憶する。thisWeekRollingは今日起点表示中の中央チップのaria-label
+    weekLayoutCalendar: '週区切り',
+    weekLayoutRolling: '今日から7日間',
+    thisWeekRolling: '今日を先頭に戻る',
     // 3タブ構成(2026-07-16 便U-1 Fable設計: 現行の「今日セクション+週/月切替」を
     // ページ上部の「日」「週」「月」タブに再構成)
     viewDay: '日',
@@ -155,6 +170,13 @@ export const ja = {
     rangeCostResultTitle: '期間の食費',
     rangeCostResultRange: '{sm}/{sd}〜{em}/{ed}（{n}日間）',
     rangeCostResultAverage: '1日あたり 約{n}円',
+    // 期間の食費の基準を明示(2026-07-24 便BH-3・タスク9): 予定ベース(登録した献立)と
+    // 実績ベース(作った記録)を分けて出す。実績ベースは記録の食数を反映し「1食あたり」も出す
+    rangeCostPlanLabel: '予定ベース（登録した献立）',
+    rangeCostActualLabel: '実績ベース（作った記録）',
+    rangeCostMealCount: '{n}食分',
+    rangeCostActualResult: '約{yen}円（{n}食分・1食あたり 約{per}円）',
+    rangeCostActualEmpty: 'この期間にはまだ「作った記録」がありません',
     dow: ['月', '火', '水', '木', '金', '土', '日'] as string[],
     slot: {
       breakfast: '朝食',
@@ -174,6 +196,9 @@ export const ja = {
     genreMixedBadge: 'ジャンル混在',
     genreMixedHint: '主菜のジャンルに合う副菜が足りず、別ジャンルの品が入っています',
     empty: '未定',
+    // 「未定」枠が押せると分からない指摘への対応(2026-07-24 便BH-3・タスク5)。空き枠は
+    // 「＋ レシピを選ぶ」のボタン然とした見た目にする(Plusアイコン＝＋ + この文言)
+    emptyAssign: 'レシピを選ぶ',
     assign: '選ぶ',
     change: '変更する',
     suggest: '自動提案',
@@ -206,6 +231,9 @@ export const ja = {
     pickCurrentBadge: '選択中',
     noSuggestion: '提案できるレシピがありません。先にレシピを登録してください',
     weekCostTitle: '今週の概算食費',
+    // 概算食費に「◯食分」を併記(2026-07-24 便BH-3・タスク8: この食費が何食分かを添える)。
+    // 主菜+副菜が並んでも1回の食事＝1食分として数える
+    weekCostMealCount: '{n}食分',
     weekCostNote: '材料に価格を入力したレシピだけが計算対象です',
     weekCostNoteLink: '食材と価格を編集する',
     budgetCompareOver: '予算より約{n}円オーバーしています',
