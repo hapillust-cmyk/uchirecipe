@@ -6449,6 +6449,79 @@ try {
       await naviBrowser.close()
     }
   }
+
+  // --- NAVI-04: 段取り精度の改善(2026-07-23便BI・Fable裁定)。貼り付け/URL取り込みのレシピは
+  //     step.minutesが空になる実態があり、従来は本文に「15分煮る」と書いてあっても待ちとして
+  //     認識されず全手順が「手を動かす」の平坦な段取り＋誤った所要目安になっていた。
+  //     minutesを持たない(=貼り付け相当)レシピでも、本文の時間表記+待ち動詞から待ちを認識し、
+  //     隙間に別レシピの手作業が差し込まれることをブラウザ実UIで確認する ---
+  currentCheck = 'NAVI-04'
+  {
+    const nav4Browser = await chromium.launch()
+    const nav4Context = await nav4Browser.newContext({ viewport: { width: 390, height: 820 } })
+    const nav4Page = await nav4Context.newPage()
+    nav4Page.on('pageerror', (err) => {
+      if (err.message.includes('cloudflareinsights') || err.message.includes('Access-Control-Allow-Origin')) return
+      errors.push(`[pageerror@NAVI-04] ${err.message}`)
+    })
+    try {
+      await nav4Page.goto(`${BASE}/#/recipes`, { waitUntil: 'networkidle' })
+      await nav4Page.waitForTimeout(1800)
+      await nav4Page.evaluate(async () => {
+        const openDb = () =>
+          new Promise((resolve, reject) => {
+            const r = indexedDB.open('uchi-recipe')
+            r.onsuccess = () => resolve(r.result)
+            r.onerror = () => reject(r.error)
+          })
+        const db = await openDb()
+        const P = (req) => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error) })
+        const store = (name) => db.transaction(name, 'readwrite').objectStore(name)
+        const mk = (title, steps) => ({
+          title, servings: 2, effortLevel: 'normal', tags: [], ingredients: [], steps,
+          isFavorite: false, cookedLogs: [], searchWords: [], isStarter: false, updatedAt: Date.now(),
+        })
+        // 貼り付け相当: 時間は本文にあるが step.minutes は未設定(parseRecipeTextの実挙動)
+        const idA = await P(store('recipes').add(mk('E2E貼付け煮物', [
+          { text: '材料を切る' }, { text: '鍋で15分煮る' }, { text: '盛り付ける' },
+        ])))
+        const idB = await P(store('recipes').add(mk('E2E貼付けサラダ', [
+          { text: '野菜を切る' }, { text: 'ドレッシングと和える' },
+        ])))
+        let addedAt = Date.now()
+        await P(store('todayList').add({ recipeId: idA, addedAt: addedAt++ }))
+        await P(store('todayList').add({ recipeId: idB, addedAt: addedAt++ }))
+        const cur = (await P(store('settings').get(1))) || { id: 1 }
+        await P(store('settings').put({ ...cur, id: 1, proCode: 'UR-E2E-TEST-ONLY', proActivatedAt: Date.now() }))
+        db.close()
+      })
+      await nav4Page.goto(`${BASE}/#/cook-navi`)
+      await nav4Page.reload({ waitUntil: 'networkidle' })
+      await nav4Page.waitForTimeout(1200)
+      await nav4Page.getByRole('button', { name: '段取りを作る' }).click()
+      await nav4Page.waitForTimeout(600)
+      const body = await nav4Page.textContent('body')
+      check(
+        'NAVI-04 minutes無の「鍋で15分煮る」が待ちとして認識される(約15分の待ち時間が出る)',
+        body.includes('約15分の待ち時間'),
+      )
+      // 待ち(煮物 手順2)の隙間にサラダの手作業が差し込まれている=並行化されている。
+      // 手順カード(タイムラインの<ol>直下<li>)の並び順(DOM順)で、煮物の待ちカードの直後に
+      // サラダのカードが来ることを確認する。kind判定は「待ち」を先に見る(待ちカードの補助文言
+      // 「この間に、次の手作業を…」に"手作業"が含まれるため順序が重要)
+      const cards = await nav4Page.$$eval('ol > li', (lis) =>
+        lis.map((li) => ({ text: li.textContent || '', isWait: (li.textContent || '').includes('待ち') })),
+      )
+      const simmerIdx = cards.findIndex((c) => c.isWait && c.text.includes('鍋で15分煮る') && c.text.includes('E2E貼付け煮物'))
+      check(
+        'NAVI-04 待ちの直後に別レシピ(サラダ)の手作業が差し込まれる=並行化される',
+        simmerIdx >= 0 && (cards[simmerIdx + 1]?.text.includes('E2E貼付けサラダ') ?? false),
+        `cards=${JSON.stringify(cards.map((c) => ({ wait: c.isWait, t: c.text.slice(0, 24) })))}`,
+      )
+    } finally {
+      await nav4Browser.close()
+    }
+  }
 } catch (err) {
   ng(`実行中断(${currentCheck})`, err.message)
 } finally {
